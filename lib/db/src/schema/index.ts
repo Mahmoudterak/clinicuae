@@ -10,3 +10,5 @@ export * from "./medications";
 export * from "./inventory";
 export * from "./departments";
 export * from "./staff";
+export * from "./payments";
+export * from "./insurance";

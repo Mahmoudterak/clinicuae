@@ -1,12 +1,15 @@
+import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { Route, Switch, Router as WouterRouter } from 'wouter';
+import { Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
 import { AppLayout } from './components/layout/app-layout';
 import { ThemeProvider } from './components/theme-provider';
 import { I18nProvider } from './i18n/context';
+import { AuthProvider, useAuth } from './contexts/auth-context';
 import NotFound from '@/pages/not-found';
 
+import LoginPage from './pages/login';
 import Dashboard from './pages/dashboard';
 import DoctorPortal from './pages/doctor-portal';
 import PatientsList from './pages/patients/index';
@@ -22,10 +25,28 @@ import PharmacyList from './pages/pharmacy/index';
 import InventoryList from './pages/inventory/index';
 import DepartmentsList from './pages/departments/index';
 import StaffList from './pages/staff/index';
+import PaymentsList from './pages/payments/index';
+import InsuranceList from './pages/insurance/index';
+import Reports from './pages/reports/index';
+import AIAssistant from './pages/ai-assistant/index';
 
 const queryClient = new QueryClient();
 
-function Router() {
+function ProtectedRoutes() {
+  const { role } = useAuth();
+  const [location, setLocation] = useLocation();
+
+  // Use effect for redirect to avoid setState-during-render warning
+  React.useEffect(() => {
+    if (!role && location !== '/login') {
+      setLocation('/login');
+    }
+  }, [role, location, setLocation]);
+
+  if (!role) {
+    return <LoginPage />;
+  }
+
   return (
     <AppLayout>
       <Switch>
@@ -44,6 +65,10 @@ function Router() {
         <Route path="/inventory" component={InventoryList} />
         <Route path="/departments" component={DepartmentsList} />
         <Route path="/staff" component={StaffList} />
+        <Route path="/payments" component={PaymentsList} />
+        <Route path="/insurance" component={InsuranceList} />
+        <Route path="/reports" component={Reports} />
+        <Route path="/ai-assistant" component={AIAssistant} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>
@@ -53,18 +78,21 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <I18nProvider>
-        <ThemeProvider>
-          <TooltipProvider>
-            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-              <Router />
-            </WouterRouter>
-            <Toaster />
-          </TooltipProvider>
-        </ThemeProvider>
-      </I18nProvider>
+      <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+        <I18nProvider>
+          <ThemeProvider>
+            <TooltipProvider>
+              <AuthProvider>
+                <ProtectedRoutes />
+                <Toaster />
+              </AuthProvider>
+            </TooltipProvider>
+          </ThemeProvider>
+        </I18nProvider>
+      </WouterRouter>
     </QueryClientProvider>
   );
 }
 
 export default App;
+

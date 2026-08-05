@@ -1,3 +1,4 @@
+import { useAuth } from "@/contexts/auth-context";
 import { useState } from "react";
 import { 
   useListLabRequests, 
@@ -93,7 +94,7 @@ export default function LabList() {
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
-  const { data: requests, isLoading } = useListLabRequests();
+  const { data: requests, isLoading } = useListLabRequests(useAuth().role === 'doctor' ? { doctorId: useAuth().doctorId } : undefined);
   const { data: patients } = useListPatients();
   const { data: doctors } = useListDoctors();
 

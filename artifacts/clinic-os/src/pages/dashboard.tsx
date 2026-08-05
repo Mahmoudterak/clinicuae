@@ -43,6 +43,8 @@ import { useTranslation } from "@/i18n/context";
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "wouter";
 
+import { useAuth } from "@/contexts/auth-context";
+
 // CountUp Component
 const CountUp = ({ 
   end, 
@@ -86,12 +88,14 @@ const CountUp = ({
 
 
 export default function Dashboard() {
+  const { role, doctorId } = useAuth();
+  
   const { data: summary, isLoading: loadingSummary } = useGetDashboardSummary();
   const { data: activity, isLoading: loadingActivity } = useGetRecentActivity();
   const { data: appointmentsByDay, isLoading: loadingAppts } = useGetAppointmentsByDay();
   const { data: revenueByMonth, isLoading: loadingRevenue } = useGetRevenueByMonth();
-  const { data: appointments } = useListAppointments();
-  const { data: invoices } = useListInvoices();
+  const { data: appointments } = useListAppointments(role === 'doctor' && doctorId ? { doctorId } : undefined);
+  const { data: invoices } = useListInvoices(role === 'doctor' && doctorId ? { doctorId } : undefined);
   const { data: doctors } = useListDoctors();
   
   const { t, isRtl, lang } = useTranslation();

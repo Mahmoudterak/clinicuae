@@ -559,6 +559,7 @@ export const DeletePrescriptionResponse = zod.void()
 
 export const ListInvoicesQueryParams = zod.object({
   "patientId": zod.coerce.number().int().optional(),
+  "doctorId": zod.coerce.number().int().optional(),
   "status": zod.coerce.string().optional()
 })
 
@@ -680,6 +681,200 @@ export const GetRevenueByMonthResponseItem = zod.object({
   "revenue": zod.number()
 })
 export const GetRevenueByMonthResponse = zod.array(GetRevenueByMonthResponseItem)
+
+
+export const ListPaymentsQueryParams = zod.object({
+  "patientId": zod.coerce.number().int().optional(),
+  "invoiceId": zod.coerce.number().int().optional(),
+  "status": zod.coerce.string().optional()
+})
+
+export const ListPaymentsResponseItem = zod.object({
+  "id": zod.int(),
+  "invoiceId": zod.int().nullish(),
+  "patientId": zod.int(),
+  "patientName": zod.string().nullish(),
+  "amount": zod.number(),
+  "method": zod.string(),
+  "status": zod.string(),
+  "reference": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "paymentDate": zod.string(),
+  "createdAt": zod.string()
+})
+export const ListPaymentsResponse = zod.array(ListPaymentsResponseItem)
+
+
+export const CreatePaymentBody = zod.object({
+  "invoiceId": zod.int().optional(),
+  "patientId": zod.int(),
+  "amount": zod.number(),
+  "method": zod.string(),
+  "status": zod.string().optional(),
+  "reference": zod.string().optional(),
+  "notes": zod.string().optional(),
+  "paymentDate": zod.string()
+})
+
+export const CreatePaymentResponse = zod.object({
+  "id": zod.int(),
+  "invoiceId": zod.int().nullish(),
+  "patientId": zod.int(),
+  "patientName": zod.string().nullish(),
+  "amount": zod.number(),
+  "method": zod.string(),
+  "status": zod.string(),
+  "reference": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "paymentDate": zod.string(),
+  "createdAt": zod.string()
+})
+
+
+export const UpdatePaymentParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const UpdatePaymentBody = zod.object({
+  "invoiceId": zod.int().optional(),
+  "patientId": zod.int(),
+  "amount": zod.number(),
+  "method": zod.string(),
+  "status": zod.string().optional(),
+  "reference": zod.string().optional(),
+  "notes": zod.string().optional(),
+  "paymentDate": zod.string()
+})
+
+export const UpdatePaymentResponse = zod.object({
+  "id": zod.int(),
+  "invoiceId": zod.int().nullish(),
+  "patientId": zod.int(),
+  "patientName": zod.string().nullish(),
+  "amount": zod.number(),
+  "method": zod.string(),
+  "status": zod.string(),
+  "reference": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "paymentDate": zod.string(),
+  "createdAt": zod.string()
+})
+
+
+export const DeletePaymentParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const DeletePaymentResponse = zod.void()
+
+
+export const ListInsuranceQueryParams = zod.object({
+  "patientId": zod.coerce.number().int().optional(),
+  "status": zod.coerce.string().optional()
+})
+
+export const ListInsuranceResponseItem = zod.object({
+  "id": zod.int(),
+  "patientId": zod.int(),
+  "patientName": zod.string().nullish(),
+  "provider": zod.string(),
+  "policyNumber": zod.string(),
+  "groupNumber": zod.string().nullish(),
+  "planName": zod.string().nullish(),
+  "holderName": zod.string().nullish(),
+  "relationship": zod.string(),
+  "coverageType": zod.string(),
+  "coveragePercent": zod.number().nullish(),
+  "deductible": zod.number().nullish(),
+  "expiryDate": zod.string().nullish(),
+  "status": zod.string(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const ListInsuranceResponse = zod.array(ListInsuranceResponseItem)
+
+
+export const CreateInsuranceRecordBody = zod.object({
+  "patientId": zod.int(),
+  "provider": zod.string(),
+  "policyNumber": zod.string(),
+  "groupNumber": zod.string().optional(),
+  "planName": zod.string().optional(),
+  "holderName": zod.string().optional(),
+  "relationship": zod.string().optional(),
+  "coverageType": zod.string().optional(),
+  "coveragePercent": zod.number().optional(),
+  "deductible": zod.number().optional(),
+  "expiryDate": zod.string().optional(),
+  "status": zod.string().optional(),
+  "notes": zod.string().optional()
+})
+
+export const CreateInsuranceRecordResponse = zod.object({
+  "id": zod.int(),
+  "patientId": zod.int(),
+  "patientName": zod.string().nullish(),
+  "provider": zod.string(),
+  "policyNumber": zod.string(),
+  "groupNumber": zod.string().nullish(),
+  "planName": zod.string().nullish(),
+  "holderName": zod.string().nullish(),
+  "relationship": zod.string(),
+  "coverageType": zod.string(),
+  "coveragePercent": zod.number().nullish(),
+  "deductible": zod.number().nullish(),
+  "expiryDate": zod.string().nullish(),
+  "status": zod.string(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+export const UpdateInsuranceRecordParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const UpdateInsuranceRecordBody = zod.object({
+  "patientId": zod.int(),
+  "provider": zod.string(),
+  "policyNumber": zod.string(),
+  "groupNumber": zod.string().optional(),
+  "planName": zod.string().optional(),
+  "holderName": zod.string().optional(),
+  "relationship": zod.string().optional(),
+  "coverageType": zod.string().optional(),
+  "coveragePercent": zod.number().optional(),
+  "deductible": zod.number().optional(),
+  "expiryDate": zod.string().optional(),
+  "status": zod.string().optional(),
+  "notes": zod.string().optional()
+})
+
+export const UpdateInsuranceRecordResponse = zod.object({
+  "id": zod.int(),
+  "patientId": zod.int(),
+  "patientName": zod.string().nullish(),
+  "provider": zod.string(),
+  "policyNumber": zod.string(),
+  "groupNumber": zod.string().nullish(),
+  "planName": zod.string().nullish(),
+  "holderName": zod.string().nullish(),
+  "relationship": zod.string(),
+  "coverageType": zod.string(),
+  "coveragePercent": zod.number().nullish(),
+  "deductible": zod.number().nullish(),
+  "expiryDate": zod.string().nullish(),
+  "status": zod.string(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+export const DeleteInsuranceRecordParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const DeleteInsuranceRecordResponse = zod.void()
 
 
 export const ListLabRequestsQueryParams = zod.object({

@@ -1,3 +1,4 @@
+import { useAuth } from "@/contexts/auth-context";
 import { useState } from "react";
 import { 
   useListRadiologyRequests, 
@@ -89,7 +90,7 @@ export default function RadiologyList() {
   const [selectedReq, setSelectedReq] = useState<any>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
-  const { data: requests, isLoading } = useListRadiologyRequests();
+  const { data: requests, isLoading } = useListRadiologyRequests(useAuth().role === 'doctor' ? { doctorId: useAuth().doctorId } : undefined);
   const { data: patients } = useListPatients();
   const { data: doctors } = useListDoctors();
 

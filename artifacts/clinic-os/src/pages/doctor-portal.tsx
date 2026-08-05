@@ -1,3 +1,4 @@
+import { useAuth } from "@/contexts/auth-context";
 import { useState, useEffect } from "react";
 import { 
   useListDoctors, 
@@ -14,49 +15,35 @@ import { ar as arLocale, enUS } from "date-fns/locale";
 import {
   Calendar, Users, Pill, FileText, CheckCircle2, Clock, Ban
 } from "lucide-react";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 
 export default function DoctorPortal() {
   const { t, isRtl } = useTranslation();
   const locale = isRtl ? arLocale : enUS;
   const queryClient = useQueryClient();
-
-  const [doctorId, setDoctorId] = useState<number | null>(
-    Number(localStorage.getItem('clinic-os-doctor-id')) || null
-  );
+  const { role, doctorId } = useAuth();
 
   const { data: doctors } = useListDoctors();
-  const { data: appointments } = useListAppointments(doctorId ? { doctorId } : undefined);
-  const { data: records } = useListMedicalRecords(doctorId ? { doctorId } : undefined);
-  const { data: prescriptions } = useListPrescriptions(doctorId ? { doctorId } : undefined);
+  const { data: appointments } = useListAppointments(role === 'doctor' && doctorId ? { doctorId } : undefined);
+  const { data: records } = useListMedicalRecords(role === 'doctor' && doctorId ? { doctorId } : undefined);
+  const { data: prescriptions } = useListPrescriptions(role === 'doctor' && doctorId ? { doctorId } : undefined);
   
   const updateAppointment = useUpdateAppointment();
 
   useEffect(() => {
     if (doctorId) {
-      localStorage.setItem('clinic-os-doctor-id', String(doctorId));
     }
   }, [doctorId]);
 
-  if (!doctorId) {
+  if (role !== 'doctor' || !doctorId) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
-        <h2 className="text-2xl font-bold">{t("doctorPortal.selectDoctor")}</h2>
-        <Select onValueChange={(v) => setDoctorId(Number(v))}>
-          <SelectTrigger className="w-[300px]">
-            <SelectValue placeholder={t("doctorPortal.selectDoctor")} />
-          </SelectTrigger>
-          <SelectContent>
-            {doctors?.map(d => (
-              <SelectItem key={d.id} value={String(d.id)}>
-                {t("common.doctor")} {d.firstName} {d.lastName}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <h2 className="text-2xl font-bold">Doctor Access Only</h2>
+        <p className="text-muted-foreground">Please log in as a doctor to view this portal.</p>
+        <Link href="/login">
+          <Button className="bg-indigo-600 hover:bg-indigo-700">Log In as Doctor</Button>
+        </Link>
       </div>
     );
   }
@@ -90,18 +77,6 @@ export default function DoctorPortal() {
           <h1 className="text-3xl font-bold tracking-tight">{t("doctorPortal.title")}</h1>
           <p className="text-muted-foreground mt-1 text-sm">{t("doctorPortal.subtitle")}</p>
         </div>
-        <Select value={String(doctorId)} onValueChange={(v) => setDoctorId(Number(v))}>
-          <SelectTrigger className="w-[250px] bg-card">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {doctors?.map(d => (
-              <SelectItem key={d.id} value={String(d.id)}>
-                {t("common.doctor")} {d.firstName} {d.lastName}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

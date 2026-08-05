@@ -6,8 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type ListInvoicesParams = {
+export type ListPaymentsParams = {
 patientId?: number;
-doctorId?: number;
+invoiceId?: number;
 status?: string;
 };

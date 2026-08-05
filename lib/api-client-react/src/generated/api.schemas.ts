@@ -482,6 +482,66 @@ export interface StaffInput {
   notes?: string;
 }
 
+export interface Payment {
+  id: number;
+  invoiceId?: number | null;
+  patientId: number;
+  patientName?: string | null;
+  amount: number;
+  method: string;
+  status: string;
+  reference?: string | null;
+  notes?: string | null;
+  paymentDate: string;
+  createdAt: string;
+}
+
+export interface PaymentInput {
+  invoiceId?: number;
+  patientId: number;
+  amount: number;
+  method: string;
+  status?: string;
+  reference?: string;
+  notes?: string;
+  paymentDate: string;
+}
+
+export interface InsuranceRecord {
+  id: number;
+  patientId: number;
+  patientName?: string | null;
+  provider: string;
+  policyNumber: string;
+  groupNumber?: string | null;
+  planName?: string | null;
+  holderName?: string | null;
+  relationship: string;
+  coverageType: string;
+  coveragePercent?: number | null;
+  deductible?: number | null;
+  expiryDate?: string | null;
+  status: string;
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface InsuranceInput {
+  patientId: number;
+  provider: string;
+  policyNumber: string;
+  groupNumber?: string;
+  planName?: string;
+  holderName?: string;
+  relationship?: string;
+  coverageType?: string;
+  coveragePercent?: number;
+  deductible?: number;
+  expiryDate?: string;
+  status?: string;
+  notes?: string;
+}
+
 export type ListPatientsParams = {
 search?: string;
 };
@@ -504,6 +564,18 @@ doctorId?: number;
 };
 
 export type ListInvoicesParams = {
+patientId?: number;
+doctorId?: number;
+status?: string;
+};
+
+export type ListPaymentsParams = {
+patientId?: number;
+invoiceId?: number;
+status?: string;
+};
+
+export type ListInsuranceParams = {
 patientId?: number;
 status?: string;
 };

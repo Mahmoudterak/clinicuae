@@ -13,6 +13,8 @@ import medicationsRouter from "./medications";
 import inventoryRouter from "./inventoryItems";
 import departmentsRouter from "./departments";
 import staffRouter from "./staff";
+import paymentsRouter from "./payments";
+import insuranceRouter from "./insuranceRecords";
 
 const router: IRouter = Router();
 
@@ -30,5 +32,7 @@ router.use(medicationsRouter);
 router.use(inventoryRouter);
 router.use(departmentsRouter);
 router.use(staffRouter);
+router.use(paymentsRouter);
+router.use(insuranceRouter);
 
 export default router;

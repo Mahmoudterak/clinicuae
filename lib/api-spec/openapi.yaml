@@ -22,6 +22,8 @@ tags:
   - name: inventory
   - name: departments
   - name: staff
+  - name: payments
+  - name: insurance
 paths:
   /healthz:
     get:
@@ -398,6 +400,10 @@ paths:
           in: query
           required: false
           schema: { type: integer }
+        - name: doctorId
+          in: query
+          required: false
+          schema: { type: integer }
         - name: status
           in: query
           required: false
@@ -505,6 +511,111 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/MonthRevenue" }
+
+  /payments:
+    get:
+      operationId: listPayments
+      tags: [payments]
+      parameters:
+        - { name: patientId, in: query, required: false, schema: { type: integer } }
+        - { name: invoiceId, in: query, required: false, schema: { type: integer } }
+        - { name: status, in: query, required: false, schema: { type: string } }
+      responses:
+        "200":
+          description: Payments
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Payment" } }
+    post:
+      operationId: createPayment
+      tags: [payments]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PaymentInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Payment" }
+  /payments/{id}:
+    patch:
+      operationId: updatePayment
+      tags: [payments]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PaymentInput" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Payment" }
+    delete:
+      operationId: deletePayment
+      tags: [payments]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+
+  /insurance:
+    get:
+      operationId: listInsurance
+      tags: [insurance]
+      parameters:
+        - { name: patientId, in: query, required: false, schema: { type: integer } }
+        - { name: status, in: query, required: false, schema: { type: string } }
+      responses:
+        "200":
+          description: Insurance records
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/InsuranceRecord" } }
+    post:
+      operationId: createInsuranceRecord
+      tags: [insurance]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InsuranceInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InsuranceRecord" }
+  /insurance/{id}:
+    patch:
+      operationId: updateInsuranceRecord
+      tags: [insurance]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InsuranceInput" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InsuranceRecord" }
+    delete:
+      operationId: deleteInsuranceRecord
+      tags: [insurance]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
 
   /lab-requests:
     get:
@@ -1314,5 +1425,73 @@ components:
         nationalId: { type: string }
         dateOfJoining: { type: string }
         salary: { type: number }
+        status: { type: string }
+        notes: { type: string }
+
+    Payment:
+      type: object
+      required: [id, patientId, amount, method, status, paymentDate, createdAt]
+      properties:
+        id: { type: integer }
+        invoiceId: { type: integer, nullable: true }
+        patientId: { type: integer }
+        patientName: { type: string, nullable: true }
+        amount: { type: number }
+        method: { type: string }
+        status: { type: string }
+        reference: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        paymentDate: { type: string }
+        createdAt: { type: string }
+
+    PaymentInput:
+      type: object
+      required: [patientId, amount, method, paymentDate]
+      properties:
+        invoiceId: { type: integer }
+        patientId: { type: integer }
+        amount: { type: number }
+        method: { type: string }
+        status: { type: string }
+        reference: { type: string }
+        notes: { type: string }
+        paymentDate: { type: string }
+
+    InsuranceRecord:
+      type: object
+      required: [id, patientId, provider, policyNumber, relationship, coverageType, status, createdAt]
+      properties:
+        id: { type: integer }
+        patientId: { type: integer }
+        patientName: { type: string, nullable: true }
+        provider: { type: string }
+        policyNumber: { type: string }
+        groupNumber: { type: string, nullable: true }
+        planName: { type: string, nullable: true }
+        holderName: { type: string, nullable: true }
+        relationship: { type: string }
+        coverageType: { type: string }
+        coveragePercent: { type: number, nullable: true }
+        deductible: { type: number, nullable: true }
+        expiryDate: { type: string, nullable: true }
+        status: { type: string }
+        notes: { type: string, nullable: true }
+        createdAt: { type: string }
+
+    InsuranceInput:
+      type: object
+      required: [patientId, provider, policyNumber]
+      properties:
+        patientId: { type: integer }
+        provider: { type: string }
+        policyNumber: { type: string }
+        groupNumber: { type: string }
+        planName: { type: string }
+        holderName: { type: string }
+        relationship: { type: string }
+        coverageType: { type: string }
+        coveragePercent: { type: number }
+        deductible: { type: number }
+        expiryDate: { type: string }
         status: { type: string }
         notes: { type: string }

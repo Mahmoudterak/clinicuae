@@ -1,10 +1,12 @@
+import { useAuth } from "@/contexts/auth-context";
 import { useState } from "react";
 import { 
   useListPatients, 
   useCreatePatient, 
   useUpdatePatient, 
   useDeletePatient,
-  getListPatientsQueryKey
+  getListPatientsQueryKey,
+  useListAppointments
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
@@ -84,8 +86,15 @@ const patientSchema = z.object({
 type PatientFormValues = z.infer<typeof patientSchema>;
 
 export default function PatientsList() {
+  const { role, doctorId } = useAuth();
   const [search, setSearch] = useState("");
-  const { data: patients, isLoading } = useListPatients({ search });
+  const { data: allPatients, isLoading } = useListPatients({ search });
+  const { data: docAppts } = useListAppointments(role === 'doctor' ? { doctorId } : undefined);
+  
+  const patients = role === 'doctor' && docAppts && allPatients 
+    ? allPatients.filter(p => docAppts.some(a => a.patientId === p.id))
+    : allPatients;
+
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { t, isRtl } = useTranslation();

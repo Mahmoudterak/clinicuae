@@ -14,52 +14,28 @@ import {
   TestTube,
   Activity,
   CreditCard,
-  ShieldPlus,
+  ShieldCheck,
   Package,
   Building2,
   BriefcaseMedical,
-  LineChart,
+  BarChart3,
   Bot,
   ChevronRight,
-  UserCircle2
+  UserCircle2,
+  LogOut,
+  ShieldAlert
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { ThemeToggle } from "../theme-provider"
 import { useTranslation } from "@/i18n/context"
+import { useAuth } from "@/contexts/auth-context"
 import logoUrl from "@/assets/clinic-os-logo.png"
-import { useListDoctors } from "@workspace/api-client-react"
-
-const DOCTOR_KEY = "clinic-os-doctor-id"
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { t, lang, setLang, isRtl } = useTranslation()
-
-  const { data: doctors } = useListDoctors()
-  const [selectedDoctorId, setSelectedDoctorId] = useState<number | null>(
-    () => Number(localStorage.getItem(DOCTOR_KEY)) || null
-  )
-
-  // Sync with localStorage changes (e.g. doctor-portal sets it)
-  useEffect(() => {
-    const onStorage = () => {
-      const id = Number(localStorage.getItem(DOCTOR_KEY)) || null
-      setSelectedDoctorId(id)
-    }
-    window.addEventListener("storage", onStorage)
-    // Poll every 2s for same-tab changes (doctor portal writes to localStorage)
-    const interval = setInterval(() => {
-      const id = Number(localStorage.getItem(DOCTOR_KEY)) || null
-      setSelectedDoctorId((prev) => (prev !== id ? id : prev))
-    }, 2000)
-    return () => { window.removeEventListener("storage", onStorage); clearInterval(interval) }
-  }, [])
-
-  const activeDoctor = doctors?.find((d) => d.id === selectedDoctorId) ?? null
-  const initials = activeDoctor
-    ? `${activeDoctor.firstName[0]}${activeDoctor.lastName[0]}`.toUpperCase()
-    : null
+  const { role, name, logout } = useAuth()
 
   const navigation = [
     { name: t("nav.dashboard"), href: "/", icon: LayoutDashboard },
@@ -70,20 +46,19 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { name: t("nav.records"), href: "/records", icon: FileText },
     { name: t("nav.prescriptions"), href: "/prescriptions", icon: Pill },
     { name: t("nav.invoices"), href: "/invoices", icon: Receipt },
+    { name: t("nav.payments"), href: "/payments", icon: CreditCard },
+    { name: t("nav.insurance"), href: "/insurance", icon: ShieldCheck },
     { name: t("nav.lab"), href: "/lab", icon: TestTube },
     { name: t("nav.radiology"), href: "/radiology", icon: Activity },
     { name: t("nav.pharmacy"), href: "/pharmacy", icon: Package },
     { name: t("nav.inventory"), href: "/inventory", icon: Package },
     { name: t("nav.departments"), href: "/departments", icon: Building2 },
     { name: t("nav.staff"), href: "/staff", icon: BriefcaseMedical },
+    { name: t("nav.reports"), href: "/reports", icon: BarChart3 },
+    { name: t("nav.aiAssistant"), href: "/ai-assistant", icon: Bot },
   ]
 
-  const comingSoonNavigation = [
-    { name: t("dashboard.payments"), icon: CreditCard },
-    { name: t("dashboard.insurance"), icon: ShieldPlus },
-    { name: t("dashboard.reports"), icon: LineChart },
-    { name: t("dashboard.aiAssistant"), icon: Bot },
-  ]
+  const comingSoonNavigation: any[] = []
 
   return (
     <div className="min-h-[100dvh] flex flex-col md:flex-row bg-background">
@@ -136,73 +111,21 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               )
             })}
           </nav>
-
-          <div className="px-4 py-2">
-            <h4 className="px-3 text-xs font-semibold text-indigo-300 uppercase tracking-wider mb-2">
-              {t("dashboard.comingSoon")}
-            </h4>
-            <nav className="space-y-1">
-              {comingSoonNavigation.map((item) => (
-                <div 
-                  key={item.name}
-                  className="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium text-indigo-300/50 cursor-not-allowed select-none"
-                >
-                  <div className="flex items-center gap-3">
-                    <item.icon className="h-5 w-5 opacity-50" />
-                    {item.name}
-                  </div>
-                  <span className="text-[10px] bg-indigo-900/40 text-indigo-300 px-1.5 py-0.5 rounded font-semibold border border-indigo-700/30">
-                    {t("dashboard.soon")}
-                  </span>
-                </div>
-              ))}
-            </nav>
-          </div>
         </div>
 
-        <div className="p-3 border-t border-indigo-500/30 bg-black/10">
-          <Link
-            href="/doctor"
-            onClick={() => setSidebarOpen(false)}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-all duration-200 group cursor-pointer"
-          >
-            {/* Avatar */}
-            {activeDoctor ? (
-              <div className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-br from-indigo-400 to-violet-500 flex items-center justify-center text-white text-sm font-bold shadow-lg ring-2 ring-white/20">
-                {initials}
-              </div>
-            ) : (
-              <div className="h-9 w-9 shrink-0 rounded-full bg-white/10 flex items-center justify-center border border-white/20">
-                <UserCircle2 className="h-5 w-5 text-indigo-300" />
-              </div>
-            )}
-
-            {/* Info */}
-            <div className="flex-1 min-w-0">
-              {activeDoctor ? (
-                <>
-                  <p className="text-sm font-semibold text-white truncate leading-tight">
-                    {isRtl ? `د. ${activeDoctor.firstName} ${activeDoctor.lastName}` : `Dr. ${activeDoctor.firstName} ${activeDoctor.lastName}`}
-                  </p>
-                  <p className="text-xs text-indigo-300 truncate leading-tight mt-0.5">
-                    {activeDoctor.specialty}
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="text-sm font-medium text-indigo-200 leading-tight">
-                    {t("nav.doctorPortal")}
-                  </p>
-                  <p className="text-xs text-indigo-400 leading-tight mt-0.5">
-                    {lang === "ar" ? "اختر حسابك" : "Select your profile"}
-                  </p>
-                </>
-              )}
+        <div className="p-4 border-t border-indigo-500/30 bg-black/10 flex items-center justify-between">
+          <div className="flex items-center gap-3 px-3 py-2 flex-1 min-w-0">
+            <div className="h-9 w-9 rounded-full bg-white/20 flex items-center justify-center text-white font-bold border border-white/30 shrink-0">
+              {role === 'admin' ? <ShieldAlert className="h-4 w-4" /> : name?.split(" ")?.slice(-2).map(n=>n[0]).join("")?.replace(/[^a-zA-Z]/g, '') || 'D'}
             </div>
-
-            {/* Arrow */}
-            <ChevronRight className={`h-4 w-4 text-indigo-400 group-hover:text-white transition-colors shrink-0 ${isRtl ? "rotate-180" : ""}`} />
-          </Link>
+            <div className="flex flex-col min-w-0 truncate">
+              <span className="text-sm font-semibold text-white truncate">{name}</span>
+              <span className="text-xs text-indigo-200 truncate">{role === 'admin' ? "System Admin" : "Doctor"}</span>
+            </div>
+          </div>
+          <button onClick={logout} className="p-2 text-indigo-200 hover:text-white hover:bg-white/10 rounded-xl transition-colors">
+            <LogOut className="h-5 w-5" />
+          </button>
         </div>
       </div>
 

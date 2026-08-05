@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { eq, and, desc, type SQL } from "drizzle-orm";
-import { db, invoicesTable, patientsTable } from "@workspace/db";
+import { eq, and, desc, inArray, type SQL } from "drizzle-orm";
+import { db, invoicesTable, patientsTable, appointmentsTable } from "@workspace/db";
 import {
   ListInvoicesQueryParams,
   ListInvoicesResponse,
@@ -30,6 +30,16 @@ router.get("/invoices", async (req, res): Promise<void> => {
   const filters: SQL[] = [];
   if (query.data.patientId !== undefined) filters.push(eq(invoicesTable.patientId, query.data.patientId));
   if (query.data.status) filters.push(eq(invoicesTable.status, query.data.status));
+  // doctorId: scope to patients who have appointments with this doctor
+  if (query.data.doctorId !== undefined) {
+    const appts = await db
+      .selectDistinct({ patientId: appointmentsTable.patientId })
+      .from(appointmentsTable)
+      .where(eq(appointmentsTable.doctorId, query.data.doctorId));
+    const ids = appts.map((a) => a.patientId);
+    if (ids.length === 0) { res.json([]); return; }
+    filters.push(inArray(invoicesTable.patientId, ids));
+  }
   const rows = await db
     .select()
     .from(invoicesTable)
