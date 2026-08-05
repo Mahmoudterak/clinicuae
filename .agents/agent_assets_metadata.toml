@@ -1,0 +1,44 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "nq8s32SYUjoCfdJg_lO9o"
+uri = "file://screenshots/01-login.jpg"
+type = "image"
+title = "صفحة تسجيل الدخول"
+description = "Admin & Doctor login with language toggle"
+
+[[outputs]]
+id = "cPCYbScaHWwkH4RWFCgX-"
+uri = "file://screenshots/02-dashboard.jpg"
+type = "image"
+title = "لوحة التحكم الرئيسية"
+description = "KPI cards, appointment trends chart, AI insights"
+
+[[outputs]]
+id = "Le1cLFq2MTFKDy0q8AKK1"
+uri = "file://screenshots/03-patient-detail.jpg"
+type = "image"
+title = "ملف المريض"
+description = "Split-panel layout — sidebar + records/prescriptions/invoices"
+
+[[outputs]]
+id = "-pUqx8fOTB_0LWAVd6XIn"
+uri = "file://screenshots/04-settings.jpg"
+type = "image"
+title = "إعدادات المنصة"
+description = "Clinic name, contact info, currency, timezone"
+
+[[outputs]]
+id = "0bLCeWSVetIkwhabg2H06"
+uri = "file://screenshots/05-user-management.jpg"
+type = "image"
+title = "إدارة المستخدمين"
+description = "Add/edit/delete admin accounts with password masking"
+
+[[outputs]]
+id = "6UpU-mBW4nNVweaaHiY3V"
+uri = "file://screenshots/06-doctor-dashboard.jpg"
+type = "image"
+title = "لوحة تحكم الطبيب"
+description = "Doctor-scoped KPIs, personal schedule, pending invoices"
