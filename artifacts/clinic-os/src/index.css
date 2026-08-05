@@ -67,60 +67,67 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* LIGHT MODE */
+/* LIGHT MODE - Premium EMR Indigo Theme */
 :root {
   --button-outline: rgba(0, 0, 0, 0.1);
   --badge-outline: rgba(0, 0, 0, 0.05);
-
   --opaque-button-border-intensity: -8;
 
   --elevate-1: rgba(0, 0, 0, 0.03);
   --elevate-2: rgba(0, 0, 0, 0.08);
 
+  /* Background: #F8FAFC (Slate 50) */
   --background: 210 40% 98%;
-  --foreground: 222.2 84% 4.9%;
-  --border: 214.3 31.8% 91.4%;
+  --foreground: 222 47% 11%;
+  
+  --border: 214 32% 91%;
   
   --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
-  --card-border: 214.3 31.8% 91.4%;
+  --card-foreground: 222 47% 11%;
+  --card-border: 214 32% 91%;
 
-  --sidebar: 210 40% 98%;
-  --sidebar-foreground: 222.2 84% 4.9%;
-  --sidebar-border: 214.3 31.8% 91.4%;
-  --sidebar-primary: 199 89% 48%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 210 40% 92%;
-  --sidebar-accent-foreground: 222.2 84% 4.9%;
-  --sidebar-ring: 199 89% 48%;
+  /* Sidebar will use gradient utility classes, but defining variables for base */
+  --sidebar: 238 48% 34%; /* approx #312E81 */
+  --sidebar-foreground: 210 40% 98%;
+  --sidebar-border: 238 48% 28%;
+  --sidebar-primary: 210 40% 98%;
+  --sidebar-primary-foreground: 238 48% 34%;
+  --sidebar-accent: 238 48% 40%;
+  --sidebar-accent-foreground: 210 40% 98%;
+  --sidebar-ring: 243 75% 59%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --popover-border: 214.3 31.8% 91.4%;
+  --popover-foreground: 222 47% 11%;
+  --popover-border: 214 32% 91%;
 
-  --primary: 199 89% 48%;
+  /* Primary: #4F46E5 (Indigo 600) */
+  --primary: 243 75% 59%;
   --primary-foreground: 0 0% 100%;
   
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
+  /* Secondary: #3B82F6 (Blue 500) */
+  --secondary: 217 91% 60%;
+  --secondary-foreground: 0 0% 100%;
   
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 47%;
   
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222.2 47.4% 11.2%;
+  /* Accent: #8B5CF6 (Violet 500) */
+  --accent: 258 90% 66%;
+  --accent-foreground: 0 0% 100%;
   
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
+  /* Destructive: #EF4444 (Red 500) */
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
   
-  --input: 214.3 31.8% 91.4%;
-  --ring: 199 89% 48%;
+  --input: 214 32% 91%;
+  --ring: 243 75% 59%;
   
-  --chart-1: 199 89% 48%;
-  --chart-2: 215 90% 50%;
-  --chart-3: 180 80% 40%;
-  --chart-4: 280 85% 45%;
-  --chart-5: 340 85% 55%;
+  /* Chart Colors (indigo, violet, blue, emerald, amber) */
+  --chart-1: 243 75% 59%; /* Indigo */
+  --chart-2: 258 90% 66%; /* Violet */
+  --chart-3: 217 91% 60%; /* Blue */
+  --chart-4: 160 84% 39%; /* Emerald */
+  --chart-5: 38 92% 50%;  /* Amber */
 
   --app-font-sans: 'Plus Jakarta Sans', sans-serif;
   --app-font-serif: Georgia, serif;
@@ -129,24 +136,14 @@
   
   --radius: 0.75rem;
   
-  --shadow-2xs: 0px 2px 0px 0px hsl(202 89% 53% / 0);
-  --shadow-xs: 0px 2px 0px 0px hsl(202 89% 53% / 0);
-  --shadow-sm:
-    0px 2px 0px 0px hsl(202 89% 53% / 0),
-    0px 1px 2px -1px hsl(202 89% 53% / 0);
-  --shadow:
-    0px 2px 0px 0px hsl(202 89% 53% / 0),
-    0px 1px 2px -1px hsl(202 89% 53% / 0);
-  --shadow-md:
-    0px 2px 0px 0px hsl(202 89% 53% / 0),
-    0px 2px 4px -1px hsl(202 89% 53% / 0);
-  --shadow-lg:
-    0px 2px 0px 0px hsl(202 89% 53% / 0),
-    0px 4px 6px -1px hsl(202 89% 53% / 0);
-  --shadow-xl:
-    0px 2px 0px 0px hsl(202 89% 53% / 0),
-    0px 8px 10px -1px hsl(202 89% 53% / 0);
-  --shadow-2xl: 0px 2px 0px 0px hsl(202 89% 53% / 0);
+  --shadow-2xs: 0px 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-xs: 0px 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0px 4px 6px -1px rgba(0, 0, 0, 0.05), 0px 2px 4px -1px rgba(0, 0, 0, 0.03);
+  --shadow: 0px 10px 15px -3px rgba(0, 0, 0, 0.05), 0px 4px 6px -2px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0px 20px 25px -5px rgba(0, 0, 0, 0.05), 0px 10px 10px -5px rgba(0, 0, 0, 0.02);
+  --shadow-lg: 0px 25px 50px -12px rgba(0, 0, 0, 0.08);
+  --shadow-xl: 0px 35px 60px -15px rgba(0, 0, 0, 0.1);
+  --shadow-2xl: 0px 50px 100px -20px rgba(0, 0, 0, 0.12);
   
   --tracking-normal: 0em;
   --spacing: 0.25rem;
@@ -160,59 +157,60 @@
   --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 }
 
+/* DARK MODE */
 .dark {
   --button-outline: rgba(255, 255, 255, 0.1);
   --badge-outline: rgba(255, 255, 255, 0.05);
-
   --opaque-button-border-intensity: 9;
 
   --elevate-1: rgba(255, 255, 255, 0.04);
   --elevate-2: rgba(255, 255, 255, 0.09);
 
+  /* Deep Navy */
   --background: 222 47% 11%;
   --foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
+  --border: 217 33% 17%;
   
   --card: 217 33% 17%;
   --card-foreground: 210 40% 98%;
-  --card-border: 217.2 32.6% 17.5%;
+  --card-border: 217 33% 17%;
   
-  --sidebar: 217 33% 17%;
+  --sidebar: 222 47% 11%;
   --sidebar-foreground: 210 40% 98%;
-  --sidebar-border: 217.2 32.6% 17.5%;
-  --sidebar-primary: 199 89% 48%;
+  --sidebar-border: 217 33% 17%;
+  --sidebar-primary: 243 75% 59%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 217.2 32.6% 22%;
+  --sidebar-accent: 217 33% 22%;
   --sidebar-accent-foreground: 210 40% 98%;
-  --sidebar-ring: 199 89% 48%;
+  --sidebar-ring: 243 75% 59%;
 
   --popover: 217 33% 17%;
   --popover-foreground: 210 40% 98%;
-  --popover-border: 217.2 32.6% 17.5%;
+  --popover-border: 217 33% 17%;
   
-  --primary: 199 89% 48%;
+  --primary: 243 75% 59%;
   --primary-foreground: 0 0% 100%;
   
-  --secondary: 217.2 32.6% 22%;
-  --secondary-foreground: 210 40% 98%;
+  --secondary: 217 91% 60%;
+  --secondary-foreground: 0 0% 100%;
   
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
+  --muted: 217 33% 17%;
+  --muted-foreground: 215 20% 65%;
   
-  --accent: 217.2 32.6% 22%;
-  --accent-foreground: 210 40% 98%;
+  --accent: 258 90% 66%;
+  --accent-foreground: 0 0% 100%;
   
-  --destructive: 0 62.8% 40.6%;
+  --destructive: 0 63% 41%;
   --destructive-foreground: 210 40% 98%;
   
-  --input: 217.2 32.6% 22%;
-  --ring: 199 89% 48%;
+  --input: 217 33% 22%;
+  --ring: 243 75% 59%;
   
-  --chart-1: 199 89% 48%;
-  --chart-2: 215 90% 50%;
-  --chart-3: 180 80% 40%;
-  --chart-4: 280 85% 45%;
-  --chart-5: 340 85% 55%;
+  --chart-1: 243 75% 59%;
+  --chart-2: 258 90% 66%;
+  --chart-3: 217 91% 60%;
+  --chart-4: 160 84% 39%;
+  --chart-5: 38 92% 50%;
 }
 
 @layer base {
@@ -238,12 +236,6 @@
     content: attr(data-placeholder);
     color: hsl(var(--muted-foreground));
     pointer-events: none;
-  }
-
-  .no-default-hover-elevate {
-  }
-
-  .no-default-active-elevate {
   }
 
   .toggle-elevate::before,
@@ -297,8 +289,7 @@
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after,
   .border.active-elevate:not(.no-active-interaction-elevate)::after,
   .border.hover-elevate-2:not(.no-hover-interaction-elevate)::after,
-  .border.active-elevate-2:not(.no-active-interaction-elevate)::after,
-  .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
+  .border.active-elevate-2:not(.no-active-interaction-elevate)::after {
     inset: -1px;
   }
 }

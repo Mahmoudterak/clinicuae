@@ -1,0 +1,168 @@
+Design a premium healthcare SaaS dashboard for "Clinic OS" inspired by modern EMR systems such as Epic, Athenahealth, and NextGen.
+
+Requirements:
+
+Create a clean, modern, enterprise-level dashboard with rounded cards, soft shadows, gradient KPI cards, and a professional medical color palette.
+
+Theme
+
+- Primary: #4F46E5
+- Secondary: #3B82F6
+- Accent: #8B5CF6
+- Success: #10B981
+- Warning: #F59E0B
+- Danger: #EF4444
+- Background: #F8FAFC
+
+Layout
+
+- RTL Arabic
+- Responsive
+- Desktop + Tablet + Mobile
+- Fixed Sidebar
+- Sticky Header
+
+Sidebar
+
+🏠 لوحة القيادة
+
+👨‍⚕️ بوابة الطبيب
+
+👥 المرضى
+
+🩺 الأطباء
+
+📅 المواعيد
+
+📋 السجلات الطبية
+
+💊 الوصفات الطبية
+
+🧪 المختبر
+
+🩻 الأشعة
+
+💳 الفواتير
+
+💰 المدفوعات
+
+🛡 التأمين
+
+💊 الصيدلية
+
+📦 المخزون
+
+🏢 الأقسام
+
+👨‍💼 الموظفون
+
+📈 التقارير
+
+🔔 الإشعارات
+
+🤖 AI Assistant
+
+⚙️ الإعدادات
+
+Header
+
+- Search Bar
+- Branch Switcher
+- Language Switch
+- Dark Mode
+- Notifications
+- User Profile
+
+Dashboard Cards
+
+Total Patients
+
+Today's Appointments
+
+Doctors Available
+
+Monthly Revenue
+
+Pending Payments
+
+Completed Visits
+
+Charts
+
+Appointments Overview
+
+Revenue Analytics
+
+Patient Growth
+
+Doctor Performance
+
+Recent Activities Timeline
+
+Today's Schedule
+
+Medicine Requests
+
+Recent Patients
+
+Upcoming Appointments
+
+AI Insights Widget
+
+Display AI recommendations such as:
+
+- Busy doctor alerts
+- Appointment optimization
+- Revenue prediction
+- Inventory alerts
+- Follow-up reminders
+
+Calendar Widget
+
+Interactive Monthly Calendar
+
+Quick Actions
+
++ New Patient
+
++ New Appointment
+
++ New Invoice
+
++ New Prescription
+
++ Laboratory Request
+
++ Radiology Request
+
+Design Style
+
+Modern SaaS
+
+Glassmorphism
+
+Premium UI
+
+Gradient Cards
+
+Large Statistics
+
+Professional Medical Icons
+
+Minimalistic
+
+High-End Enterprise Software
+
+Animations
+
+Smooth transitions
+
+Hover effects
+
+Animated counters
+
+Chart animations
+
+Micro interactions
+
+The final result should look like a premium EMR dashboard comparable to Epic, Cerner, Athenahealth, and Microsoft Cloud for Healthcare.
