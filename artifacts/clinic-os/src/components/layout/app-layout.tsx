@@ -15,22 +15,51 @@ import {
   Activity,
   CreditCard,
   ShieldPlus,
-  Cross,
   Package,
   Building2,
   BriefcaseMedical,
   LineChart,
-  Bot
+  Bot,
+  ChevronRight,
+  UserCircle2
 } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ThemeToggle } from "../theme-provider"
 import { useTranslation } from "@/i18n/context"
 import logoUrl from "@/assets/clinic-os-logo.png"
+import { useListDoctors } from "@workspace/api-client-react"
+
+const DOCTOR_KEY = "clinic-os-doctor-id"
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { t, lang, setLang } = useTranslation()
+  const { t, lang, setLang, isRtl } = useTranslation()
+
+  const { data: doctors } = useListDoctors()
+  const [selectedDoctorId, setSelectedDoctorId] = useState<number | null>(
+    () => Number(localStorage.getItem(DOCTOR_KEY)) || null
+  )
+
+  // Sync with localStorage changes (e.g. doctor-portal sets it)
+  useEffect(() => {
+    const onStorage = () => {
+      const id = Number(localStorage.getItem(DOCTOR_KEY)) || null
+      setSelectedDoctorId(id)
+    }
+    window.addEventListener("storage", onStorage)
+    // Poll every 2s for same-tab changes (doctor portal writes to localStorage)
+    const interval = setInterval(() => {
+      const id = Number(localStorage.getItem(DOCTOR_KEY)) || null
+      setSelectedDoctorId((prev) => (prev !== id ? id : prev))
+    }, 2000)
+    return () => { window.removeEventListener("storage", onStorage); clearInterval(interval) }
+  }, [])
+
+  const activeDoctor = doctors?.find((d) => d.id === selectedDoctorId) ?? null
+  const initials = activeDoctor
+    ? `${activeDoctor.firstName[0]}${activeDoctor.lastName[0]}`.toUpperCase()
+    : null
 
   const navigation = [
     { name: t("nav.dashboard"), href: "/", icon: LayoutDashboard },
@@ -131,16 +160,49 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        <div className="p-4 border-t border-indigo-500/30 bg-black/10">
-          <div className="flex items-center gap-3 px-3 py-2">
-            <div className="h-9 w-9 rounded-full bg-white/20 flex items-center justify-center text-white font-bold border border-white/30">
-              JD
+        <div className="p-3 border-t border-indigo-500/30 bg-black/10">
+          <Link
+            href="/doctor"
+            onClick={() => setSidebarOpen(false)}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-all duration-200 group cursor-pointer"
+          >
+            {/* Avatar */}
+            {activeDoctor ? (
+              <div className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-br from-indigo-400 to-violet-500 flex items-center justify-center text-white text-sm font-bold shadow-lg ring-2 ring-white/20">
+                {initials}
+              </div>
+            ) : (
+              <div className="h-9 w-9 shrink-0 rounded-full bg-white/10 flex items-center justify-center border border-white/20">
+                <UserCircle2 className="h-5 w-5 text-indigo-300" />
+              </div>
+            )}
+
+            {/* Info */}
+            <div className="flex-1 min-w-0">
+              {activeDoctor ? (
+                <>
+                  <p className="text-sm font-semibold text-white truncate leading-tight">
+                    {isRtl ? `د. ${activeDoctor.firstName} ${activeDoctor.lastName}` : `Dr. ${activeDoctor.firstName} ${activeDoctor.lastName}`}
+                  </p>
+                  <p className="text-xs text-indigo-300 truncate leading-tight mt-0.5">
+                    {activeDoctor.specialty}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-medium text-indigo-200 leading-tight">
+                    {t("nav.doctorPortal")}
+                  </p>
+                  <p className="text-xs text-indigo-400 leading-tight mt-0.5">
+                    {lang === "ar" ? "اختر حسابك" : "Select your profile"}
+                  </p>
+                </>
+              )}
             </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-white">Dr. Jane Doe</span>
-              <span className="text-xs text-indigo-200">Chief Medical Officer</span>
-            </div>
-          </div>
+
+            {/* Arrow */}
+            <ChevronRight className={`h-4 w-4 text-indigo-400 group-hover:text-white transition-colors shrink-0 ${isRtl ? "rotate-180" : ""}`} />
+          </Link>
         </div>
       </div>
 
