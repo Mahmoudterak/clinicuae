@@ -9,6 +9,9 @@ import { I18nProvider } from './i18n/context';
 import { AuthProvider, useAuth } from './contexts/auth-context';
 import { SettingsProvider } from './contexts/settings-context';
 import SettingsPage from './pages/settings/index';
+import WhatsAppPage from './pages/whatsapp/index';
+import BookingsPage from './pages/bookings/index';
+import PublicBookingPage from './pages/book/index';
 import NotFound from '@/pages/not-found';
 
 import LoginPage from './pages/login';
@@ -37,6 +40,11 @@ const queryClient = new QueryClient();
 function ProtectedRoutes() {
   const { role } = useAuth();
   const [location, setLocation] = useLocation();
+
+  // Public route — no auth needed
+  if (location === '/book' || location.startsWith('/book?')) {
+    return <PublicBookingPage />;
+  }
 
   // Use effect for redirect to avoid setState-during-render warning
   React.useEffect(() => {
@@ -72,6 +80,8 @@ function ProtectedRoutes() {
         <Route path="/reports" component={Reports} />
         <Route path="/ai-assistant" component={AIAssistant} />
         <Route path="/settings" component={SettingsPage} />
+        <Route path="/whatsapp" component={WhatsAppPage} />
+        <Route path="/bookings" component={BookingsPage} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>

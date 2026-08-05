@@ -15,6 +15,8 @@ import departmentsRouter from "./departments";
 import staffRouter from "./staff";
 import paymentsRouter from "./payments";
 import insuranceRouter from "./insuranceRecords";
+import whatsappRouter from "./whatsapp";
+import bookingsRouter from "./onlineBookings";
 
 const router: IRouter = Router();
 
@@ -34,5 +36,7 @@ router.use(departmentsRouter);
 router.use(staffRouter);
 router.use(paymentsRouter);
 router.use(insuranceRouter);
+router.use(whatsappRouter);
+router.use(bookingsRouter);
 
 export default router;

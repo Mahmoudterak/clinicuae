@@ -12,3 +12,5 @@ export * from "./departments";
 export * from "./staff";
 export * from "./payments";
 export * from "./insurance";
+export * from "./whatsapp";
+export * from "./onlineBookings";

@@ -23,7 +23,10 @@ import {
   ChevronRight,
   UserCircle2,
   LogOut,
-  ShieldAlert
+  ShieldAlert,
+  MessageSquareMore,
+  CalendarCheck,
+  ExternalLink
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { ThemeToggle } from "../theme-provider"
@@ -61,7 +64,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { name: t("nav.staff"), href: "/staff", icon: BriefcaseMedical },
     { name: t("nav.reports"), href: "/reports", icon: BarChart3 },
     { name: t("nav.aiAssistant"), href: "/ai-assistant", icon: Bot },
-    ...(role === 'admin' ? [{ name: isRtl ? "الإعدادات" : "Settings", href: "/settings", icon: Settings }] : []),
+    ...(role === 'admin' ? [
+      { name: isRtl ? "واتساب الأعمال" : "WhatsApp", href: "/whatsapp", icon: MessageSquareMore },
+      { name: isRtl ? "الحجوزات الإلكترونية" : "Online Bookings", href: "/bookings", icon: CalendarCheck },
+      { name: isRtl ? "الإعدادات" : "Settings", href: "/settings", icon: Settings },
+    ] : []),
   ]
 
   const comingSoonNavigation: any[] = []
