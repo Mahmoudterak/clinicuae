@@ -29,13 +29,18 @@ import { useState, useEffect } from "react"
 import { ThemeToggle } from "../theme-provider"
 import { useTranslation } from "@/i18n/context"
 import { useAuth } from "@/contexts/auth-context"
-import logoUrl from "@/assets/clinic-os-logo.png"
+import { useSettings } from "@/contexts/settings-context"
+import defaultLogoUrl from "@/assets/clinic-os-logo.png"
+import { Settings } from "lucide-react"
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { t, lang, setLang, isRtl } = useTranslation()
   const { role, name, logout } = useAuth()
+  const { settings } = useSettings()
+  const logoUrl = settings.clinic.logoDataUrl ?? defaultLogoUrl
+  const clinicName = isRtl ? settings.clinic.clinicNameAr : settings.clinic.clinicName
 
   const navigation = [
     { name: t("nav.dashboard"), href: "/", icon: LayoutDashboard },
@@ -56,6 +61,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { name: t("nav.staff"), href: "/staff", icon: BriefcaseMedical },
     { name: t("nav.reports"), href: "/reports", icon: BarChart3 },
     { name: t("nav.aiAssistant"), href: "/ai-assistant", icon: Bot },
+    ...(role === 'admin' ? [{ name: isRtl ? "الإعدادات" : "Settings", href: "/settings", icon: Settings }] : []),
   ]
 
   const comingSoonNavigation: any[] = []
@@ -65,8 +71,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Mobile Header */}
       <div className="md:hidden flex items-center justify-between p-4 border-b bg-card">
         <div className="flex items-center gap-2">
-          <img src={logoUrl} alt="Clinic OS" className="h-8 w-8 object-contain" />
-          <span className="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-violet-600">Clinic OS</span>
+          <img src={settings.clinic.logoDataUrl ?? defaultLogoUrl} alt="Clinic OS" className="h-8 w-8 object-contain" />
+          <span className="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-violet-600">{clinicName}</span>
         </div>
         <button 
           onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -86,7 +92,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       `}>
         <div className="h-16 flex items-center gap-3 px-6 border-b border-indigo-500/30">
           <img src={logoUrl} alt="Clinic OS" className="h-8 w-8 object-contain brightness-0 invert" />
-          <span className="font-bold text-xl tracking-tight text-white">Clinic OS</span>
+          <span className="font-bold text-xl tracking-tight text-white">{clinicName}</span>
         </div>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar">

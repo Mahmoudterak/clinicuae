@@ -7,6 +7,8 @@ import { AppLayout } from './components/layout/app-layout';
 import { ThemeProvider } from './components/theme-provider';
 import { I18nProvider } from './i18n/context';
 import { AuthProvider, useAuth } from './contexts/auth-context';
+import { SettingsProvider } from './contexts/settings-context';
+import SettingsPage from './pages/settings/index';
 import NotFound from '@/pages/not-found';
 
 import LoginPage from './pages/login';
@@ -69,6 +71,7 @@ function ProtectedRoutes() {
         <Route path="/insurance" component={InsuranceList} />
         <Route path="/reports" component={Reports} />
         <Route path="/ai-assistant" component={AIAssistant} />
+        <Route path="/settings" component={SettingsPage} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>
@@ -82,10 +85,12 @@ function App() {
         <I18nProvider>
           <ThemeProvider>
             <TooltipProvider>
-              <AuthProvider>
-                <ProtectedRoutes />
-                <Toaster />
-              </AuthProvider>
+              <SettingsProvider>
+                <AuthProvider>
+                  <ProtectedRoutes />
+                  <Toaster />
+                </AuthProvider>
+              </SettingsProvider>
             </TooltipProvider>
           </ThemeProvider>
         </I18nProvider>
