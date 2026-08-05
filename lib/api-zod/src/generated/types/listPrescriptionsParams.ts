@@ -8,4 +8,5 @@
 
 export type ListPrescriptionsParams = {
 patientId?: number;
+doctorId?: number;
 };

@@ -19,6 +19,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format, parseISO } from "date-fns";
+import { ar as arLocale, enUS } from "date-fns/locale";
+import { useTranslation } from "@/i18n/context";
 
 import {
   Dialog,
@@ -71,9 +73,12 @@ const prescriptionSchema = z.object({
 type PrescriptionFormValues = z.infer<typeof prescriptionSchema>;
 
 export default function PrescriptionsList() {
+  const { t, isRtl } = useTranslation();
+  const locale = isRtl ? arLocale : enUS;
+
   const [patientFilter, setPatientFilter] = useState<string>("all");
   const { data: prescriptions, isLoading } = useListPrescriptions(
-    patientFilter !== "all" ? { patientId: Number(patientFilter) } : {}
+    patientFilter !== "all" ? { patientId: Number(patientFilter) } : undefined
   );
   const { data: patients } = useListPatients();
   const { data: doctors } = useListDoctors();
@@ -108,7 +113,7 @@ export default function PrescriptionsList() {
           queryClient.invalidateQueries({ queryKey: getListPrescriptionsQueryKey() });
           setIsCreateOpen(false);
           form.reset();
-          toast({ title: "Prescription issued successfully" });
+          toast({ title: t("prescriptions.created") });
         }
       }
     );
@@ -122,7 +127,7 @@ export default function PrescriptionsList() {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListPrescriptionsQueryKey() });
           setDeletingId(null);
-          toast({ title: "Prescription deleted" });
+          toast({ title: t("prescriptions.deleted") });
         }
       }
     );
@@ -132,17 +137,17 @@ export default function PrescriptionsList() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Prescriptions</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Manage patient medications and dosages.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("prescriptions.title")}</h1>
+          <p className="text-muted-foreground mt-1 text-sm">{t("prescriptions.subtitle")}</p>
         </div>
         
         <div className="flex items-center gap-3">
           <Select value={patientFilter} onValueChange={setPatientFilter}>
             <SelectTrigger className="w-[200px] bg-card">
-              <SelectValue placeholder="All Patients" />
+              <SelectValue placeholder={t("common.allPatients")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Patients</SelectItem>
+              <SelectItem value="all">{t("common.allPatients")}</SelectItem>
               {patients?.map(p => (
                 <SelectItem key={p.id} value={String(p.id)}>{p.firstName} {p.lastName}</SelectItem>
               ))}
@@ -158,12 +163,12 @@ export default function PrescriptionsList() {
             <DialogTrigger asChild>
               <Button className="shrink-0 gap-1.5">
                 <Plus className="h-4 w-4" />
-                Issue Rx
+                {t("prescriptions.issueRx")}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
-                <DialogTitle>Issue New Prescription</DialogTitle>
+                <DialogTitle>{t("prescriptions.issueNew")}</DialogTitle>
               </DialogHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
@@ -172,14 +177,14 @@ export default function PrescriptionsList() {
                     name="patientId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Patient</FormLabel>
+                        <FormLabel>{t("common.patient")}</FormLabel>
                         <Select 
                           onValueChange={(v) => field.onChange(Number(v))} 
                           value={field.value ? String(field.value) : undefined}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select patient" />
+                              <SelectValue />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -200,20 +205,20 @@ export default function PrescriptionsList() {
                     name="doctorId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Prescribing Doctor</FormLabel>
+                        <FormLabel>{t("common.doctor")}</FormLabel>
                         <Select 
                           onValueChange={(v) => field.onChange(Number(v))} 
                           value={field.value ? String(field.value) : undefined}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select doctor" />
+                              <SelectValue />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             {doctors?.map(d => (
                               <SelectItem key={d.id} value={String(d.id)}>
-                                Dr. {d.firstName} {d.lastName}
+                                {t("common.doctor")} {d.firstName} {d.lastName}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -228,9 +233,9 @@ export default function PrescriptionsList() {
                     name="medication"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Medication Name</FormLabel>
+                        <FormLabel>{t("prescriptions.medicationName")}</FormLabel>
                         <FormControl>
-                          <Input placeholder="Amoxicillin 500mg" {...field} />
+                          <Input {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -243,9 +248,9 @@ export default function PrescriptionsList() {
                       name="dosage"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Dosage</FormLabel>
+                          <FormLabel>{t("patientDetail.dosage")}</FormLabel>
                           <FormControl>
-                            <Input placeholder="1 tablet" {...field} />
+                            <Input {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -256,9 +261,9 @@ export default function PrescriptionsList() {
                       name="frequency"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Frequency</FormLabel>
+                          <FormLabel>{t("patientDetail.frequency")}</FormLabel>
                           <FormControl>
-                            <Input placeholder="Twice a day" {...field} />
+                            <Input {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -271,7 +276,7 @@ export default function PrescriptionsList() {
                     name="durationDays"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Duration (Days)</FormLabel>
+                        <FormLabel>{t("prescriptions.durationDays")}</FormLabel>
                         <FormControl>
                           <Input type="number" {...field} />
                         </FormControl>
@@ -285,9 +290,9 @@ export default function PrescriptionsList() {
                     name="instructions"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Special Instructions</FormLabel>
+                        <FormLabel>{t("prescriptions.specialInstructions")}</FormLabel>
                         <FormControl>
-                          <Textarea placeholder="Take with food..." className="resize-none" {...field} />
+                          <Textarea className="resize-none" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -301,16 +306,16 @@ export default function PrescriptionsList() {
                       onClick={() => setIsCreateOpen(false)}
                       disabled={createPrescription.isPending}
                     >
-                      Cancel
+                      {t("common.cancel")}
                     </Button>
                     <Button 
                       type="submit"
                       disabled={createPrescription.isPending}
                     >
                       {createPrescription.isPending && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="me-2 h-4 w-4 animate-spin" />
                       )}
-                      Issue Prescription
+                      {t("prescriptions.issueBtn")}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -327,13 +332,13 @@ export default function PrescriptionsList() {
           </div>
         ) : prescriptions?.length === 0 ? (
           <div className="col-span-full text-center py-12 bg-card border rounded-xl">
-            <p className="text-muted-foreground">No prescriptions found.</p>
+            <p className="text-muted-foreground">{t("prescriptions.noPrescriptions")}</p>
           </div>
         ) : (
           prescriptions?.map((rx) => (
             <div key={rx.id} className="bg-card border border-primary/20 rounded-xl overflow-hidden shadow-sm hover-elevate transition-shadow">
               <div className="p-6 relative">
-                <div className="absolute top-6 right-6">
+                <div className="absolute top-6 end-6">
                   <Button 
                     variant="ghost" 
                     size="icon" 
@@ -344,7 +349,7 @@ export default function PrescriptionsList() {
                   </Button>
                 </div>
                 
-                <div className="flex items-start gap-4 mb-4 pr-10">
+                <div className="flex items-start gap-4 mb-4 pe-10">
                   <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                     <Pill className="h-6 w-6 text-primary" />
                   </div>
@@ -357,18 +362,18 @@ export default function PrescriptionsList() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-2 text-sm bg-muted/30 p-3 rounded-lg border">
                     <div>
-                      <span className="block text-xs text-muted-foreground mb-0.5">Dosage</span>
+                      <span className="block text-xs text-muted-foreground mb-0.5">{t("patientDetail.dosage")}</span>
                       <span className="font-medium text-foreground">{rx.dosage}</span>
                     </div>
                     <div>
-                      <span className="block text-xs text-muted-foreground mb-0.5">Frequency</span>
+                      <span className="block text-xs text-muted-foreground mb-0.5">{t("patientDetail.frequency")}</span>
                       <span className="font-medium text-foreground">{rx.frequency}</span>
                     </div>
                   </div>
 
                   {rx.instructions && (
                     <div className="text-sm">
-                      <span className="font-medium">Instructions:</span>
+                      <span className="font-medium">{t("patientDetail.instructions")}:</span>
                       <p className="text-muted-foreground mt-0.5">{rx.instructions}</p>
                     </div>
                   )}
@@ -376,10 +381,10 @@ export default function PrescriptionsList() {
                   <div className="flex items-center gap-4 text-xs text-muted-foreground mt-4 pt-4 border-t">
                     <div className="flex items-center gap-1.5">
                       <Clock className="h-3.5 w-3.5" />
-                      {rx.durationDays ? `${rx.durationDays} days supply` : 'Ongoing'}
+                      {rx.durationDays ? t("prescriptions.daysSupply", { days: rx.durationDays }) : t("prescriptions.ongoing")}
                     </div>
                     <div>
-                      Rx by Dr. {rx.doctorName}
+                      {t("common.doctor")} {rx.doctorName}
                     </div>
                   </div>
                 </div>
@@ -392,13 +397,13 @@ export default function PrescriptionsList() {
       <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Prescription?</AlertDialogTitle>
+            <AlertDialogTitle>{t("prescriptions.deleteTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the prescription record.
+              {t("prescriptions.deleteDesc")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deletePrescription.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deletePrescription.isPending}>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction 
               onClick={(e) => {
                 e.preventDefault();
@@ -407,7 +412,7 @@ export default function PrescriptionsList() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={deletePrescription.isPending}
             >
-              {deletePrescription.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete"}
+              {deletePrescription.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

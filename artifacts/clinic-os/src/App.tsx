@@ -4,9 +4,11 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Route, Switch, Router as WouterRouter } from 'wouter';
 import { AppLayout } from './components/layout/app-layout';
 import { ThemeProvider } from './components/theme-provider';
+import { I18nProvider } from './i18n/context';
 import NotFound from '@/pages/not-found';
 
 import Dashboard from './pages/dashboard';
+import DoctorPortal from './pages/doctor-portal';
 import PatientsList from './pages/patients/index';
 import PatientDetail from './pages/patients/detail';
 import DoctorsList from './pages/doctors/index';
@@ -22,6 +24,7 @@ function Router() {
     <AppLayout>
       <Switch>
         <Route path="/" component={Dashboard} />
+        <Route path="/doctor" component={DoctorPortal} />
         <Route path="/patients" component={PatientsList} />
         <Route path="/patients/:id" component={PatientDetail} />
         <Route path="/doctors" component={DoctorsList} />
@@ -38,14 +41,16 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <TooltipProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-            <Router />
-          </WouterRouter>
-          <Toaster />
-        </TooltipProvider>
-      </ThemeProvider>
+      <I18nProvider>
+        <ThemeProvider>
+          <TooltipProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+              <Router />
+            </WouterRouter>
+            <Toaster />
+          </TooltipProvider>
+        </ThemeProvider>
+      </I18nProvider>
     </QueryClientProvider>
   );
 }

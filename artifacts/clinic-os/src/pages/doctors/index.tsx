@@ -20,6 +20,7 @@ import {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useTranslation } from "@/i18n/context";
 
 import {
   Dialog,
@@ -83,6 +84,7 @@ export default function DoctorsList() {
   const { data: doctors, isLoading } = useListDoctors();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -116,7 +118,7 @@ export default function DoctorsList() {
             setIsCreateOpen(false);
             setEditingId(null);
             form.reset();
-            toast({ title: "Doctor updated successfully" });
+            toast({ title: t("doctors.updated") });
           }
         }
       );
@@ -128,7 +130,7 @@ export default function DoctorsList() {
             queryClient.invalidateQueries({ queryKey: getListDoctorsQueryKey() });
             setIsCreateOpen(false);
             form.reset();
-            toast({ title: "Doctor created successfully" });
+            toast({ title: t("doctors.created") });
           }
         }
       );
@@ -158,7 +160,7 @@ export default function DoctorsList() {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListDoctorsQueryKey() });
           setDeletingId(null);
-          toast({ title: "Doctor removed successfully" });
+          toast({ title: t("doctors.deleted") });
         }
       }
     );
@@ -168,8 +170,8 @@ export default function DoctorsList() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Medical Staff</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Manage clinic doctors and specialists.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("doctors.title")}</h1>
+          <p className="text-muted-foreground mt-1 text-sm">{t("doctors.subtitle")}</p>
         </div>
         
         <Dialog open={isCreateOpen} onOpenChange={(open) => {
@@ -182,12 +184,12 @@ export default function DoctorsList() {
           <DialogTrigger asChild>
             <Button className="shrink-0 gap-1.5">
               <Plus className="h-4 w-4" />
-              Add Doctor
+              {t("doctors.addDoctor")}
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{editingId ? "Edit Doctor" : "Add New Doctor"}</DialogTitle>
+              <DialogTitle>{editingId ? t("doctors.editDoctor") : t("doctors.addDoctor")}</DialogTitle>
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
@@ -197,9 +199,9 @@ export default function DoctorsList() {
                     name="firstName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>First Name</FormLabel>
+                        <FormLabel>{t("patients.firstName")}</FormLabel>
                         <FormControl>
-                          <Input placeholder="Sarah" {...field} />
+                          <Input {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -210,9 +212,9 @@ export default function DoctorsList() {
                     name="lastName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Last Name</FormLabel>
+                        <FormLabel>{t("patients.lastName")}</FormLabel>
                         <FormControl>
-                          <Input placeholder="Smith" {...field} />
+                          <Input {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -226,9 +228,9 @@ export default function DoctorsList() {
                     name="specialty"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Specialty</FormLabel>
+                        <FormLabel>{t("doctors.specialty")}</FormLabel>
                         <FormControl>
-                          <Input placeholder="Cardiology" {...field} />
+                          <Input {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -239,9 +241,9 @@ export default function DoctorsList() {
                     name="department"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Department</FormLabel>
+                        <FormLabel>{t("doctors.department")}</FormLabel>
                         <FormControl>
-                          <Input placeholder="Internal Medicine" {...field} />
+                          <Input {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -255,9 +257,9 @@ export default function DoctorsList() {
                     name="phone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Phone</FormLabel>
+                        <FormLabel>{t("patients.phone")}</FormLabel>
                         <FormControl>
-                          <Input placeholder="+1 (555) 000-0000" {...field} />
+                          <Input dir="ltr" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -268,9 +270,9 @@ export default function DoctorsList() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
+                        <FormLabel>{t("patients.email")}</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="dr.smith@clinic.com" {...field} />
+                          <Input type="email" dir="ltr" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -283,16 +285,16 @@ export default function DoctorsList() {
                   name="status"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Status</FormLabel>
+                      <FormLabel>{t("common.status")}</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select status" />
+                            <SelectValue />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="active">Active</SelectItem>
-                          <SelectItem value="on_leave">On Leave</SelectItem>
+                          <SelectItem value="active">{t("status.active")}</SelectItem>
+                          <SelectItem value="on_leave">{t("status.on_leave")}</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -305,10 +307,9 @@ export default function DoctorsList() {
                   name="bio"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Biography / Notes</FormLabel>
+                      <FormLabel>{t("doctors.bio")}</FormLabel>
                       <FormControl>
                         <Textarea 
-                          placeholder="Professional background..." 
                           className="resize-none"
                           {...field} 
                         />
@@ -325,16 +326,16 @@ export default function DoctorsList() {
                     onClick={() => setIsCreateOpen(false)}
                     disabled={createDoctor.isPending || updateDoctor.isPending}
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </Button>
                   <Button 
                     type="submit"
                     disabled={createDoctor.isPending || updateDoctor.isPending}
                   >
                     {(createDoctor.isPending || updateDoctor.isPending) && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="me-2 h-4 w-4 animate-spin" />
                     )}
-                    {editingId ? "Save Changes" : "Add Doctor"}
+                    {editingId ? t("common.saveChanges") : t("doctors.addDoctor")}
                   </Button>
                 </DialogFooter>
               </form>
@@ -349,7 +350,7 @@ export default function DoctorsList() {
         </div>
       ) : doctors?.length === 0 ? (
         <div className="text-center py-12 bg-card rounded-xl border">
-          <p className="text-muted-foreground">No doctors registered.</p>
+          <p className="text-muted-foreground">{t("doctors.noDoctors")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -362,19 +363,19 @@ export default function DoctorsList() {
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 -me-2">
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => handleEdit(doctor)}>
-                        <Pencil className="mr-2 h-4 w-4" /> Edit Details
+                        <Pencil className="me-2 h-4 w-4" /> {t("doctors.editDetails")}
                       </DropdownMenuItem>
                       <DropdownMenuItem 
                         className="text-destructive focus:text-destructive focus:bg-destructive/10"
                         onClick={() => setDeletingId(doctor.id)}
                       >
-                        <Trash2 className="mr-2 h-4 w-4" /> Remove
+                        <Trash2 className="me-2 h-4 w-4" /> {t("doctors.remove")}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -394,11 +395,11 @@ export default function DoctorsList() {
                 <div className="mt-6 space-y-2">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Phone className="h-4 w-4 shrink-0" />
-                    <span className="truncate">{doctor.phone || 'No phone'}</span>
+                    <span className="truncate" dir="ltr">{doctor.phone || t("common.notApplicable")}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Mail className="h-4 w-4 shrink-0" />
-                    <span className="truncate">{doctor.email || 'No email'}</span>
+                    <span className="truncate" dir="ltr">{doctor.email || t("common.notApplicable")}</span>
                   </div>
                 </div>
               </div>
@@ -406,7 +407,7 @@ export default function DoctorsList() {
                 <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                   doctor.status === 'active' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600'
                 }`}>
-                  {doctor.status === 'active' ? 'Active' : 'On Leave'}
+                  {t(`status.${doctor.status}`)}
                 </span>
                 <span className="text-xs text-muted-foreground font-mono">ID: DR-{doctor.id}</span>
               </div>
@@ -418,14 +419,13 @@ export default function DoctorsList() {
       <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove doctor from staff?</AlertDialogTitle>
+            <AlertDialogTitle>{t("doctors.removeTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently remove the doctor
-              from the directory.
+              {t("doctors.removeDesc")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteDoctor.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteDoctor.isPending}>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction 
               onClick={(e) => {
                 e.preventDefault();
@@ -434,7 +434,7 @@ export default function DoctorsList() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={deleteDoctor.isPending}
             >
-              {deleteDoctor.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Remove Doctor"}
+              {deleteDoctor.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("doctors.removeBtn")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

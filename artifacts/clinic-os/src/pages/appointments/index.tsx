@@ -25,6 +25,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format, parseISO } from "date-fns";
+import { ar as arLocale, enUS } from "date-fns/locale";
+import { useTranslation } from "@/i18n/context";
 
 import {
   Dialog,
@@ -85,17 +87,20 @@ const appointmentSchema = z.object({
 
 type AppointmentFormValues = z.infer<typeof appointmentSchema>;
 
-const statusConfig = {
-  scheduled: { label: "Scheduled", color: "bg-blue-500/10 text-blue-600", icon: Clock },
-  confirmed: { label: "Confirmed", color: "bg-purple-500/10 text-purple-600", icon: CheckCircle2 },
-  completed: { label: "Completed", color: "bg-emerald-500/10 text-emerald-600", icon: CheckCircle2 },
-  cancelled: { label: "Cancelled", color: "bg-destructive/10 text-destructive", icon: XCircle },
-  no_show: { label: "No Show", color: "bg-amber-500/10 text-amber-600", icon: Ban },
-};
+const getStatusConfig = () => ({
+  scheduled: { color: "bg-blue-500/10 text-blue-600", icon: Clock },
+  confirmed: { color: "bg-purple-500/10 text-purple-600", icon: CheckCircle2 },
+  completed: { color: "bg-emerald-500/10 text-emerald-600", icon: CheckCircle2 },
+  cancelled: { color: "bg-destructive/10 text-destructive", icon: XCircle },
+  no_show: { color: "bg-amber-500/10 text-amber-600", icon: Ban },
+});
 
 export default function AppointmentsList() {
+  const { t, isRtl } = useTranslation();
+  const locale = isRtl ? arLocale : enUS;
+
   const [dateFilter, setDateFilter] = useState("");
-  const { data: appointments, isLoading } = useListAppointments({ date: dateFilter || undefined });
+  const { data: appointments, isLoading } = useListAppointments(dateFilter ? { date: dateFilter } : undefined);
   const { data: patients } = useListPatients();
   const { data: doctors } = useListDoctors();
   
@@ -134,7 +139,7 @@ export default function AppointmentsList() {
             setIsCreateOpen(false);
             setEditingId(null);
             form.reset();
-            toast({ title: "Appointment updated successfully" });
+            toast({ title: t("appointments.updated") });
           }
         }
       );
@@ -146,7 +151,7 @@ export default function AppointmentsList() {
             queryClient.invalidateQueries({ queryKey: getListAppointmentsQueryKey() });
             setIsCreateOpen(false);
             form.reset();
-            toast({ title: "Appointment scheduled successfully" });
+            toast({ title: t("appointments.created") });
           }
         }
       );
@@ -174,7 +179,7 @@ export default function AppointmentsList() {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListAppointmentsQueryKey() });
-          toast({ title: `Appointment marked as ${status}` });
+          toast({ title: t("appointments.statusUpdated", { status: t(`status.${status}`) }) });
         }
       }
     );
@@ -188,32 +193,34 @@ export default function AppointmentsList() {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListAppointmentsQueryKey() });
           setDeletingId(null);
-          toast({ title: "Appointment deleted" });
+          toast({ title: t("appointments.deleted") });
         }
       }
     );
   };
 
+  const statusConfig = getStatusConfig();
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Appointments</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Schedule and manage patient visits.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("appointments.title")}</h1>
+          <p className="text-muted-foreground mt-1 text-sm">{t("appointments.subtitle")}</p>
         </div>
         
         <div className="flex items-center gap-3">
           <div className="relative">
-            <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <CalendarIcon className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
               type="date"
-              className="w-full sm:w-[180px] pl-9 bg-card"
+              className="w-full sm:w-[180px] ps-9 bg-card"
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value)}
             />
           </div>
           {dateFilter && (
-            <Button variant="ghost" size="sm" onClick={() => setDateFilter("")} className="px-2">Clear</Button>
+            <Button variant="ghost" size="sm" onClick={() => setDateFilter("")} className="px-2">{t("common.clear")}</Button>
           )}
           
           <Dialog open={isCreateOpen} onOpenChange={(open) => {
@@ -226,12 +233,12 @@ export default function AppointmentsList() {
             <DialogTrigger asChild>
               <Button className="shrink-0 gap-1.5">
                 <Plus className="h-4 w-4" />
-                New Appointment
+                {t("appointments.newAppointment")}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>{editingId ? "Edit Appointment" : "Schedule Appointment"}</DialogTitle>
+                <DialogTitle>{editingId ? t("appointments.editAppointment") : t("appointments.schedule")}</DialogTitle>
               </DialogHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
@@ -240,14 +247,14 @@ export default function AppointmentsList() {
                     name="patientId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Patient</FormLabel>
+                        <FormLabel>{t("common.patient")}</FormLabel>
                         <Select 
                           onValueChange={(v) => field.onChange(Number(v))} 
                           value={field.value ? String(field.value) : undefined}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select patient" />
+                              <SelectValue />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -268,20 +275,20 @@ export default function AppointmentsList() {
                     name="doctorId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Doctor</FormLabel>
+                        <FormLabel>{t("common.doctor")}</FormLabel>
                         <Select 
                           onValueChange={(v) => field.onChange(Number(v))} 
                           value={field.value ? String(field.value) : undefined}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select doctor" />
+                              <SelectValue />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             {doctors?.map(d => (
                               <SelectItem key={d.id} value={String(d.id)}>
-                                Dr. {d.firstName} {d.lastName} ({d.specialty})
+                                {t("common.doctor")} {d.firstName} {d.lastName} ({d.specialty})
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -297,7 +304,7 @@ export default function AppointmentsList() {
                       name="date"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Date</FormLabel>
+                          <FormLabel>{t("common.date")}</FormLabel>
                           <FormControl>
                             <Input type="date" {...field} />
                           </FormControl>
@@ -310,7 +317,7 @@ export default function AppointmentsList() {
                       name="time"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Time</FormLabel>
+                          <FormLabel>{t("common.time")}</FormLabel>
                           <FormControl>
                             <Input type="time" {...field} />
                           </FormControl>
@@ -326,7 +333,7 @@ export default function AppointmentsList() {
                       name="durationMinutes"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Duration (mins)</FormLabel>
+                          <FormLabel>{t("appointments.duration")}</FormLabel>
                           <Select 
                             onValueChange={(v) => field.onChange(Number(v))} 
                             value={String(field.value)}
@@ -337,10 +344,10 @@ export default function AppointmentsList() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="15">15 minutes</SelectItem>
-                              <SelectItem value="30">30 minutes</SelectItem>
-                              <SelectItem value="45">45 minutes</SelectItem>
-                              <SelectItem value="60">1 hour</SelectItem>
+                              <SelectItem value="15">15</SelectItem>
+                              <SelectItem value="30">30</SelectItem>
+                              <SelectItem value="45">45</SelectItem>
+                              <SelectItem value="60">60</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -352,7 +359,7 @@ export default function AppointmentsList() {
                       name="status"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Status</FormLabel>
+                          <FormLabel>{t("common.status")}</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
@@ -360,11 +367,9 @@ export default function AppointmentsList() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="scheduled">Scheduled</SelectItem>
-                              <SelectItem value="confirmed">Confirmed</SelectItem>
-                              <SelectItem value="completed">Completed</SelectItem>
-                              <SelectItem value="cancelled">Cancelled</SelectItem>
-                              <SelectItem value="no_show">No Show</SelectItem>
+                              {Object.keys(statusConfig).map(k => (
+                                <SelectItem key={k} value={k}>{t(`status.${k}`)}</SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -378,9 +383,9 @@ export default function AppointmentsList() {
                     name="reason"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Reason for Visit</FormLabel>
+                        <FormLabel>{t("appointments.reason")}</FormLabel>
                         <FormControl>
-                          <Input placeholder="General checkup..." {...field} />
+                          <Input {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -392,10 +397,9 @@ export default function AppointmentsList() {
                     name="notes"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Additional Notes</FormLabel>
+                        <FormLabel>{t("appointments.addNotes")}</FormLabel>
                         <FormControl>
                           <Textarea 
-                            placeholder="Optional notes..." 
                             className="resize-none"
                             {...field} 
                           />
@@ -412,16 +416,16 @@ export default function AppointmentsList() {
                       onClick={() => setIsCreateOpen(false)}
                       disabled={createAppointment.isPending || updateAppointment.isPending}
                     >
-                      Cancel
+                      {t("common.cancel")}
                     </Button>
                     <Button 
                       type="submit"
                       disabled={createAppointment.isPending || updateAppointment.isPending}
                     >
                       {(createAppointment.isPending || updateAppointment.isPending) && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="me-2 h-4 w-4 animate-spin" />
                       )}
-                      {editingId ? "Save Changes" : "Schedule"}
+                      {editingId ? t("common.saveChanges") : t("appointments.scheduleBtn")}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -433,15 +437,15 @@ export default function AppointmentsList() {
 
       <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+          <table className="w-full text-sm text-start">
             <thead className="bg-muted/50 text-muted-foreground">
               <tr>
-                <th className="px-6 py-4 font-medium">Date & Time</th>
-                <th className="px-6 py-4 font-medium">Patient</th>
-                <th className="px-6 py-4 font-medium">Doctor</th>
-                <th className="px-6 py-4 font-medium">Reason</th>
-                <th className="px-6 py-4 font-medium">Status</th>
-                <th className="px-6 py-4 font-medium text-right">Actions</th>
+                <th className="px-6 py-4 font-medium">{t("common.date")} & {t("common.time")}</th>
+                <th className="px-6 py-4 font-medium">{t("common.patient")}</th>
+                <th className="px-6 py-4 font-medium">{t("common.doctor")}</th>
+                <th className="px-6 py-4 font-medium">{t("common.reason")}</th>
+                <th className="px-6 py-4 font-medium">{t("common.status")}</th>
+                <th className="px-6 py-4 font-medium text-end">{t("common.actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -454,7 +458,7 @@ export default function AppointmentsList() {
               ) : appointments?.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">
-                    No appointments found for the selected date.
+                    {t("appointments.noAppointments")}
                   </td>
                 </tr>
               ) : (
@@ -465,14 +469,14 @@ export default function AppointmentsList() {
                   return (
                     <tr key={apt.id} className="hover:bg-muted/30 transition-colors group">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="font-medium text-foreground">{format(parseISO(apt.date), 'MMM d, yyyy')}</div>
+                        <div className="font-medium text-foreground">{format(parseISO(apt.date), 'MMM d, yyyy', { locale })}</div>
                         <div className="text-xs text-muted-foreground mt-0.5">{apt.time} ({apt.durationMinutes}m)</div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="font-medium text-foreground">{apt.patientName}</div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-foreground">Dr. {apt.doctorName}</div>
+                        <div className="text-foreground">{t("common.doctor")} {apt.doctorName}</div>
                       </td>
                       <td className="px-6 py-4">
                         <span className="truncate block max-w-[200px]">{apt.reason}</span>
@@ -480,10 +484,10 @@ export default function AppointmentsList() {
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${status.color}`}>
                           <StatusIcon className="h-3.5 w-3.5" />
-                          {status.label}
+                          {t(`status.${apt.status}`)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-6 py-4 text-end">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -491,27 +495,27 @@ export default function AppointmentsList() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuLabel>Change Status</DropdownMenuLabel>
-                            {Object.entries(statusConfig).map(([key, config]) => {
+                            <DropdownMenuLabel>{t("appointments.changeStatus")}</DropdownMenuLabel>
+                            {Object.keys(statusConfig).map(key => {
                               if (key === apt.status) return null;
                               return (
                                 <DropdownMenuItem 
                                   key={key}
                                   onClick={() => handleStatusChange(apt.id, key)}
                                 >
-                                  Mark as {config.label}
+                                  {t("appointments.markAs", { status: t(`status.${key}`) })}
                                 </DropdownMenuItem>
                               );
                             })}
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => handleEdit(apt)}>
-                              <Pencil className="mr-2 h-4 w-4" /> Edit Appointment
+                              <Pencil className="me-2 h-4 w-4" /> {t("appointments.editAppointment")}
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               className="text-destructive focus:text-destructive focus:bg-destructive/10"
                               onClick={() => setDeletingId(apt.id)}
                             >
-                              <Trash2 className="mr-2 h-4 w-4" /> Delete
+                              <Trash2 className="me-2 h-4 w-4" /> {t("common.delete")}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -528,14 +532,13 @@ export default function AppointmentsList() {
       <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Appointment?</AlertDialogTitle>
+            <AlertDialogTitle>{t("appointments.deleteTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the appointment
-              record.
+              {t("appointments.deleteDesc")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteAppointment.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteAppointment.isPending}>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction 
               onClick={(e) => {
                 e.preventDefault();
@@ -544,7 +547,7 @@ export default function AppointmentsList() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={deleteAppointment.isPending}
             >
-              {deleteAppointment.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete"}
+              {deleteAppointment.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

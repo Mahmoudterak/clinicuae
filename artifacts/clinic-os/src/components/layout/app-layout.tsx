@@ -14,21 +14,24 @@ import {
 } from "lucide-react"
 import { useState } from "react"
 import { ThemeToggle } from "../theme-provider"
+import { useTranslation } from "@/i18n/context"
 import logoUrl from "@/assets/clinic-os-logo.png"
-
-const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Patients", href: "/patients", icon: Users },
-  { name: "Doctors", href: "/doctors", icon: Stethoscope },
-  { name: "Appointments", href: "/appointments", icon: Calendar },
-  { name: "Medical Records", href: "/records", icon: FileText },
-  { name: "Prescriptions", href: "/prescriptions", icon: Pill },
-  { name: "Invoices", href: "/invoices", icon: Receipt },
-]
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { t, lang, setLang } = useTranslation()
+
+  const navigation = [
+    { name: t("nav.dashboard"), href: "/", icon: LayoutDashboard },
+    { name: t("nav.doctorPortal"), href: "/doctor", icon: Stethoscope },
+    { name: t("nav.patients"), href: "/patients", icon: Users },
+    { name: t("nav.doctors"), href: "/doctors", icon: Stethoscope },
+    { name: t("nav.appointments"), href: "/appointments", icon: Calendar },
+    { name: t("nav.records"), href: "/records", icon: FileText },
+    { name: t("nav.prescriptions"), href: "/prescriptions", icon: Pill },
+    { name: t("nav.invoices"), href: "/invoices", icon: Receipt },
+  ]
 
   return (
     <div className="min-h-[100dvh] flex flex-col md:flex-row bg-background">
@@ -40,7 +43,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
         <button 
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="p-2 -mr-2 text-muted-foreground hover:bg-accent rounded-md"
+          className="p-2 -me-2 text-muted-foreground hover:bg-accent rounded-md"
         >
           {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
@@ -48,9 +51,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar */}
       <div className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-sidebar border-r flex flex-col transition-transform duration-300 ease-in-out
+        fixed inset-y-0 start-0 z-50 w-64 bg-sidebar border-e flex flex-col transition-transform duration-300 ease-in-out
         md:relative md:translate-x-0
-        ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
+        ${sidebarOpen 
+          ? "translate-x-0" 
+          : "max-md:-translate-x-full max-md:[html[dir=rtl]_&]:translate-x-full"}
       `}>
         <div className="h-16 flex items-center gap-3 px-6 border-b">
           <img src={logoUrl} alt="Clinic OS" className="h-8 w-8 object-contain" />
@@ -106,19 +111,26 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <header className="h-16 bg-card border-b hidden md:flex items-center justify-between px-8 shrink-0 sticky top-0 z-30">
           <div className="flex-1 max-w-xl">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input 
                 type="text"
-                placeholder="Search patients, doctors, or appointments..." 
-                className="w-full pl-9 pr-4 py-2 bg-muted/50 border-none rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
+                placeholder={t("common.searchPlaceholder")}
+                className="w-full ps-9 pe-4 py-2 bg-muted/50 border-none rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
               />
             </div>
           </div>
-          <div className="flex items-center gap-4 ml-4">
+          <div className="flex items-center gap-4 ms-4">
+            <button 
+              onClick={() => setLang(lang === 'en' ? 'ar' : 'en')}
+              className="p-2 w-10 h-10 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground transition-colors font-bold text-sm flex items-center justify-center"
+              title="Toggle language"
+            >
+              {lang === 'en' ? 'ع' : 'EN'}
+            </button>
             <ThemeToggle />
             <button className="relative p-2 text-muted-foreground hover:bg-accent rounded-full transition-colors">
               <Bell className="h-5 w-5" />
-              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-destructive border-2 border-card"></span>
+              <span className="absolute top-1.5 end-1.5 h-2 w-2 rounded-full bg-destructive border-2 border-card"></span>
             </button>
           </div>
         </header>

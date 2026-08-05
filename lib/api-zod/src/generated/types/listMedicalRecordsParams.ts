@@ -8,4 +8,5 @@
 
 export type ListMedicalRecordsParams = {
 patientId?: number;
+doctorId?: number;
 };

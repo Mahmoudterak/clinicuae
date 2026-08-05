@@ -302,10 +302,12 @@ status?: string;
 
 export type ListMedicalRecordsParams = {
 patientId?: number;
+doctorId?: number;
 };
 
 export type ListPrescriptionsParams = {
 patientId?: number;
+doctorId?: number;
 };
 
 export type ListInvoicesParams = {

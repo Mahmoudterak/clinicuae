@@ -23,6 +23,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format, parseISO } from "date-fns";
+import { ar as arLocale, enUS } from "date-fns/locale";
+import { useTranslation } from "@/i18n/context";
 
 import {
   Dialog,
@@ -81,9 +83,12 @@ const invoiceSchema = z.object({
 type InvoiceFormValues = z.infer<typeof invoiceSchema>;
 
 export default function InvoicesList() {
+  const { t, isRtl } = useTranslation();
+  const locale = isRtl ? arLocale : enUS;
+
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const { data: invoices, isLoading } = useListInvoices(
-    statusFilter !== "all" ? { status: statusFilter } : {}
+    statusFilter !== "all" ? { status: statusFilter } : undefined
   );
   const { data: patients } = useListPatients();
   
@@ -120,7 +125,7 @@ export default function InvoicesList() {
             setIsCreateOpen(false);
             setEditingId(null);
             form.reset();
-            toast({ title: "Invoice updated successfully" });
+            toast({ title: t("invoices.updated") });
           }
         }
       );
@@ -132,7 +137,7 @@ export default function InvoicesList() {
             queryClient.invalidateQueries({ queryKey: getListInvoicesQueryKey() });
             setIsCreateOpen(false);
             form.reset();
-            toast({ title: "Invoice created successfully" });
+            toast({ title: t("invoices.created") });
           }
         }
       );
@@ -158,7 +163,7 @@ export default function InvoicesList() {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListInvoicesQueryKey() });
-          toast({ title: "Invoice marked as paid" });
+          toast({ title: t("invoices.markedPaid") });
         }
       }
     );
@@ -172,7 +177,7 @@ export default function InvoicesList() {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListInvoicesQueryKey() });
           setDeletingId(null);
-          toast({ title: "Invoice deleted" });
+          toast({ title: t("invoices.deleted") });
         }
       }
     );
@@ -182,20 +187,20 @@ export default function InvoicesList() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Billing & Invoices</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Manage patient billing and payments.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("invoices.title")}</h1>
+          <p className="text-muted-foreground mt-1 text-sm">{t("invoices.subtitle")}</p>
         </div>
         
         <div className="flex items-center gap-3">
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[180px] bg-card">
-              <SelectValue placeholder="Filter by status" />
+              <SelectValue placeholder={t("invoices.filterStatus")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Invoices</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="paid">Paid</SelectItem>
-              <SelectItem value="overdue">Overdue</SelectItem>
+              <SelectItem value="all">{t("invoices.allInvoices")}</SelectItem>
+              <SelectItem value="pending">{t("status.pending")}</SelectItem>
+              <SelectItem value="paid">{t("status.paid")}</SelectItem>
+              <SelectItem value="overdue">{t("status.overdue")}</SelectItem>
             </SelectContent>
           </Select>
           
@@ -209,12 +214,12 @@ export default function InvoicesList() {
             <DialogTrigger asChild>
               <Button className="shrink-0 gap-1.5">
                 <Plus className="h-4 w-4" />
-                Create Invoice
+                {t("invoices.createInvoice")}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
-                <DialogTitle>{editingId ? "Edit Invoice" : "Create New Invoice"}</DialogTitle>
+                <DialogTitle>{editingId ? t("invoices.editInvoice") : t("invoices.createNew")}</DialogTitle>
               </DialogHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
@@ -223,14 +228,14 @@ export default function InvoicesList() {
                     name="patientId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Patient</FormLabel>
+                        <FormLabel>{t("common.patient")}</FormLabel>
                         <Select 
                           onValueChange={(v) => field.onChange(Number(v))} 
                           value={field.value ? String(field.value) : undefined}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select patient" />
+                              <SelectValue />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -252,9 +257,9 @@ export default function InvoicesList() {
                       name="amount"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Amount ($)</FormLabel>
+                          <FormLabel>{t("common.amount")} ($)</FormLabel>
                           <FormControl>
-                            <Input type="number" step="0.01" {...field} />
+                            <Input type="number" step="0.01" dir="ltr" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -265,7 +270,7 @@ export default function InvoicesList() {
                       name="status"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Status</FormLabel>
+                          <FormLabel>{t("common.status")}</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
@@ -273,9 +278,9 @@ export default function InvoicesList() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="paid">Paid</SelectItem>
-                              <SelectItem value="overdue">Overdue</SelectItem>
+                              <SelectItem value="pending">{t("status.pending")}</SelectItem>
+                              <SelectItem value="paid">{t("status.paid")}</SelectItem>
+                              <SelectItem value="overdue">{t("status.overdue")}</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -289,9 +294,9 @@ export default function InvoicesList() {
                     name="description"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Description / Services</FormLabel>
+                        <FormLabel>{t("invoices.services")}</FormLabel>
                         <FormControl>
-                          <Input placeholder="General Consultation" {...field} />
+                          <Input {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -304,7 +309,7 @@ export default function InvoicesList() {
                       name="issuedDate"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Issue Date</FormLabel>
+                          <FormLabel>{t("invoices.issueDate")}</FormLabel>
                           <FormControl>
                             <Input type="date" {...field} />
                           </FormControl>
@@ -317,7 +322,7 @@ export default function InvoicesList() {
                       name="dueDate"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Due Date (Optional)</FormLabel>
+                          <FormLabel>{t("invoices.dueDate")}</FormLabel>
                           <FormControl>
                             <Input type="date" {...field} />
                           </FormControl>
@@ -334,16 +339,16 @@ export default function InvoicesList() {
                       onClick={() => setIsCreateOpen(false)}
                       disabled={createInvoice.isPending || updateInvoice.isPending}
                     >
-                      Cancel
+                      {t("common.cancel")}
                     </Button>
                     <Button 
                       type="submit"
                       disabled={createInvoice.isPending || updateInvoice.isPending}
                     >
                       {(createInvoice.isPending || updateInvoice.isPending) && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="me-2 h-4 w-4 animate-spin" />
                       )}
-                      {editingId ? "Save Changes" : "Create Invoice"}
+                      {editingId ? t("common.saveChanges") : t("invoices.createInvoice")}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -355,16 +360,16 @@ export default function InvoicesList() {
 
       <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+          <table className="w-full text-sm text-start">
             <thead className="bg-muted/50 text-muted-foreground">
               <tr>
-                <th className="px-6 py-4 font-medium">Invoice ID</th>
-                <th className="px-6 py-4 font-medium">Patient</th>
-                <th className="px-6 py-4 font-medium">Description</th>
-                <th className="px-6 py-4 font-medium">Date</th>
-                <th className="px-6 py-4 font-medium text-right">Amount</th>
-                <th className="px-6 py-4 font-medium">Status</th>
-                <th className="px-6 py-4 font-medium text-right">Actions</th>
+                <th className="px-6 py-4 font-medium">{t("patientDetail.invoiceNum")}</th>
+                <th className="px-6 py-4 font-medium">{t("common.patient")}</th>
+                <th className="px-6 py-4 font-medium">{t("patientDetail.description")}</th>
+                <th className="px-6 py-4 font-medium">{t("common.date")}</th>
+                <th className="px-6 py-4 font-medium text-end">{t("common.amount")}</th>
+                <th className="px-6 py-4 font-medium">{t("common.status")}</th>
+                <th className="px-6 py-4 font-medium text-end">{t("common.actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -377,7 +382,7 @@ export default function InvoicesList() {
               ) : invoices?.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-8 text-center text-muted-foreground">
-                    No invoices found.
+                    {t("invoices.noInvoices")}
                   </td>
                 </tr>
               ) : (
@@ -393,12 +398,12 @@ export default function InvoicesList() {
                       {inv.description}
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-foreground">{format(parseISO(inv.issuedDate), 'MMM d, yyyy')}</div>
+                      <div className="text-foreground">{format(parseISO(inv.issuedDate), 'MMM d, yyyy', { locale })}</div>
                       {inv.dueDate && (
-                        <div className="text-xs text-muted-foreground mt-0.5">Due: {format(parseISO(inv.dueDate), 'MMM d, yyyy')}</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">Due: {format(parseISO(inv.dueDate), 'MMM d, yyyy', { locale })}</div>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-right font-semibold text-foreground">
+                    <td className="px-6 py-4 text-end font-semibold text-foreground" dir="ltr">
                       ${inv.amount.toFixed(2)}
                     </td>
                     <td className="px-6 py-4">
@@ -410,10 +415,10 @@ export default function InvoicesList() {
                         {inv.status === 'paid' && <CheckCircle2 className="h-3.5 w-3.5" />}
                         {inv.status === 'overdue' && <XCircle className="h-3.5 w-3.5" />}
                         {inv.status === 'pending' && <Clock className="h-3.5 w-3.5" />}
-                        {inv.status.charAt(0).toUpperCase() + inv.status.slice(1)}
+                        {t(`status.${inv.status}`)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 text-end">
                       <div className="flex items-center justify-end gap-2">
                         {inv.status !== 'paid' && (
                           <Button 
@@ -424,7 +429,7 @@ export default function InvoicesList() {
                             disabled={updateInvoice.isPending}
                           >
                             <DollarSign className="h-3.5 w-3.5" />
-                            Pay
+                            {t("invoices.pay")}
                           </Button>
                         )}
                         
@@ -435,21 +440,21 @@ export default function InvoicesList() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuLabel>{t("common.actions")}</DropdownMenuLabel>
                             {inv.status !== 'paid' && (
                               <DropdownMenuItem onClick={() => handleMarkPaid(inv.id)}>
-                                Mark as Paid
+                                {t("invoices.markPaid")}
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => handleEdit(inv)}>
-                              <Pencil className="mr-2 h-4 w-4" /> Edit Invoice
+                              <Pencil className="me-2 h-4 w-4" /> {t("invoices.editInvoice")}
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               className="text-destructive focus:text-destructive focus:bg-destructive/10"
                               onClick={() => setDeletingId(inv.id)}
                             >
-                              <Trash2 className="mr-2 h-4 w-4" /> Delete
+                              <Trash2 className="me-2 h-4 w-4" /> {t("common.delete")}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -466,13 +471,13 @@ export default function InvoicesList() {
       <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Invoice?</AlertDialogTitle>
+            <AlertDialogTitle>{t("invoices.deleteTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the billing record.
+              {t("invoices.deleteDesc")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteInvoice.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteInvoice.isPending}>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction 
               onClick={(e) => {
                 e.preventDefault();
@@ -481,7 +486,7 @@ export default function InvoicesList() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={deleteInvoice.isPending}
             >
-              {deleteInvoice.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete"}
+              {deleteInvoice.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

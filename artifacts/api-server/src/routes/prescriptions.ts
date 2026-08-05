@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, desc } from "drizzle-orm";
+import { eq, and, desc, type SQL } from "drizzle-orm";
 import { db, prescriptionsTable, patientsTable, doctorsTable } from "@workspace/db";
 import {
   ListPrescriptionsQueryParams,
@@ -30,10 +30,13 @@ router.get("/prescriptions", async (req, res): Promise<void> => {
     res.status(400).json({ error: query.error.message });
     return;
   }
+  const filters: SQL[] = [];
+  if (query.data.patientId !== undefined) filters.push(eq(prescriptionsTable.patientId, query.data.patientId));
+  if (query.data.doctorId !== undefined) filters.push(eq(prescriptionsTable.doctorId, query.data.doctorId));
   const rows = await db
     .select()
     .from(prescriptionsTable)
-    .where(query.data.patientId !== undefined ? eq(prescriptionsTable.patientId, query.data.patientId) : undefined)
+    .where(filters.length ? and(...filters) : undefined)
     .orderBy(desc(prescriptionsTable.createdAt));
   res.json(ListPrescriptionsResponse.parse(await withNames(rows)));
 });

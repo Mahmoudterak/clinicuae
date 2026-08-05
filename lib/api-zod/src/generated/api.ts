@@ -412,7 +412,8 @@ export const DeleteAppointmentResponse = zod.void()
 
 
 export const ListMedicalRecordsQueryParams = zod.object({
-  "patientId": zod.coerce.number().int().optional()
+  "patientId": zod.coerce.number().int().optional(),
+  "doctorId": zod.coerce.number().int().optional()
 })
 
 export const ListMedicalRecordsResponseItem = zod.object({
@@ -499,7 +500,8 @@ export const DeleteMedicalRecordResponse = zod.void()
 
 
 export const ListPrescriptionsQueryParams = zod.object({
-  "patientId": zod.coerce.number().int().optional()
+  "patientId": zod.coerce.number().int().optional(),
+  "doctorId": zod.coerce.number().int().optional()
 })
 
 export const ListPrescriptionsResponseItem = zod.object({

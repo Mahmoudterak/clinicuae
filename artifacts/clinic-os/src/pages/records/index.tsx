@@ -21,6 +21,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format, parseISO } from "date-fns";
+import { ar as arLocale, enUS } from "date-fns/locale";
+import { useTranslation } from "@/i18n/context";
 
 import {
   Dialog,
@@ -80,9 +82,12 @@ const recordSchema = z.object({
 type RecordFormValues = z.infer<typeof recordSchema>;
 
 export default function RecordsList() {
+  const { t, isRtl } = useTranslation();
+  const locale = isRtl ? arLocale : enUS;
+
   const [patientFilter, setPatientFilter] = useState<string>("all");
   const { data: records, isLoading } = useListMedicalRecords(
-    patientFilter !== "all" ? { patientId: Number(patientFilter) } : {}
+    patientFilter !== "all" ? { patientId: Number(patientFilter) } : undefined
   );
   const { data: patients } = useListPatients();
   const { data: doctors } = useListDoctors();
@@ -122,7 +127,7 @@ export default function RecordsList() {
             setIsCreateOpen(false);
             setEditingId(null);
             form.reset();
-            toast({ title: "Record updated successfully" });
+            toast({ title: t("records.updated") });
           }
         }
       );
@@ -134,7 +139,7 @@ export default function RecordsList() {
             queryClient.invalidateQueries({ queryKey: getListMedicalRecordsQueryKey() });
             setIsCreateOpen(false);
             form.reset();
-            toast({ title: "Medical record created successfully" });
+            toast({ title: t("records.created") });
           }
         }
       );
@@ -164,7 +169,7 @@ export default function RecordsList() {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListMedicalRecordsQueryKey() });
           setDeletingId(null);
-          toast({ title: "Record deleted" });
+          toast({ title: t("records.deleted") });
         }
       }
     );
@@ -174,17 +179,17 @@ export default function RecordsList() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Medical Records</h1>
-          <p className="text-muted-foreground mt-1 text-sm">View and manage patient clinical histories.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("records.title")}</h1>
+          <p className="text-muted-foreground mt-1 text-sm">{t("records.subtitle")}</p>
         </div>
         
         <div className="flex items-center gap-3">
           <Select value={patientFilter} onValueChange={setPatientFilter}>
             <SelectTrigger className="w-[200px] bg-card">
-              <SelectValue placeholder="All Patients" />
+              <SelectValue placeholder={t("common.allPatients")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Patients</SelectItem>
+              <SelectItem value="all">{t("common.allPatients")}</SelectItem>
               {patients?.map(p => (
                 <SelectItem key={p.id} value={String(p.id)}>{p.firstName} {p.lastName}</SelectItem>
               ))}
@@ -201,12 +206,12 @@ export default function RecordsList() {
             <DialogTrigger asChild>
               <Button className="shrink-0 gap-1.5">
                 <Plus className="h-4 w-4" />
-                New Record
+                {t("records.newRecord")}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>{editingId ? "Edit Medical Record" : "Add Medical Record"}</DialogTitle>
+                <DialogTitle>{editingId ? t("records.editRecord") : t("records.addRecord")}</DialogTitle>
               </DialogHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
@@ -216,14 +221,14 @@ export default function RecordsList() {
                       name="patientId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Patient</FormLabel>
+                          <FormLabel>{t("common.patient")}</FormLabel>
                           <Select 
                             onValueChange={(v) => field.onChange(Number(v))} 
                             value={field.value ? String(field.value) : undefined}
                           >
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select patient" />
+                                <SelectValue />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -243,20 +248,20 @@ export default function RecordsList() {
                       name="doctorId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Attending Doctor</FormLabel>
+                          <FormLabel>{t("common.doctor")}</FormLabel>
                           <Select 
                             onValueChange={(v) => field.onChange(Number(v))} 
                             value={field.value ? String(field.value) : undefined}
                           >
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select doctor" />
+                                <SelectValue />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
                               {doctors?.map(d => (
                                 <SelectItem key={d.id} value={String(d.id)}>
-                                  Dr. {d.firstName} {d.lastName}
+                                  {t("common.doctor")} {d.firstName} {d.lastName}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -273,7 +278,7 @@ export default function RecordsList() {
                       name="visitDate"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Visit Date</FormLabel>
+                          <FormLabel>{t("records.visitDate")}</FormLabel>
                           <FormControl>
                             <Input type="date" {...field} />
                           </FormControl>
@@ -286,9 +291,9 @@ export default function RecordsList() {
                       name="vitals"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Vitals (BP, HR, Temp, Weight)</FormLabel>
+                          <FormLabel>{t("records.vitals")}</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g. BP 120/80, HR 72..." {...field} />
+                            <Input {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -301,9 +306,9 @@ export default function RecordsList() {
                     name="diagnosis"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Primary Diagnosis</FormLabel>
+                        <FormLabel>{t("records.primaryDiagnosis")}</FormLabel>
                         <FormControl>
-                          <Input placeholder="E.g. Acute Bronchitis" {...field} />
+                          <Input {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -315,9 +320,9 @@ export default function RecordsList() {
                     name="symptoms"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Presenting Symptoms</FormLabel>
+                        <FormLabel>{t("records.presentingSymptoms")}</FormLabel>
                         <FormControl>
-                          <Textarea placeholder="Patient complains of..." {...field} />
+                          <Textarea {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -329,9 +334,9 @@ export default function RecordsList() {
                     name="treatment"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Treatment Plan / Procedures</FormLabel>
+                        <FormLabel>{t("records.treatmentPlan")}</FormLabel>
                         <FormControl>
-                          <Textarea placeholder="Prescribed..." {...field} />
+                          <Textarea {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -343,9 +348,9 @@ export default function RecordsList() {
                     name="notes"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Clinical Notes</FormLabel>
+                        <FormLabel>{t("patients.notes")}</FormLabel>
                         <FormControl>
-                          <Textarea placeholder="Additional observations..." {...field} />
+                          <Textarea {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -359,16 +364,16 @@ export default function RecordsList() {
                       onClick={() => setIsCreateOpen(false)}
                       disabled={createRecord.isPending || updateRecord.isPending}
                     >
-                      Cancel
+                      {t("common.cancel")}
                     </Button>
                     <Button 
                       type="submit"
                       disabled={createRecord.isPending || updateRecord.isPending}
                     >
                       {(createRecord.isPending || updateRecord.isPending) && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="me-2 h-4 w-4 animate-spin" />
                       )}
-                      {editingId ? "Save Changes" : "Save Record"}
+                      {editingId ? t("common.saveChanges") : t("records.saveRecord")}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -385,7 +390,7 @@ export default function RecordsList() {
           </div>
         ) : records?.length === 0 ? (
           <div className="col-span-full text-center py-12 bg-card border rounded-xl">
-            <p className="text-muted-foreground">No medical records found.</p>
+            <p className="text-muted-foreground">{t("records.noRecords")}</p>
           </div>
         ) : (
           records?.map((record) => (
@@ -397,24 +402,24 @@ export default function RecordsList() {
                     <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
                       <span className="font-medium text-foreground">{record.patientName}</span>
                       <span>•</span>
-                      <span>{format(parseISO(record.visitDate), 'MMM d, yyyy')}</span>
+                      <span>{format(parseISO(record.visitDate), 'MMM d, yyyy', { locale })}</span>
                     </div>
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 -me-2">
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => handleEdit(record)}>
-                        <Pencil className="mr-2 h-4 w-4" /> Edit Record
+                        <Pencil className="me-2 h-4 w-4" /> {t("records.editRecord")}
                       </DropdownMenuItem>
                       <DropdownMenuItem 
                         className="text-destructive focus:text-destructive focus:bg-destructive/10"
                         onClick={() => setDeletingId(record.id)}
                       >
-                        <Trash2 className="mr-2 h-4 w-4" /> Delete
+                        <Trash2 className="me-2 h-4 w-4" /> {t("common.delete")}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -423,26 +428,26 @@ export default function RecordsList() {
                 <div className="space-y-4 mt-6">
                   {record.symptoms && (
                     <div>
-                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Symptoms</h4>
+                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{t("patientDetail.symptoms")}</h4>
                       <p className="text-sm text-foreground">{record.symptoms}</p>
                     </div>
                   )}
                   {record.treatment && (
                     <div>
-                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Treatment</h4>
+                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{t("patientDetail.treatment")}</h4>
                       <p className="text-sm text-foreground">{record.treatment}</p>
                     </div>
                   )}
                   {record.vitals && (
                     <div>
-                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Vitals</h4>
+                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{t("patientDetail.vitals")}</h4>
                       <p className="text-sm font-mono bg-muted/50 p-2 rounded-md inline-block">{record.vitals}</p>
                     </div>
                   )}
                 </div>
               </div>
               <div className="px-6 py-3 bg-muted/30 border-t flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Attending: <span className="font-medium text-foreground">Dr. {record.doctorName}</span></span>
+                <span className="text-muted-foreground">{t("patientDetail.attending")}: <span className="font-medium text-foreground">{t("common.doctor")} {record.doctorName}</span></span>
                 <span className="text-xs text-muted-foreground font-mono">REC-{record.id}</span>
               </div>
             </div>
@@ -453,13 +458,13 @@ export default function RecordsList() {
       <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Medical Record?</AlertDialogTitle>
+            <AlertDialogTitle>{t("records.deleteTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this clinical record.
+              {t("records.deleteDesc")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteRecord.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteRecord.isPending}>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction 
               onClick={(e) => {
                 e.preventDefault();
@@ -468,7 +473,7 @@ export default function RecordsList() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={deleteRecord.isPending}
             >
-              {deleteRecord.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete"}
+              {deleteRecord.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -15,9 +15,10 @@ import {
   Pencil,
   Trash2,
   ChevronRight,
+  ChevronLeft,
   Loader2
 } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { useTranslation } from "@/i18n/context";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -87,6 +88,9 @@ export default function PatientsList() {
   const { data: patients, isLoading } = useListPatients({ search });
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t, isRtl } = useTranslation();
+
+  const ChevronIcon = isRtl ? ChevronLeft : ChevronRight;
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -122,7 +126,7 @@ export default function PatientsList() {
             setIsCreateOpen(false);
             setEditingId(null);
             form.reset();
-            toast({ title: "Patient updated successfully" });
+            toast({ title: t("patients.updated") });
           }
         }
       );
@@ -134,7 +138,7 @@ export default function PatientsList() {
             queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
             setIsCreateOpen(false);
             form.reset();
-            toast({ title: "Patient created successfully" });
+            toast({ title: t("patients.created") });
           }
         }
       );
@@ -166,7 +170,7 @@ export default function PatientsList() {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
           setDeletingId(null);
-          toast({ title: "Patient deleted successfully" });
+          toast({ title: t("patients.deleted") });
         }
       }
     );
@@ -176,16 +180,16 @@ export default function PatientsList() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Patients Directory</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Manage patient records and information.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("patients.title")}</h1>
+          <p className="text-muted-foreground mt-1 text-sm">{t("patients.subtitle")}</p>
         </div>
         
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder="Search patients..." 
-              className="w-full sm:w-[250px] pl-9 bg-card"
+              placeholder={t("common.search")} 
+              className="w-full sm:w-[250px] ps-9 bg-card"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -201,12 +205,12 @@ export default function PatientsList() {
             <DialogTrigger asChild>
               <Button className="shrink-0 gap-1.5">
                 <Plus className="h-4 w-4" />
-                New Patient
+                {t("patients.newPatient")}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>{editingId ? "Edit Patient" : "Add New Patient"}</DialogTitle>
+                <DialogTitle>{editingId ? t("patients.editPatient") : t("patients.addPatient")}</DialogTitle>
               </DialogHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
@@ -216,9 +220,9 @@ export default function PatientsList() {
                       name="firstName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>First Name</FormLabel>
+                          <FormLabel>{t("patients.firstName")}</FormLabel>
                           <FormControl>
-                            <Input placeholder="John" {...field} />
+                            <Input {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -229,9 +233,9 @@ export default function PatientsList() {
                       name="lastName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Last Name</FormLabel>
+                          <FormLabel>{t("patients.lastName")}</FormLabel>
                           <FormControl>
-                            <Input placeholder="Doe" {...field} />
+                            <Input {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -245,9 +249,9 @@ export default function PatientsList() {
                       name="phone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Phone</FormLabel>
+                          <FormLabel>{t("patients.phone")}</FormLabel>
                           <FormControl>
-                            <Input placeholder="+1 (555) 000-0000" {...field} />
+                            <Input dir="ltr" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -258,9 +262,9 @@ export default function PatientsList() {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email</FormLabel>
+                          <FormLabel>{t("patients.email")}</FormLabel>
                           <FormControl>
-                            <Input type="email" placeholder="john@example.com" {...field} />
+                            <Input type="email" dir="ltr" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -274,11 +278,11 @@ export default function PatientsList() {
                       name="gender"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Gender</FormLabel>
+                          <FormLabel>{t("patients.gender")}</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select gender" />
+                                <SelectValue />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -296,7 +300,7 @@ export default function PatientsList() {
                       name="dateOfBirth"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Date of Birth</FormLabel>
+                          <FormLabel>{t("patients.dob")}</FormLabel>
                           <FormControl>
                             <Input type="date" {...field} />
                           </FormControl>
@@ -309,11 +313,11 @@ export default function PatientsList() {
                       name="bloodType"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Blood Type</FormLabel>
+                          <FormLabel>{t("patients.bloodType")}</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value || ""}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select type" />
+                                <SelectValue />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -333,9 +337,9 @@ export default function PatientsList() {
                     name="address"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Address</FormLabel>
+                        <FormLabel>{t("patients.address")}</FormLabel>
                         <FormControl>
-                          <Input placeholder="123 Main St, City, State" {...field} />
+                          <Input {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -347,9 +351,9 @@ export default function PatientsList() {
                     name="allergies"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Allergies</FormLabel>
+                        <FormLabel>{t("patients.allergies")}</FormLabel>
                         <FormControl>
-                          <Input placeholder="Penicillin, Peanuts..." {...field} />
+                          <Input {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -361,10 +365,9 @@ export default function PatientsList() {
                     name="notes"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Clinical Notes</FormLabel>
+                        <FormLabel>{t("patients.notes")}</FormLabel>
                         <FormControl>
                           <Textarea 
-                            placeholder="Any general notes about the patient..." 
                             className="resize-none"
                             {...field} 
                           />
@@ -381,16 +384,16 @@ export default function PatientsList() {
                       onClick={() => setIsCreateOpen(false)}
                       disabled={createPatient.isPending || updatePatient.isPending}
                     >
-                      Cancel
+                      {t("common.cancel")}
                     </Button>
                     <Button 
                       type="submit"
                       disabled={createPatient.isPending || updatePatient.isPending}
                     >
                       {(createPatient.isPending || updatePatient.isPending) && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="me-2 h-4 w-4 animate-spin" />
                       )}
-                      {editingId ? "Save Changes" : "Create Patient"}
+                      {editingId ? t("common.saveChanges") : t("patients.createPatient")}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -402,14 +405,14 @@ export default function PatientsList() {
 
       <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+          <table className="w-full text-sm text-start">
             <thead className="bg-muted/50 text-muted-foreground">
               <tr>
-                <th className="px-6 py-4 font-medium">Patient</th>
-                <th className="px-6 py-4 font-medium">Contact</th>
-                <th className="px-6 py-4 font-medium">Gender/Age</th>
-                <th className="px-6 py-4 font-medium">Blood Type</th>
-                <th className="px-6 py-4 font-medium text-right">Actions</th>
+                <th className="px-6 py-4 font-medium">{t("common.patient")}</th>
+                <th className="px-6 py-4 font-medium">{t("patients.contact")}</th>
+                <th className="px-6 py-4 font-medium">{t("patients.genderAge")}</th>
+                <th className="px-6 py-4 font-medium">{t("patients.bloodType")}</th>
+                <th className="px-6 py-4 font-medium text-end">{t("common.actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -422,7 +425,7 @@ export default function PatientsList() {
               ) : patients?.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">
-                    No patients found.
+                    {t("patients.notFound")}
                   </td>
                 </tr>
               ) : (
@@ -445,7 +448,7 @@ export default function PatientsList() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
-                        <span>{patient.phone}</span>
+                        <span dir="ltr" className="text-start">{patient.phone}</span>
                         {patient.email && <span className="text-muted-foreground text-xs">{patient.email}</span>}
                       </div>
                     </td>
@@ -453,7 +456,7 @@ export default function PatientsList() {
                       <div className="flex flex-col">
                         <span>{patient.gender}</span>
                         <span className="text-muted-foreground text-xs">
-                          {patient.dateOfBirth ? `${new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear()} years` : 'N/A'}
+                          {patient.dateOfBirth ? `${new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear()}` : 'N/A'}
                         </span>
                       </div>
                     </td>
@@ -461,14 +464,14 @@ export default function PatientsList() {
                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                         patient.bloodType ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400' : 'bg-muted text-muted-foreground'
                       }`}>
-                        {patient.bloodType || 'Unknown'}
+                        {patient.bloodType || t("common.unknown")}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 text-end">
                       <div className="flex items-center justify-end gap-2">
                         <Link href={`/patients/${patient.id}`}>
                           <Button variant="ghost" size="sm" className="h-8 gap-1 hidden group-hover:flex">
-                            Profile <ChevronRight className="h-4 w-4" />
+                            {t("patients.profile")} <ChevronIcon className="h-4 w-4" />
                           </Button>
                         </Link>
                         
@@ -479,23 +482,23 @@ export default function PatientsList() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuLabel>{t("common.actions")}</DropdownMenuLabel>
                             <Link href={`/patients/${patient.id}`}>
                               <DropdownMenuItem className="cursor-pointer">
-                                View Profile
+                                {t("patients.viewProfile")}
                               </DropdownMenuItem>
                             </Link>
                             <DropdownMenuItem 
                               className="cursor-pointer"
                               onClick={() => handleEdit(patient)}
                             >
-                              <Pencil className="mr-2 h-4 w-4" /> Edit
+                              <Pencil className="me-2 h-4 w-4" /> {t("common.edit")}
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
                               onClick={() => setDeletingId(patient.id)}
                             >
-                              <Trash2 className="mr-2 h-4 w-4" /> Delete
+                              <Trash2 className="me-2 h-4 w-4" /> {t("common.delete")}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -512,14 +515,13 @@ export default function PatientsList() {
       <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogTitle>{t("patients.deleteConfirmTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the patient
-              record and remove their data from our servers.
+              {t("patients.deleteConfirmDesc")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deletePatient.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deletePatient.isPending}>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction 
               onClick={(e) => {
                 e.preventDefault();
@@ -528,7 +530,7 @@ export default function PatientsList() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={deletePatient.isPending}
             >
-              {deletePatient.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete Patient"}
+              {deletePatient.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("patients.deleteBtn")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

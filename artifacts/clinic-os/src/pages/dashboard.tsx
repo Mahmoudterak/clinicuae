@@ -27,12 +27,17 @@ import {
   Bar
 } from "recharts";
 import { format, parseISO } from "date-fns";
+import { ar as arLocale, enUS } from "date-fns/locale";
+import { useTranslation } from "@/i18n/context";
 
 export default function Dashboard() {
   const { data: summary, isLoading: loadingSummary } = useGetDashboardSummary();
   const { data: activity, isLoading: loadingActivity } = useGetRecentActivity();
   const { data: appointmentsByDay, isLoading: loadingAppts } = useGetAppointmentsByDay();
   const { data: revenueByMonth, isLoading: loadingRevenue } = useGetRevenueByMonth();
+  
+  const { t, isRtl } = useTranslation();
+  const locale = isRtl ? arLocale : enUS;
 
   if (loadingSummary || loadingActivity || loadingAppts || loadingRevenue) {
     return (
@@ -51,29 +56,29 @@ export default function Dashboard() {
 
   const statCards = [
     {
-      title: "Total Patients",
+      title: t("dashboard.totalPatients"),
       value: summary?.totalPatients ?? 0,
       icon: Users,
       trend: "+12.5%",
       trendUp: true,
     },
     {
-      title: "Appointments Today",
+      title: t("dashboard.appointmentsToday"),
       value: summary?.appointmentsToday ?? 0,
       icon: Calendar,
       trend: "+5.2%",
       trendUp: true,
     },
     {
-      title: "Active Doctors",
+      title: t("dashboard.activeDoctors"),
       value: summary?.totalDoctors ?? 0,
       icon: Stethoscope,
       trend: "0%",
       trendUp: true,
     },
     {
-      title: "Monthly Revenue",
-      value: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(summary?.revenueThisMonth ?? 0),
+      title: t("dashboard.monthlyRevenue"),
+      value: new Intl.NumberFormat(isRtl ? 'ar-AE' : 'en-US', { style: 'currency', currency: 'USD' }).format(summary?.revenueThisMonth ?? 0),
       icon: DollarSign,
       trend: "+18.2%",
       trendUp: true,
@@ -83,8 +88,8 @@ export default function Dashboard() {
   return (
     <div className="space-y-8 pb-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Overview</h1>
-        <p className="text-muted-foreground mt-1 text-sm">Here's what's happening at your clinic today.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">{t("dashboard.overview")}</h1>
+        <p className="text-muted-foreground mt-1 text-sm">{t("dashboard.overviewDesc")}</p>
       </div>
 
       {/* KPI Cards */}
@@ -97,7 +102,7 @@ export default function Dashboard() {
               </div>
               <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${stat.trendUp ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-destructive/10 text-destructive'}`}>
                 {stat.trendUp ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-                {stat.trend}
+                <span dir="ltr">{stat.trend}</span>
               </div>
             </div>
             <div className="mt-4">
@@ -114,11 +119,11 @@ export default function Dashboard() {
           <div className="bg-card border rounded-xl p-6 shadow-sm">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-semibold">Appointment Trends</h3>
-                <p className="text-sm text-muted-foreground">Last 14 days of scheduled visits</p>
+                <h3 className="text-lg font-semibold">{t("dashboard.appointmentTrends")}</h3>
+                <p className="text-sm text-muted-foreground">{t("dashboard.appointmentTrendsDesc")}</p>
               </div>
             </div>
-            <div className="h-[300px] w-full">
+            <div className="h-[300px] w-full" dir="ltr">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={appointmentsByDay} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
@@ -130,7 +135,7 @@ export default function Dashboard() {
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                   <XAxis 
                     dataKey="date" 
-                    tickFormatter={(val) => format(parseISO(val), 'MMM d')} 
+                    tickFormatter={(val) => format(parseISO(val), 'MMM d', { locale })} 
                     axisLine={false}
                     tickLine={false}
                     tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
@@ -143,7 +148,7 @@ export default function Dashboard() {
                   />
                   <RechartsTooltip 
                     contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--card))' }}
-                    labelFormatter={(val) => format(parseISO(val as string), 'MMM d, yyyy')}
+                    labelFormatter={(val) => format(parseISO(val as string), 'MMM d, yyyy', { locale })}
                   />
                   <Area 
                     type="monotone" 
@@ -161,11 +166,11 @@ export default function Dashboard() {
           <div className="bg-card border rounded-xl p-6 shadow-sm">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-semibold">Revenue Overview</h3>
-                <p className="text-sm text-muted-foreground">Monthly revenue generation</p>
+                <h3 className="text-lg font-semibold">{t("dashboard.revenueOverview")}</h3>
+                <p className="text-sm text-muted-foreground">{t("dashboard.revenueOverviewDesc")}</p>
               </div>
             </div>
-            <div className="h-[250px] w-full">
+            <div className="h-[250px] w-full" dir="ltr">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={revenueByMonth} margin={{ top: 10, right: 10, left: -10, bottom: 0 }} barSize={32}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
@@ -185,7 +190,7 @@ export default function Dashboard() {
                   <RechartsTooltip 
                     cursor={{ fill: 'hsl(var(--muted))' }}
                     contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--card))' }}
-                    formatter={(value: number) => [new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value), 'Revenue']}
+                    formatter={(value: number) => [new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value), t("dashboard.revenue")]}
                   />
                   <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                 </BarChart>
@@ -197,8 +202,8 @@ export default function Dashboard() {
         {/* Activity Feed */}
         <div className="bg-card border rounded-xl shadow-sm flex flex-col h-[calc(100vh-12rem)] min-h-[600px] sticky top-24">
           <div className="p-6 border-b">
-            <h3 className="text-lg font-semibold">Recent Activity</h3>
-            <p className="text-sm text-muted-foreground">Latest actions across the clinic</p>
+            <h3 className="text-lg font-semibold">{t("dashboard.recentActivity")}</h3>
+            <p className="text-sm text-muted-foreground">{t("dashboard.recentActivityDesc")}</p>
           </div>
           <div className="flex-1 overflow-y-auto p-6">
             <div className="space-y-8">
@@ -225,16 +230,16 @@ export default function Dashboard() {
                 return (
                   <div key={item.id} className="relative flex gap-4">
                     {!isLast && (
-                      <div className="absolute left-[19px] top-10 bottom-[-24px] w-px bg-border" />
+                      <div className="absolute start-[19px] top-10 bottom-[-24px] w-px bg-border" />
                     )}
                     <div className={`relative z-10 h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${colorClass}`}>
                       <Icon className="h-5 w-5" />
                     </div>
                     <div className="flex flex-col pt-1">
                       <p className="text-sm font-medium text-foreground">{item.description}</p>
-                      <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground" dir="ltr">
                         <Clock className="h-3 w-3" />
-                        <span>{format(parseISO(item.timestamp), 'MMM d, h:mm a')}</span>
+                        <span>{format(parseISO(item.timestamp), 'MMM d, h:mm a', { locale })}</span>
                       </div>
                     </div>
                   </div>
