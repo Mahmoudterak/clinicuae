@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Clinic OS"
+description = "A cloud-based medical center management system: dashboard, patients, doctors, appointments, medical records, prescriptions, and invoicing for clinic staff."
+version = "1.0.0"
+id = "artifacts/clinic-os"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22067
+
+[services.development]
+run = "pnpm --filter @workspace/clinic-os run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/clinic-os", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/clinic-os/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22067"
+BASE_PATH = "/"

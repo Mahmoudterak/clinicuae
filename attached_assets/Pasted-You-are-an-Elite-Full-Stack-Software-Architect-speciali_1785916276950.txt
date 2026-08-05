@@ -1,0 +1,287 @@
+You are an Elite Full Stack Software Architect specializing in Enterprise Healthcare SaaS platforms.
+
+Your task is to build a production-ready application called:
+
+# Clinic OS
+
+Clinic OS is a cloud-based Multi-Tenant Medical Center Management System powered by AI.
+
+Never generate demo pages.
+Never generate placeholder code.
+Every page must be fully functional.
+
+==================================================
+TECH STACK
+==================================================
+
+Frontend
+- Next.js 15
+- React 19
+- TypeScript
+- TailwindCSS
+- shadcn/ui
+
+Backend
+- Next.js Server Actions
+- API Routes
+- Prisma ORM
+- PostgreSQL
+
+Authentication
+- Better Auth
+
+Database
+- PostgreSQL
+
+Storage
+- Supabase Storage
+
+Deployment
+- Replit Deployments
+
+==================================================
+PROJECT STRUCTURE
+==================================================
+
+Use Clean Architecture.
+
+Use reusable components.
+
+Follow SOLID Principles.
+
+Create scalable folder structure.
+
+Generate production quality code.
+
+==================================================
+MULTI TENANT SAAS
+==================================================
+
+Every clinic has
+
+- isolated database records
+- isolated users
+- isolated patients
+- isolated appointments
+- isolated invoices
+- isolated inventory
+- isolated reports
+
+Never allow cross tenant access.
+
+==================================================
+MODULES
+==================================================
+
+Dashboard
+
+Patients
+
+Doctors
+
+Appointments
+
+Medical Records
+
+Diagnosis
+
+Treatments
+
+Prescriptions
+
+Laboratory
+
+Radiology
+
+Invoices
+
+Payments
+
+Insurance
+
+Pharmacy
+
+Inventory
+
+Suppliers
+
+Departments
+
+Employees
+
+Attendance
+
+Reports
+
+Notifications
+
+Settings
+
+Audit Logs
+
+==================================================
+AI MODULE
+==================================================
+
+Appointment Assistant
+
+AI Medical Assistant
+
+AI Diagnosis Suggestions
+
+AI Prescription Generator
+
+AI Medical Report Generator
+
+AI Patient Summary
+
+AI Dashboard Insights
+
+==================================================
+PATIENT PORTAL
+==================================================
+
+Patient Login
+
+Appointments
+
+Invoices
+
+Payments
+
+Medical Records
+
+Lab Results
+
+Radiology Reports
+
+==================================================
+ONLINE BOOKING
+==================================================
+
+Online Booking
+
+Doctor Schedule
+
+Calendar
+
+Waiting List
+
+Appointment Confirmation
+
+==================================================
+ROLE SYSTEM
+==================================================
+
+Owner
+
+Clinic Manager
+
+Doctor
+
+Reception
+
+Nurse
+
+Laboratory
+
+Radiology
+
+Cashier
+
+Accountant
+
+HR
+
+Support
+
+Custom Roles
+
+Implement full RBAC.
+
+==================================================
+DATABASE
+==================================================
+
+Generate
+
+Prisma Schema
+
+Relations
+
+Indexes
+
+Seed Data
+
+Migration Files
+
+==================================================
+QUALITY
+==================================================
+
+Responsive
+
+Dark Mode
+
+Arabic RTL
+
+English LTR
+
+Accessibility
+
+Fast Performance
+
+SEO Friendly
+
+==================================================
+SECURITY
+==================================================
+
+Authentication
+
+Authorization
+
+Audit Logs
+
+Encrypted Data
+
+Rate Limiting
+
+Secure Uploads
+
+==================================================
+FINAL TASK
+==================================================
+
+Analyze the current project.
+
+Detect missing features.
+
+Implement them one by one.
+
+Never stop after one feature.
+
+Continue automatically until the entire Clinic OS platform is complete.
+
+Whenever an error appears,
+fix it automatically.
+
+Run build repeatedly until successful.
+
+Generate
+
+README.md
+
+API.md
+
+DATABASE.md
+
+DEPLOYMENT.md
+
+CHANGELOG.md
+
+SYSTEM_ARCHITECTURE.md
+
+PROJECT_STATUS.md
+
+The project must be production ready.

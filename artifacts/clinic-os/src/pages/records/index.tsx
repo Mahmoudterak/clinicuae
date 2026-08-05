@@ -1,0 +1,478 @@
+import { useState } from "react";
+import { 
+  useListMedicalRecords, 
+  useCreateMedicalRecord, 
+  useUpdateMedicalRecord, 
+  useDeleteMedicalRecord,
+  getListMedicalRecordsQueryKey,
+  useListPatients,
+  useListDoctors
+} from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { 
+  Plus, 
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  Loader2,
+  FileText
+} from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { format, parseISO } from "date-fns";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+
+const recordSchema = z.object({
+  patientId: z.coerce.number().min(1, "Patient is required"),
+  doctorId: z.coerce.number().min(1, "Doctor is required"),
+  visitDate: z.string().min(1, "Date is required"),
+  diagnosis: z.string().min(1, "Diagnosis is required"),
+  symptoms: z.string().optional(),
+  treatment: z.string().optional(),
+  vitals: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+type RecordFormValues = z.infer<typeof recordSchema>;
+
+export default function RecordsList() {
+  const [patientFilter, setPatientFilter] = useState<string>("all");
+  const { data: records, isLoading } = useListMedicalRecords(
+    patientFilter !== "all" ? { patientId: Number(patientFilter) } : {}
+  );
+  const { data: patients } = useListPatients();
+  const { data: doctors } = useListDoctors();
+  
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  const createRecord = useCreateMedicalRecord();
+  const updateRecord = useUpdateMedicalRecord();
+  const deleteRecord = useDeleteMedicalRecord();
+
+  const form = useForm<RecordFormValues>({
+    resolver: zodResolver(recordSchema),
+    defaultValues: {
+      patientId: 0,
+      doctorId: 0,
+      visitDate: new Date().toISOString().split('T')[0],
+      diagnosis: "",
+      symptoms: "",
+      treatment: "",
+      vitals: "",
+      notes: "",
+    }
+  });
+
+  const onSubmit = (data: RecordFormValues) => {
+    if (editingId) {
+      updateRecord.mutate(
+        { id: editingId, data },
+        {
+          onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: getListMedicalRecordsQueryKey() });
+            setIsCreateOpen(false);
+            setEditingId(null);
+            form.reset();
+            toast({ title: "Record updated successfully" });
+          }
+        }
+      );
+    } else {
+      createRecord.mutate(
+        { data },
+        {
+          onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: getListMedicalRecordsQueryKey() });
+            setIsCreateOpen(false);
+            form.reset();
+            toast({ title: "Medical record created successfully" });
+          }
+        }
+      );
+    }
+  };
+
+  const handleEdit = (record: any) => {
+    form.reset({
+      patientId: record.patientId,
+      doctorId: record.doctorId,
+      visitDate: record.visitDate,
+      diagnosis: record.diagnosis,
+      symptoms: record.symptoms || "",
+      treatment: record.treatment || "",
+      vitals: record.vitals || "",
+      notes: record.notes || "",
+    });
+    setEditingId(record.id);
+    setIsCreateOpen(true);
+  };
+
+  const handleDelete = () => {
+    if (!deletingId) return;
+    deleteRecord.mutate(
+      { id: deletingId },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListMedicalRecordsQueryKey() });
+          setDeletingId(null);
+          toast({ title: "Record deleted" });
+        }
+      }
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Medical Records</h1>
+          <p className="text-muted-foreground mt-1 text-sm">View and manage patient clinical histories.</p>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <Select value={patientFilter} onValueChange={setPatientFilter}>
+            <SelectTrigger className="w-[200px] bg-card">
+              <SelectValue placeholder="All Patients" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Patients</SelectItem>
+              {patients?.map(p => (
+                <SelectItem key={p.id} value={String(p.id)}>{p.firstName} {p.lastName}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Dialog open={isCreateOpen} onOpenChange={(open) => {
+            setIsCreateOpen(open);
+            if (!open) {
+              setEditingId(null);
+              form.reset();
+            }
+          }}>
+            <DialogTrigger asChild>
+              <Button className="shrink-0 gap-1.5">
+                <Plus className="h-4 w-4" />
+                New Record
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>{editingId ? "Edit Medical Record" : "Add Medical Record"}</DialogTitle>
+              </DialogHeader>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="patientId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Patient</FormLabel>
+                          <Select 
+                            onValueChange={(v) => field.onChange(Number(v))} 
+                            value={field.value ? String(field.value) : undefined}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select patient" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {patients?.map(p => (
+                                <SelectItem key={p.id} value={String(p.id)}>
+                                  {p.firstName} {p.lastName}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="doctorId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Attending Doctor</FormLabel>
+                          <Select 
+                            onValueChange={(v) => field.onChange(Number(v))} 
+                            value={field.value ? String(field.value) : undefined}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select doctor" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {doctors?.map(d => (
+                                <SelectItem key={d.id} value={String(d.id)}>
+                                  Dr. {d.firstName} {d.lastName}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="visitDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Visit Date</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="vitals"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Vitals (BP, HR, Temp, Weight)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. BP 120/80, HR 72..." {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="diagnosis"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Primary Diagnosis</FormLabel>
+                        <FormControl>
+                          <Input placeholder="E.g. Acute Bronchitis" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="symptoms"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Presenting Symptoms</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder="Patient complains of..." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="treatment"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Treatment Plan / Procedures</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder="Prescribed..." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="notes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Clinical Notes</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder="Additional observations..." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <DialogFooter className="pt-4">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => setIsCreateOpen(false)}
+                      disabled={createRecord.isPending || updateRecord.isPending}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit"
+                      disabled={createRecord.isPending || updateRecord.isPending}
+                    >
+                      {(createRecord.isPending || updateRecord.isPending) && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      )}
+                      {editingId ? "Save Changes" : "Save Record"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        {isLoading ? (
+          <div className="col-span-full flex justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : records?.length === 0 ? (
+          <div className="col-span-full text-center py-12 bg-card border rounded-xl">
+            <p className="text-muted-foreground">No medical records found.</p>
+          </div>
+        ) : (
+          records?.map((record) => (
+            <div key={record.id} className="bg-card border rounded-xl overflow-hidden shadow-sm hover-elevate transition-shadow group flex flex-col h-full">
+              <div className="p-6 flex-1">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="font-bold text-lg text-foreground">{record.diagnosis}</h3>
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
+                      <span className="font-medium text-foreground">{record.patientName}</span>
+                      <span>•</span>
+                      <span>{format(parseISO(record.visitDate), 'MMM d, yyyy')}</span>
+                    </div>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleEdit(record)}>
+                        <Pencil className="mr-2 h-4 w-4" /> Edit Record
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                        onClick={() => setDeletingId(record.id)}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" /> Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                
+                <div className="space-y-4 mt-6">
+                  {record.symptoms && (
+                    <div>
+                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Symptoms</h4>
+                      <p className="text-sm text-foreground">{record.symptoms}</p>
+                    </div>
+                  )}
+                  {record.treatment && (
+                    <div>
+                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Treatment</h4>
+                      <p className="text-sm text-foreground">{record.treatment}</p>
+                    </div>
+                  )}
+                  {record.vitals && (
+                    <div>
+                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Vitals</h4>
+                      <p className="text-sm font-mono bg-muted/50 p-2 rounded-md inline-block">{record.vitals}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="px-6 py-3 bg-muted/30 border-t flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">Attending: <span className="font-medium text-foreground">Dr. {record.doctorName}</span></span>
+                <span className="text-xs text-muted-foreground font-mono">REC-{record.id}</span>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Medical Record?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete this clinical record.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteRecord.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={(e) => {
+                e.preventDefault();
+                handleDelete();
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteRecord.isPending}
+            >
+              {deleteRecord.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}

@@ -1,6 +1,6 @@
-# [Project name]
+# Clinic OS
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A cloud-based medical center management system for clinic staff: dashboard, patients, doctors, appointments, medical records, prescriptions, and invoicing.
 
 ## Run & Operate
 
@@ -14,31 +14,39 @@ _Replace the heading above with the project's name, and this line with one sente
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
+- Frontend: React + Vite (`artifacts/clinic-os`, served at `/`), wouter, TanStack Query, Recharts, shadcn/ui
+- API: Express 5 (`artifacts/api-server`, served at `/api`)
 - DB: PostgreSQL + Drizzle ORM
 - Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- API codegen: Orval (from OpenAPI spec at `lib/api-spec/openapi.yaml`)
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- OpenAPI contract: `lib/api-spec/openapi.yaml` (source of truth for all API shapes)
+- DB schema: `lib/db/src/schema/*.ts` (patients, doctors, appointments, medicalRecords, prescriptions, invoices)
+- API routes: `artifacts/api-server/src/routes/*.ts` (one file per domain)
+- Frontend pages: `artifacts/clinic-os/src/pages/`
+- Brand logo: `artifacts/clinic-os/src/assets/clinic-os-logo.png`
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Contract-first: change `openapi.yaml`, run codegen, then update server routes and frontend.
+- `createdAt` timestamps are serialized to ISO strings in routes via `artifacts/api-server/src/lib/serialize.ts` (generated Zod schemas expect strings, Drizzle returns Date).
+- The codegen script rewrites the generated zod import to `zod/v4` (Orval emits v4 syntax; top-level `zod` entry is v3).
+- List endpoints denormalize `patientName` / `doctorName` for display convenience.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+Core clinic management MVP: dashboard KPIs + charts + activity feed, patient registry with profiles, doctor directory, appointment scheduling with filters, medical records, prescriptions, and invoicing with mark-as-paid. Planned next: RBAC auth, AI assistant features, lab/radiology/pharmacy/inventory modules.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Brand: "Clinic OS" (cyan/blue medical identity, provided logo). Wants a full multi-tenant medical SaaS eventually (see attached_assets brief). Arabic RTL + English support is a stated goal for later.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- After changing `lib/api-spec/openapi.yaml`, always run codegen before touching server or frontend code.
+- Entity responses must pass through `iso()` before Zod `.parse()` if they include `createdAt`.
 
 ## Pointers
 

@@ -1,0 +1,1 @@
+- [Orval zod v4 import fix](orval-zod-v4.md) — codegen must rewrite generated zod import to zod/v4; entity routes must ISO-serialize createdAt before Zod parse.
