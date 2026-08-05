@@ -258,7 +258,7 @@ export default function InvoicesList() {
                       name="amount"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t("common.amount")} ($)</FormLabel>
+                          <FormLabel>{t("common.amount")} (AED)</FormLabel>
                           <FormControl>
                             <Input type="number" step="0.01" dir="ltr" {...field} />
                           </FormControl>
@@ -405,7 +405,7 @@ export default function InvoicesList() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-end font-semibold text-foreground" dir="ltr">
-                      ${inv.amount.toFixed(2)}
+                      {new Intl.NumberFormat('en-AE', { style: 'currency', currency: 'AED' }).format(inv.amount)}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${

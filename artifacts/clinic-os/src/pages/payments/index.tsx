@@ -155,11 +155,11 @@ export default function PaymentsList() {
           <div className="flex gap-4">
             <div className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/20">
               <div className="text-xs text-indigo-100">{t("payments.collected")}</div>
-              <div className="text-2xl font-bold" dir="ltr">{new Intl.NumberFormat(numLocale, { style: 'currency', currency: 'USD' }).format(totalCollected)}</div>
+              <div className="text-2xl font-bold" dir="ltr">{new Intl.NumberFormat(numLocale, { style: 'currency', currency: 'AED' }).format(totalCollected)}</div>
             </div>
             <div className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/20">
               <div className="text-xs text-indigo-100">{t("payments.pendingAmt")}</div>
-              <div className="text-2xl font-bold" dir="ltr">{new Intl.NumberFormat(numLocale, { style: 'currency', currency: 'USD' }).format(pendingAmount)}</div>
+              <div className="text-2xl font-bold" dir="ltr">{new Intl.NumberFormat(numLocale, { style: 'currency', currency: 'AED' }).format(pendingAmount)}</div>
             </div>
             <div className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/20">
               <div className="text-xs text-indigo-100">{t("payments.todayCount")}</div>
@@ -283,7 +283,7 @@ export default function PaymentsList() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="font-bold text-foreground font-mono" dir="ltr">
-                        {new Intl.NumberFormat(numLocale, { style: 'currency', currency: 'USD' }).format(p.amount)}
+                        {new Intl.NumberFormat(numLocale, { style: 'currency', currency: 'AED' }).format(p.amount)}
                       </div>
                       <span className={`inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider ${methodColors[p.method] || 'bg-slate-100 text-slate-700'}`}>
                         {p.method.replace('_', ' ')}

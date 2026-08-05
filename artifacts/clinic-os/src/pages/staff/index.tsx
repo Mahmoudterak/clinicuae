@@ -314,10 +314,10 @@ export default function StaffList() {
                       <div className="flex items-center gap-2">
                         {revealedSalaries[s.id] ? (
                           <span className="font-mono font-medium" dir="ltr">
-                            {new Intl.NumberFormat(numLocale, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(s.salary || 0)}
+                            {new Intl.NumberFormat(numLocale, { style: 'currency', currency: 'AED', maximumFractionDigits: 0 }).format(s.salary || 0)}
                           </span>
                         ) : (
-                          <span className="font-mono text-muted-foreground blur-[4px] select-none">$123,456</span>
+                          <span className="font-mono text-muted-foreground blur-[4px] select-none">AED 123,456</span>
                         )}
                         <button onClick={() => toggleSalary(s.id)} className="p-1 text-muted-foreground hover:text-foreground transition-colors">
                           {revealedSalaries[s.id] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}

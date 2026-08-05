@@ -81,7 +81,7 @@ const CountUp = ({
   }, [end, duration]);
 
   if (isCurrency) {
-    return <>{new Intl.NumberFormat(locale, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(count)}</>;
+    return <>{new Intl.NumberFormat(locale, { style: 'currency', currency: 'AED', maximumFractionDigits: 0 }).format(count)}</>;
   }
   return <>{new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(count)}</>;
 };
@@ -182,6 +182,176 @@ export default function Dashboard() {
     const doc = doctors.find(d => d.id === Number(busiestDoc[0]));
     if (doc) busiestDocName = `Dr. ${doc.firstName} ${doc.lastName}`;
   }
+
+  // ── Doctor-scoped dashboard ──────────────────────────────────────────
+  if (role === 'doctor') {
+    const myTodayAppts = appointments?.filter(a => isSameDay(parseISO(a.date), new Date())) || [];
+    const myUpcoming  = appointments?.filter(a => !isSameDay(parseISO(a.date), new Date()) && new Date(a.date) > new Date()) || [];
+    const myPending   = invoices?.filter(i => i.status === 'pending' || i.status === 'overdue') || [];
+    const myPendingAmt = myPending.reduce((s, i) => s + i.amount, 0);
+    const myPatientsSet = new Set(appointments?.map(a => a.patientId) || []);
+    const fmtAED = (n: number) => new Intl.NumberFormat('en-AE', { style: 'currency', currency: 'AED', maximumFractionDigits: 0 }).format(n);
+
+    const docCards = [
+      { label: isRtl ? 'مواعيد اليوم' : "Today's Appointments", value: myTodayAppts.length, gradient: 'from-indigo-500 to-violet-500', shadow: 'shadow-indigo-500/20', icon: CalendarIcon },
+      { label: isRtl ? 'المواعيد القادمة' : 'Upcoming', value: myUpcoming.length, gradient: 'from-violet-500 to-fuchsia-500', shadow: 'shadow-violet-500/20', icon: Clock },
+      { label: isRtl ? 'إجمالي مرضاي' : 'My Patients', value: myPatientsSet.size, gradient: 'from-sky-500 to-cyan-500', shadow: 'shadow-sky-500/20', icon: Users },
+      { label: isRtl ? 'فواتير معلّقة' : 'Pending Invoices', value: myPendingAmt, isCurrency: true, gradient: 'from-amber-400 to-orange-500', shadow: 'shadow-amber-500/20', icon: DollarSign },
+    ];
+
+    return (
+      <div className="space-y-8 pb-8">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">{isRtl ? 'لوحة الطبيب' : 'Doctor Dashboard'}</h1>
+          <p className="text-muted-foreground mt-1 text-sm">{isRtl ? 'نظرة عامة على جدولك ومرضاك' : "Overview of your schedule and patients"}</p>
+        </div>
+
+        {/* KPI cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          {docCards.map((c, i) => (
+            <div key={i} className={`bg-gradient-to-br ${c.gradient} rounded-2xl p-6 text-white shadow-lg ${c.shadow} hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden group`}>
+              <div className="absolute -end-8 -top-8 bg-white/10 w-32 h-32 rounded-full blur-2xl group-hover:bg-white/20 transition-all" />
+              <div className="relative z-10">
+                <div className="h-10 w-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/20">
+                  <c.icon className="h-5 w-5 text-white" />
+                </div>
+                <p className="text-3xl font-bold mt-4 tracking-tight">
+                  {c.isCurrency ? fmtAED(c.value) : <CountUp end={c.value} locale={numLocale} />}
+                </p>
+                <p className="text-sm font-medium text-white/80 mt-1">{c.label}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Calendar + today's schedule */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Calendar */}
+          <div className="bg-card border rounded-2xl shadow-sm overflow-hidden flex flex-col">
+            <div className="p-5 border-b flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+              <div>
+                <h3 className="font-semibold">{t("dashboard.schedule")}</h3>
+                <p className="text-xs text-muted-foreground">{t("dashboard.scheduleDesc")}</p>
+              </div>
+              <div className="flex gap-1">
+                <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md transition-colors">
+                  <ChevronLeft className={`h-4 w-4 ${isRtl ? 'rotate-180' : ''}`} />
+                </button>
+                <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md transition-colors">
+                  <ChevronRight className={`h-4 w-4 ${isRtl ? 'rotate-180' : ''}`} />
+                </button>
+              </div>
+            </div>
+            <div className="p-5">
+              <div className="text-center font-medium text-sm mb-4 text-primary">{format(currentMonth, 'MMMM yyyy', { locale })}</div>
+              <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground mb-2">
+                {['S','M','T','W','T','F','S'].map((d, i) => <div key={i} className="font-medium">{d}</div>)}
+              </div>
+              <div className="grid grid-cols-7 gap-1">
+                {Array.from({ length: daysInMonth[0].getDay() }).map((_, i) => <div key={`pad-${i}`} />)}
+                {daysInMonth.map(day => {
+                  const dayAppts = appointments?.filter(a => isSameDay(parseISO(a.date), day));
+                  const hasAppts = dayAppts && dayAppts.length > 0;
+                  const isSelected = isSameDay(day, selectedDate);
+                  const isTodayDay = isToday(day);
+                  return (
+                    <button key={day.toISOString()} onClick={() => setSelectedDate(day)}
+                      className={`aspect-square rounded-full flex flex-col items-center justify-center text-sm relative transition-all
+                        ${isSelected ? 'bg-primary text-primary-foreground font-semibold shadow-md' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-foreground'}
+                        ${isTodayDay && !isSelected ? 'text-primary font-bold' : ''}`}>
+                      {format(day, 'd')}
+                      {hasAppts && <span className={`absolute bottom-1 h-1 w-1 rounded-full ${isSelected ? 'bg-white' : 'bg-primary'}`} />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="mt-auto border-t bg-slate-50/50 dark:bg-slate-900/50 p-4">
+              <div className="text-sm font-medium mb-3 flex items-center justify-between">
+                <span>{format(selectedDate, 'MMM d, yyyy', { locale })}</span>
+                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{selectedDateAppointments.length} Appts</span>
+              </div>
+              <div className="space-y-2 max-h-32 overflow-y-auto">
+                {selectedDateAppointments.length > 0 ? selectedDateAppointments.map(appt => (
+                  <div key={appt.id} className="text-xs flex items-center gap-3 bg-white dark:bg-slate-800 p-2 rounded border">
+                    <span className="font-medium text-slate-500 w-12 shrink-0">{appt.time}</span>
+                    <span className="font-medium truncate">{appt.patientName}</span>
+                  </div>
+                )) : (
+                  <div className="text-xs text-muted-foreground text-center py-4">{t("appointments.noAppointments")}</div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Today's appointments detail */}
+          <div className="lg:col-span-2 bg-card border rounded-2xl shadow-sm flex flex-col">
+            <div className="p-5 border-b bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
+              <h3 className="font-semibold flex items-center gap-2">
+                <CalendarIcon className="h-4 w-4 text-primary" />
+                {t("dashboard.todaysSchedule")}
+              </h3>
+              <span className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full font-medium">{myTodayAppts.length} {isRtl ? 'موعد' : 'appointments'}</span>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 space-y-1 min-h-[280px]">
+              {myTodayAppts.length > 0 ? myTodayAppts.map(appt => (
+                <div key={appt.id} className="p-3 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl flex items-center gap-3 transition-colors border border-transparent hover:border-border">
+                  <div className="h-9 w-9 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center shrink-0 text-xs font-bold text-indigo-600">
+                    {appt.patientName?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate">{appt.patientName}</p>
+                    <p className="text-xs text-muted-foreground">{appt.reason}</p>
+                  </div>
+                  <div className="text-end shrink-0">
+                    <p className="text-sm font-medium" dir="ltr">{appt.time}</p>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                      appt.status === 'scheduled' ? 'bg-blue-100 text-blue-700' :
+                      appt.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
+                      'bg-slate-100 text-slate-700'
+                    }`}>{t(`status.${appt.status}`)}</span>
+                  </div>
+                </div>
+              )) : (
+                <div className="h-full flex flex-col items-center justify-center text-muted-foreground py-12">
+                  <CalendarIcon className="h-8 w-8 mb-2 opacity-20" />
+                  <p className="text-sm">{t("doctorPortal.noAppointmentsToday")}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Pending invoices table */}
+        {myPending.length > 0 && (
+          <div className="bg-card border rounded-2xl shadow-sm overflow-hidden">
+            <div className="p-5 border-b bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="font-semibold flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-amber-500" />
+                {isRtl ? 'فواتير تحتاج للتحصيل' : 'Invoices Pending Collection'}
+              </h3>
+            </div>
+            <div className="divide-y">
+              {myPending.slice(0, 5).map(inv => (
+                <div key={inv.id} className="flex items-center gap-4 px-5 py-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{inv.patientName}</p>
+                    <p className="text-xs text-muted-foreground">{inv.description}</p>
+                  </div>
+                  <div className="text-end shrink-0">
+                    <p className="font-bold text-sm" dir="ltr">{fmtAED(inv.amount)}</p>
+                    <span className={`text-xs ${inv.status === 'overdue' ? 'text-destructive' : 'text-amber-500'}`}>{t(`status.${inv.status}`)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+  // ── END Doctor dashboard ──────────────────────────────────────────────
 
   return (
     <div className="space-y-8 pb-8">
@@ -481,7 +651,7 @@ export default function Dashboard() {
                 <div>
                   <h4 className="text-sm font-semibold text-orange-900 dark:text-orange-200">{t("dashboard.pendingInvoicesAlert")}</h4>
                   <p className="text-xs text-orange-700 dark:text-orange-300 mt-1">
-                    There are {new Intl.NumberFormat(numLocale, { style: 'currency', currency: 'USD' }).format(pendingPayments)} in pending payments to collect.
+                    There are {new Intl.NumberFormat(numLocale, { style: 'currency', currency: 'AED' }).format(pendingPayments)} in pending payments to collect.
                   </p>
                 </div>
               </div>
@@ -523,13 +693,13 @@ export default function Dashboard() {
               <YAxis 
                 axisLine={false}
                 tickLine={false}
-                tickFormatter={(val) => `$${val/1000}k`}
+                tickFormatter={(val) => `${val/1000}k`}
                 tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
               />
               <RechartsTooltip 
                 cursor={{ fill: 'hsl(var(--muted))' }}
                 contentStyle={{ borderRadius: '12px', border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--card))', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-                formatter={(value: number) => [new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value), t("dashboard.revenue")]}
+                formatter={(value: number) => [new Intl.NumberFormat('en-AE', { style: 'currency', currency: 'AED', maximumFractionDigits: 0 }).format(value), t("dashboard.revenue")]}
               />
               <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
             </BarChart>

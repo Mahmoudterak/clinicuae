@@ -94,15 +94,15 @@ export default function Reports() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-card border rounded-2xl p-6 shadow-sm">
             <div className="text-sm text-muted-foreground mb-1">Total Revenue</div>
-            <div className="text-3xl font-bold text-emerald-600" dir="ltr">{new Intl.NumberFormat(numLocale, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(totalRevenue)}</div>
+            <div className="text-3xl font-bold text-emerald-600" dir="ltr">{new Intl.NumberFormat(numLocale, { style: 'currency', currency: 'AED', maximumFractionDigits: 0 }).format(totalRevenue)}</div>
           </div>
           <div className="bg-card border rounded-2xl p-6 shadow-sm">
             <div className="text-sm text-muted-foreground mb-1">Average Invoice</div>
-            <div className="text-3xl font-bold text-indigo-600" dir="ltr">{new Intl.NumberFormat(numLocale, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(avgRevenue)}</div>
+            <div className="text-3xl font-bold text-indigo-600" dir="ltr">{new Intl.NumberFormat(numLocale, { style: 'currency', currency: 'AED', maximumFractionDigits: 0 }).format(avgRevenue)}</div>
           </div>
           <div className="bg-card border rounded-2xl p-6 shadow-sm">
             <div className="text-sm text-muted-foreground mb-1">Pending Collection</div>
-            <div className="text-3xl font-bold text-amber-500" dir="ltr">{new Intl.NumberFormat(numLocale, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(totalPending)}</div>
+            <div className="text-3xl font-bold text-amber-500" dir="ltr">{new Intl.NumberFormat(numLocale, { style: 'currency', currency: 'AED', maximumFractionDigits: 0 }).format(totalPending)}</div>
           </div>
         </div>
 
@@ -113,7 +113,7 @@ export default function Reports() {
               <BarChart data={revenueChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} barSize={40}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tickFormatter={v => `$${v/1000}k`} tick={{ fontSize: 12 }} />
+                <YAxis axisLine={false} tickLine={false} tickFormatter={v => `${v/1000}k AED`} tick={{ fontSize: 12 }} />
                 <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
                 <Bar dataKey="value" fill="#4F46E5" radius={[6, 6, 0, 0]} />
               </BarChart>

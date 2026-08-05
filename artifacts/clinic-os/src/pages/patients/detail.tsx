@@ -354,7 +354,7 @@ export default function PatientDetail() {
                         <p className="text-xs text-muted-foreground mt-0.5 font-mono">INV-{inv.id.toString().padStart(5, "0")} · {format(parseISO(inv.issuedDate), "MMM d, yyyy", { locale })}</p>
                       </div>
                       <div className="text-end shrink-0">
-                        <p className="text-lg font-bold" dir="ltr">${inv.amount.toFixed(2)}</p>
+                        <p className="text-lg font-bold" dir="ltr">{new Intl.NumberFormat('en-AE', { style: 'currency', currency: 'AED' }).format(inv.amount)}</p>
                         <span className={`text-xs font-medium ${
                           inv.status === "paid"    ? "text-emerald-600" :
                           inv.status === "overdue" ? "text-destructive" : "text-amber-600"

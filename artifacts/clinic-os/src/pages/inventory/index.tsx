@@ -172,7 +172,7 @@ export default function InventoryList() {
             <div className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/20">
               <div className="text-xs text-amber-100">{t("inventory.totalValue")}</div>
               <div className="text-2xl font-bold" dir="ltr">
-                {new Intl.NumberFormat(numLocale, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(totalValue)}
+                {new Intl.NumberFormat(numLocale, { style: 'currency', currency: 'AED', maximumFractionDigits: 0 }).format(totalValue)}
               </div>
             </div>
           </div>
