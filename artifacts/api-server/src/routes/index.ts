@@ -7,6 +7,12 @@ import medicalRecordsRouter from "./medicalRecords";
 import prescriptionsRouter from "./prescriptions";
 import invoicesRouter from "./invoices";
 import dashboardRouter from "./dashboard";
+import labRequestsRouter from "./labRequests";
+import radiologyRequestsRouter from "./radiologyRequests";
+import medicationsRouter from "./medications";
+import inventoryRouter from "./inventoryItems";
+import departmentsRouter from "./departments";
+import staffRouter from "./staff";
 
 const router: IRouter = Router();
 
@@ -18,5 +24,11 @@ router.use(medicalRecordsRouter);
 router.use(prescriptionsRouter);
 router.use(invoicesRouter);
 router.use(dashboardRouter);
+router.use(labRequestsRouter);
+router.use(radiologyRequestsRouter);
+router.use(medicationsRouter);
+router.use(inventoryRouter);
+router.use(departmentsRouter);
+router.use(staffRouter);
 
 export default router;

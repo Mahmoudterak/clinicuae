@@ -16,6 +16,12 @@ tags:
   - name: prescriptions
   - name: invoices
   - name: dashboard
+  - name: lab
+  - name: radiology
+  - name: medications
+  - name: inventory
+  - name: departments
+  - name: staff
 paths:
   /healthz:
     get:
@@ -500,6 +506,317 @@ paths:
                 type: array
                 items: { $ref: "#/components/schemas/MonthRevenue" }
 
+  /lab-requests:
+    get:
+      operationId: listLabRequests
+      tags: [lab]
+      parameters:
+        - { name: patientId, in: query, required: false, schema: { type: integer } }
+        - { name: doctorId, in: query, required: false, schema: { type: integer } }
+        - { name: status, in: query, required: false, schema: { type: string } }
+      responses:
+        "200":
+          description: Lab requests
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/LabRequest" } }
+    post:
+      operationId: createLabRequest
+      tags: [lab]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LabRequestInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LabRequest" }
+  /lab-requests/{id}:
+    patch:
+      operationId: updateLabRequest
+      tags: [lab]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LabRequestUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LabRequest" }
+    delete:
+      operationId: deleteLabRequest
+      tags: [lab]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+
+  /radiology-requests:
+    get:
+      operationId: listRadiologyRequests
+      tags: [radiology]
+      parameters:
+        - { name: patientId, in: query, required: false, schema: { type: integer } }
+        - { name: doctorId, in: query, required: false, schema: { type: integer } }
+        - { name: status, in: query, required: false, schema: { type: string } }
+      responses:
+        "200":
+          description: Radiology requests
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/RadiologyRequest" } }
+    post:
+      operationId: createRadiologyRequest
+      tags: [radiology]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RadiologyRequestInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RadiologyRequest" }
+  /radiology-requests/{id}:
+    patch:
+      operationId: updateRadiologyRequest
+      tags: [radiology]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RadiologyRequestUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RadiologyRequest" }
+    delete:
+      operationId: deleteRadiologyRequest
+      tags: [radiology]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+
+  /medications:
+    get:
+      operationId: listMedications
+      tags: [medications]
+      parameters:
+        - { name: status, in: query, required: false, schema: { type: string } }
+        - { name: category, in: query, required: false, schema: { type: string } }
+      responses:
+        "200":
+          description: Medications
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Medication" } }
+    post:
+      operationId: createMedication
+      tags: [medications]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MedicationInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Medication" }
+  /medications/{id}:
+    patch:
+      operationId: updateMedication
+      tags: [medications]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MedicationInput" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Medication" }
+    delete:
+      operationId: deleteMedication
+      tags: [medications]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+
+  /inventory:
+    get:
+      operationId: listInventory
+      tags: [inventory]
+      parameters:
+        - { name: status, in: query, required: false, schema: { type: string } }
+        - { name: category, in: query, required: false, schema: { type: string } }
+      responses:
+        "200":
+          description: Inventory items
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/InventoryItem" } }
+    post:
+      operationId: createInventoryItem
+      tags: [inventory]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InventoryItemInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InventoryItem" }
+  /inventory/{id}:
+    patch:
+      operationId: updateInventoryItem
+      tags: [inventory]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InventoryItemInput" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InventoryItem" }
+    delete:
+      operationId: deleteInventoryItem
+      tags: [inventory]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+
+  /departments:
+    get:
+      operationId: listDepartments
+      tags: [departments]
+      responses:
+        "200":
+          description: Departments
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Department" } }
+    post:
+      operationId: createDepartment
+      tags: [departments]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DepartmentInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Department" }
+  /departments/{id}:
+    patch:
+      operationId: updateDepartment
+      tags: [departments]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DepartmentInput" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Department" }
+    delete:
+      operationId: deleteDepartment
+      tags: [departments]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+
+  /staff:
+    get:
+      operationId: listStaff
+      tags: [staff]
+      parameters:
+        - { name: departmentId, in: query, required: false, schema: { type: integer } }
+        - { name: status, in: query, required: false, schema: { type: string } }
+      responses:
+        "200":
+          description: Staff members
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/StaffMember" } }
+    post:
+      operationId: createStaffMember
+      tags: [staff]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StaffInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StaffMember" }
+  /staff/{id}:
+    patch:
+      operationId: updateStaffMember
+      tags: [staff]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StaffInput" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StaffMember" }
+    delete:
+      operationId: deleteStaffMember
+      tags: [staff]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+
 components:
   schemas:
     HealthStatus:
@@ -780,3 +1097,222 @@ components:
       properties:
         month: { type: string }
         revenue: { type: number }
+
+    LabRequest:
+      type: object
+      required: [id, patientId, doctorId, testName, category, priority, status, requestedDate, createdAt]
+      properties:
+        id: { type: integer }
+        patientId: { type: integer }
+        doctorId: { type: integer }
+        patientName: { type: string, nullable: true }
+        doctorName: { type: string, nullable: true }
+        testName: { type: string }
+        testCode: { type: string, nullable: true }
+        category: { type: string }
+        priority: { type: string }
+        status: { type: string }
+        result: { type: string, nullable: true }
+        resultDate: { type: string, nullable: true }
+        requestedDate: { type: string }
+        notes: { type: string, nullable: true }
+        createdAt: { type: string }
+
+    LabRequestInput:
+      type: object
+      required: [patientId, doctorId, testName, requestedDate]
+      properties:
+        patientId: { type: integer }
+        doctorId: { type: integer }
+        testName: { type: string }
+        testCode: { type: string }
+        category: { type: string }
+        priority: { type: string }
+        requestedDate: { type: string }
+        notes: { type: string }
+
+    LabRequestUpdate:
+      type: object
+      properties:
+        status: { type: string }
+        result: { type: string }
+        resultDate: { type: string }
+        notes: { type: string }
+
+    RadiologyRequest:
+      type: object
+      required: [id, patientId, doctorId, studyType, bodyPart, priority, status, requestedDate, createdAt]
+      properties:
+        id: { type: integer }
+        patientId: { type: integer }
+        doctorId: { type: integer }
+        patientName: { type: string, nullable: true }
+        doctorName: { type: string, nullable: true }
+        studyType: { type: string }
+        bodyPart: { type: string }
+        priority: { type: string }
+        status: { type: string }
+        findings: { type: string, nullable: true }
+        impression: { type: string, nullable: true }
+        requestedDate: { type: string }
+        reportDate: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        createdAt: { type: string }
+
+    RadiologyRequestInput:
+      type: object
+      required: [patientId, doctorId, studyType, bodyPart, requestedDate]
+      properties:
+        patientId: { type: integer }
+        doctorId: { type: integer }
+        studyType: { type: string }
+        bodyPart: { type: string }
+        priority: { type: string }
+        requestedDate: { type: string }
+        notes: { type: string }
+
+    RadiologyRequestUpdate:
+      type: object
+      properties:
+        status: { type: string }
+        findings: { type: string }
+        impression: { type: string }
+        reportDate: { type: string }
+        notes: { type: string }
+
+    Medication:
+      type: object
+      required: [id, name, category, form, unit, stockQuantity, minStockLevel, status, createdAt]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        genericName: { type: string, nullable: true }
+        category: { type: string }
+        form: { type: string }
+        strength: { type: string, nullable: true }
+        unit: { type: string }
+        stockQuantity: { type: integer }
+        minStockLevel: { type: integer }
+        pricePerUnit: { type: number, nullable: true }
+        manufacturer: { type: string, nullable: true }
+        expiryDate: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        status: { type: string }
+        createdAt: { type: string }
+
+    MedicationInput:
+      type: object
+      required: [name, category, form, unit, stockQuantity, minStockLevel]
+      properties:
+        name: { type: string }
+        genericName: { type: string }
+        category: { type: string }
+        form: { type: string }
+        strength: { type: string }
+        unit: { type: string }
+        stockQuantity: { type: integer }
+        minStockLevel: { type: integer }
+        pricePerUnit: { type: number }
+        manufacturer: { type: string }
+        expiryDate: { type: string }
+        notes: { type: string }
+        status: { type: string }
+
+    InventoryItem:
+      type: object
+      required: [id, name, category, quantity, minQuantity, unit, status, createdAt]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        category: { type: string }
+        sku: { type: string, nullable: true }
+        quantity: { type: integer }
+        minQuantity: { type: integer }
+        unit: { type: string }
+        costPerUnit: { type: number, nullable: true }
+        supplier: { type: string, nullable: true }
+        location: { type: string, nullable: true }
+        expiryDate: { type: string, nullable: true }
+        status: { type: string }
+        notes: { type: string, nullable: true }
+        createdAt: { type: string }
+
+    InventoryItemInput:
+      type: object
+      required: [name, category, quantity, minQuantity, unit]
+      properties:
+        name: { type: string }
+        category: { type: string }
+        sku: { type: string }
+        quantity: { type: integer }
+        minQuantity: { type: integer }
+        unit: { type: string }
+        costPerUnit: { type: number }
+        supplier: { type: string }
+        location: { type: string }
+        expiryDate: { type: string }
+        status: { type: string }
+        notes: { type: string }
+
+    Department:
+      type: object
+      required: [id, name, status, createdAt]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        nameAr: { type: string, nullable: true }
+        head: { type: string, nullable: true }
+        location: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        status: { type: string }
+        capacity: { type: integer, nullable: true }
+        description: { type: string, nullable: true }
+        createdAt: { type: string }
+
+    DepartmentInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        nameAr: { type: string }
+        head: { type: string }
+        location: { type: string }
+        phone: { type: string }
+        status: { type: string }
+        capacity: { type: integer }
+        description: { type: string }
+
+    StaffMember:
+      type: object
+      required: [id, firstName, lastName, role, status, createdAt]
+      properties:
+        id: { type: integer }
+        firstName: { type: string }
+        lastName: { type: string }
+        role: { type: string }
+        departmentId: { type: integer, nullable: true }
+        departmentName: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        email: { type: string, nullable: true }
+        nationalId: { type: string, nullable: true }
+        dateOfJoining: { type: string, nullable: true }
+        salary: { type: number, nullable: true }
+        status: { type: string }
+        notes: { type: string, nullable: true }
+        createdAt: { type: string }
+
+    StaffInput:
+      type: object
+      required: [firstName, lastName, role]
+      properties:
+        firstName: { type: string }
+        lastName: { type: string }
+        role: { type: string }
+        departmentId: { type: integer }
+        phone: { type: string }
+        email: { type: string }
+        nationalId: { type: string }
+        dateOfJoining: { type: string }
+        salary: { type: number }
+        status: { type: string }
+        notes: { type: string }

@@ -682,3 +682,571 @@ export const GetRevenueByMonthResponseItem = zod.object({
 export const GetRevenueByMonthResponse = zod.array(GetRevenueByMonthResponseItem)
 
 
+export const ListLabRequestsQueryParams = zod.object({
+  "patientId": zod.coerce.number().int().optional(),
+  "doctorId": zod.coerce.number().int().optional(),
+  "status": zod.coerce.string().optional()
+})
+
+export const ListLabRequestsResponseItem = zod.object({
+  "id": zod.int(),
+  "patientId": zod.int(),
+  "doctorId": zod.int(),
+  "patientName": zod.string().nullish(),
+  "doctorName": zod.string().nullish(),
+  "testName": zod.string(),
+  "testCode": zod.string().nullish(),
+  "category": zod.string(),
+  "priority": zod.string(),
+  "status": zod.string(),
+  "result": zod.string().nullish(),
+  "resultDate": zod.string().nullish(),
+  "requestedDate": zod.string(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const ListLabRequestsResponse = zod.array(ListLabRequestsResponseItem)
+
+
+export const CreateLabRequestBody = zod.object({
+  "patientId": zod.int(),
+  "doctorId": zod.int(),
+  "testName": zod.string(),
+  "testCode": zod.string().optional(),
+  "category": zod.string().optional(),
+  "priority": zod.string().optional(),
+  "requestedDate": zod.string(),
+  "notes": zod.string().optional()
+})
+
+export const CreateLabRequestResponse = zod.object({
+  "id": zod.int(),
+  "patientId": zod.int(),
+  "doctorId": zod.int(),
+  "patientName": zod.string().nullish(),
+  "doctorName": zod.string().nullish(),
+  "testName": zod.string(),
+  "testCode": zod.string().nullish(),
+  "category": zod.string(),
+  "priority": zod.string(),
+  "status": zod.string(),
+  "result": zod.string().nullish(),
+  "resultDate": zod.string().nullish(),
+  "requestedDate": zod.string(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+export const UpdateLabRequestParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const UpdateLabRequestBody = zod.object({
+  "status": zod.string().optional(),
+  "result": zod.string().optional(),
+  "resultDate": zod.string().optional(),
+  "notes": zod.string().optional()
+})
+
+export const UpdateLabRequestResponse = zod.object({
+  "id": zod.int(),
+  "patientId": zod.int(),
+  "doctorId": zod.int(),
+  "patientName": zod.string().nullish(),
+  "doctorName": zod.string().nullish(),
+  "testName": zod.string(),
+  "testCode": zod.string().nullish(),
+  "category": zod.string(),
+  "priority": zod.string(),
+  "status": zod.string(),
+  "result": zod.string().nullish(),
+  "resultDate": zod.string().nullish(),
+  "requestedDate": zod.string(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+export const DeleteLabRequestParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const DeleteLabRequestResponse = zod.void()
+
+
+export const ListRadiologyRequestsQueryParams = zod.object({
+  "patientId": zod.coerce.number().int().optional(),
+  "doctorId": zod.coerce.number().int().optional(),
+  "status": zod.coerce.string().optional()
+})
+
+export const ListRadiologyRequestsResponseItem = zod.object({
+  "id": zod.int(),
+  "patientId": zod.int(),
+  "doctorId": zod.int(),
+  "patientName": zod.string().nullish(),
+  "doctorName": zod.string().nullish(),
+  "studyType": zod.string(),
+  "bodyPart": zod.string(),
+  "priority": zod.string(),
+  "status": zod.string(),
+  "findings": zod.string().nullish(),
+  "impression": zod.string().nullish(),
+  "requestedDate": zod.string(),
+  "reportDate": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const ListRadiologyRequestsResponse = zod.array(ListRadiologyRequestsResponseItem)
+
+
+export const CreateRadiologyRequestBody = zod.object({
+  "patientId": zod.int(),
+  "doctorId": zod.int(),
+  "studyType": zod.string(),
+  "bodyPart": zod.string(),
+  "priority": zod.string().optional(),
+  "requestedDate": zod.string(),
+  "notes": zod.string().optional()
+})
+
+export const CreateRadiologyRequestResponse = zod.object({
+  "id": zod.int(),
+  "patientId": zod.int(),
+  "doctorId": zod.int(),
+  "patientName": zod.string().nullish(),
+  "doctorName": zod.string().nullish(),
+  "studyType": zod.string(),
+  "bodyPart": zod.string(),
+  "priority": zod.string(),
+  "status": zod.string(),
+  "findings": zod.string().nullish(),
+  "impression": zod.string().nullish(),
+  "requestedDate": zod.string(),
+  "reportDate": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+export const UpdateRadiologyRequestParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const UpdateRadiologyRequestBody = zod.object({
+  "status": zod.string().optional(),
+  "findings": zod.string().optional(),
+  "impression": zod.string().optional(),
+  "reportDate": zod.string().optional(),
+  "notes": zod.string().optional()
+})
+
+export const UpdateRadiologyRequestResponse = zod.object({
+  "id": zod.int(),
+  "patientId": zod.int(),
+  "doctorId": zod.int(),
+  "patientName": zod.string().nullish(),
+  "doctorName": zod.string().nullish(),
+  "studyType": zod.string(),
+  "bodyPart": zod.string(),
+  "priority": zod.string(),
+  "status": zod.string(),
+  "findings": zod.string().nullish(),
+  "impression": zod.string().nullish(),
+  "requestedDate": zod.string(),
+  "reportDate": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+export const DeleteRadiologyRequestParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const DeleteRadiologyRequestResponse = zod.void()
+
+
+export const ListMedicationsQueryParams = zod.object({
+  "status": zod.coerce.string().optional(),
+  "category": zod.coerce.string().optional()
+})
+
+export const ListMedicationsResponseItem = zod.object({
+  "id": zod.int(),
+  "name": zod.string(),
+  "genericName": zod.string().nullish(),
+  "category": zod.string(),
+  "form": zod.string(),
+  "strength": zod.string().nullish(),
+  "unit": zod.string(),
+  "stockQuantity": zod.int(),
+  "minStockLevel": zod.int(),
+  "pricePerUnit": zod.number().nullish(),
+  "manufacturer": zod.string().nullish(),
+  "expiryDate": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "status": zod.string(),
+  "createdAt": zod.string()
+})
+export const ListMedicationsResponse = zod.array(ListMedicationsResponseItem)
+
+
+export const CreateMedicationBody = zod.object({
+  "name": zod.string(),
+  "genericName": zod.string().optional(),
+  "category": zod.string(),
+  "form": zod.string(),
+  "strength": zod.string().optional(),
+  "unit": zod.string(),
+  "stockQuantity": zod.int(),
+  "minStockLevel": zod.int(),
+  "pricePerUnit": zod.number().optional(),
+  "manufacturer": zod.string().optional(),
+  "expiryDate": zod.string().optional(),
+  "notes": zod.string().optional(),
+  "status": zod.string().optional()
+})
+
+export const CreateMedicationResponse = zod.object({
+  "id": zod.int(),
+  "name": zod.string(),
+  "genericName": zod.string().nullish(),
+  "category": zod.string(),
+  "form": zod.string(),
+  "strength": zod.string().nullish(),
+  "unit": zod.string(),
+  "stockQuantity": zod.int(),
+  "minStockLevel": zod.int(),
+  "pricePerUnit": zod.number().nullish(),
+  "manufacturer": zod.string().nullish(),
+  "expiryDate": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "status": zod.string(),
+  "createdAt": zod.string()
+})
+
+
+export const UpdateMedicationParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const UpdateMedicationBody = zod.object({
+  "name": zod.string(),
+  "genericName": zod.string().optional(),
+  "category": zod.string(),
+  "form": zod.string(),
+  "strength": zod.string().optional(),
+  "unit": zod.string(),
+  "stockQuantity": zod.int(),
+  "minStockLevel": zod.int(),
+  "pricePerUnit": zod.number().optional(),
+  "manufacturer": zod.string().optional(),
+  "expiryDate": zod.string().optional(),
+  "notes": zod.string().optional(),
+  "status": zod.string().optional()
+})
+
+export const UpdateMedicationResponse = zod.object({
+  "id": zod.int(),
+  "name": zod.string(),
+  "genericName": zod.string().nullish(),
+  "category": zod.string(),
+  "form": zod.string(),
+  "strength": zod.string().nullish(),
+  "unit": zod.string(),
+  "stockQuantity": zod.int(),
+  "minStockLevel": zod.int(),
+  "pricePerUnit": zod.number().nullish(),
+  "manufacturer": zod.string().nullish(),
+  "expiryDate": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "status": zod.string(),
+  "createdAt": zod.string()
+})
+
+
+export const DeleteMedicationParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const DeleteMedicationResponse = zod.void()
+
+
+export const ListInventoryQueryParams = zod.object({
+  "status": zod.coerce.string().optional(),
+  "category": zod.coerce.string().optional()
+})
+
+export const ListInventoryResponseItem = zod.object({
+  "id": zod.int(),
+  "name": zod.string(),
+  "category": zod.string(),
+  "sku": zod.string().nullish(),
+  "quantity": zod.int(),
+  "minQuantity": zod.int(),
+  "unit": zod.string(),
+  "costPerUnit": zod.number().nullish(),
+  "supplier": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "expiryDate": zod.string().nullish(),
+  "status": zod.string(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const ListInventoryResponse = zod.array(ListInventoryResponseItem)
+
+
+export const CreateInventoryItemBody = zod.object({
+  "name": zod.string(),
+  "category": zod.string(),
+  "sku": zod.string().optional(),
+  "quantity": zod.int(),
+  "minQuantity": zod.int(),
+  "unit": zod.string(),
+  "costPerUnit": zod.number().optional(),
+  "supplier": zod.string().optional(),
+  "location": zod.string().optional(),
+  "expiryDate": zod.string().optional(),
+  "status": zod.string().optional(),
+  "notes": zod.string().optional()
+})
+
+export const CreateInventoryItemResponse = zod.object({
+  "id": zod.int(),
+  "name": zod.string(),
+  "category": zod.string(),
+  "sku": zod.string().nullish(),
+  "quantity": zod.int(),
+  "minQuantity": zod.int(),
+  "unit": zod.string(),
+  "costPerUnit": zod.number().nullish(),
+  "supplier": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "expiryDate": zod.string().nullish(),
+  "status": zod.string(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+export const UpdateInventoryItemParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const UpdateInventoryItemBody = zod.object({
+  "name": zod.string(),
+  "category": zod.string(),
+  "sku": zod.string().optional(),
+  "quantity": zod.int(),
+  "minQuantity": zod.int(),
+  "unit": zod.string(),
+  "costPerUnit": zod.number().optional(),
+  "supplier": zod.string().optional(),
+  "location": zod.string().optional(),
+  "expiryDate": zod.string().optional(),
+  "status": zod.string().optional(),
+  "notes": zod.string().optional()
+})
+
+export const UpdateInventoryItemResponse = zod.object({
+  "id": zod.int(),
+  "name": zod.string(),
+  "category": zod.string(),
+  "sku": zod.string().nullish(),
+  "quantity": zod.int(),
+  "minQuantity": zod.int(),
+  "unit": zod.string(),
+  "costPerUnit": zod.number().nullish(),
+  "supplier": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "expiryDate": zod.string().nullish(),
+  "status": zod.string(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+export const DeleteInventoryItemParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const DeleteInventoryItemResponse = zod.void()
+
+
+export const ListDepartmentsResponseItem = zod.object({
+  "id": zod.int(),
+  "name": zod.string(),
+  "nameAr": zod.string().nullish(),
+  "head": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "status": zod.string(),
+  "capacity": zod.int().nullish(),
+  "description": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const ListDepartmentsResponse = zod.array(ListDepartmentsResponseItem)
+
+
+export const CreateDepartmentBody = zod.object({
+  "name": zod.string(),
+  "nameAr": zod.string().optional(),
+  "head": zod.string().optional(),
+  "location": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "status": zod.string().optional(),
+  "capacity": zod.int().optional(),
+  "description": zod.string().optional()
+})
+
+export const CreateDepartmentResponse = zod.object({
+  "id": zod.int(),
+  "name": zod.string(),
+  "nameAr": zod.string().nullish(),
+  "head": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "status": zod.string(),
+  "capacity": zod.int().nullish(),
+  "description": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+export const UpdateDepartmentParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const UpdateDepartmentBody = zod.object({
+  "name": zod.string(),
+  "nameAr": zod.string().optional(),
+  "head": zod.string().optional(),
+  "location": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "status": zod.string().optional(),
+  "capacity": zod.int().optional(),
+  "description": zod.string().optional()
+})
+
+export const UpdateDepartmentResponse = zod.object({
+  "id": zod.int(),
+  "name": zod.string(),
+  "nameAr": zod.string().nullish(),
+  "head": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "status": zod.string(),
+  "capacity": zod.int().nullish(),
+  "description": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+export const DeleteDepartmentParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const DeleteDepartmentResponse = zod.void()
+
+
+export const ListStaffQueryParams = zod.object({
+  "departmentId": zod.coerce.number().int().optional(),
+  "status": zod.coerce.string().optional()
+})
+
+export const ListStaffResponseItem = zod.object({
+  "id": zod.int(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "role": zod.string(),
+  "departmentId": zod.int().nullish(),
+  "departmentName": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "email": zod.string().nullish(),
+  "nationalId": zod.string().nullish(),
+  "dateOfJoining": zod.string().nullish(),
+  "salary": zod.number().nullish(),
+  "status": zod.string(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const ListStaffResponse = zod.array(ListStaffResponseItem)
+
+
+export const CreateStaffMemberBody = zod.object({
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "role": zod.string(),
+  "departmentId": zod.int().optional(),
+  "phone": zod.string().optional(),
+  "email": zod.string().optional(),
+  "nationalId": zod.string().optional(),
+  "dateOfJoining": zod.string().optional(),
+  "salary": zod.number().optional(),
+  "status": zod.string().optional(),
+  "notes": zod.string().optional()
+})
+
+export const CreateStaffMemberResponse = zod.object({
+  "id": zod.int(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "role": zod.string(),
+  "departmentId": zod.int().nullish(),
+  "departmentName": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "email": zod.string().nullish(),
+  "nationalId": zod.string().nullish(),
+  "dateOfJoining": zod.string().nullish(),
+  "salary": zod.number().nullish(),
+  "status": zod.string(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+export const UpdateStaffMemberParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const UpdateStaffMemberBody = zod.object({
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "role": zod.string(),
+  "departmentId": zod.int().optional(),
+  "phone": zod.string().optional(),
+  "email": zod.string().optional(),
+  "nationalId": zod.string().optional(),
+  "dateOfJoining": zod.string().optional(),
+  "salary": zod.number().optional(),
+  "status": zod.string().optional(),
+  "notes": zod.string().optional()
+})
+
+export const UpdateStaffMemberResponse = zod.object({
+  "id": zod.int(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "role": zod.string(),
+  "departmentId": zod.int().nullish(),
+  "departmentName": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "email": zod.string().nullish(),
+  "nationalId": zod.string().nullish(),
+  "dateOfJoining": zod.string().nullish(),
+  "salary": zod.number().nullish(),
+  "status": zod.string(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+export const DeleteStaffMemberParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const DeleteStaffMemberResponse = zod.void()
+
+

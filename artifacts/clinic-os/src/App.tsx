@@ -16,6 +16,12 @@ import AppointmentsList from './pages/appointments/index';
 import RecordsList from './pages/records/index';
 import PrescriptionsList from './pages/prescriptions/index';
 import InvoicesList from './pages/invoices/index';
+import LabList from './pages/lab/index';
+import RadiologyList from './pages/radiology/index';
+import PharmacyList from './pages/pharmacy/index';
+import InventoryList from './pages/inventory/index';
+import DepartmentsList from './pages/departments/index';
+import StaffList from './pages/staff/index';
 
 const queryClient = new QueryClient();
 
@@ -32,6 +38,12 @@ function Router() {
         <Route path="/records" component={RecordsList} />
         <Route path="/prescriptions" component={PrescriptionsList} />
         <Route path="/invoices" component={InvoicesList} />
+        <Route path="/lab" component={LabList} />
+        <Route path="/radiology" component={RadiologyList} />
+        <Route path="/pharmacy" component={PharmacyList} />
+        <Route path="/inventory" component={InventoryList} />
+        <Route path="/departments" component={DepartmentsList} />
+        <Route path="/staff" component={StaffList} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>

@@ -289,6 +289,199 @@ export interface MonthRevenue {
   revenue: number;
 }
 
+export interface LabRequest {
+  id: number;
+  patientId: number;
+  doctorId: number;
+  patientName?: string | null;
+  doctorName?: string | null;
+  testName: string;
+  testCode?: string | null;
+  category: string;
+  priority: string;
+  status: string;
+  result?: string | null;
+  resultDate?: string | null;
+  requestedDate: string;
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface LabRequestInput {
+  patientId: number;
+  doctorId: number;
+  testName: string;
+  testCode?: string;
+  category?: string;
+  priority?: string;
+  requestedDate: string;
+  notes?: string;
+}
+
+export interface LabRequestUpdate {
+  status?: string;
+  result?: string;
+  resultDate?: string;
+  notes?: string;
+}
+
+export interface RadiologyRequest {
+  id: number;
+  patientId: number;
+  doctorId: number;
+  patientName?: string | null;
+  doctorName?: string | null;
+  studyType: string;
+  bodyPart: string;
+  priority: string;
+  status: string;
+  findings?: string | null;
+  impression?: string | null;
+  requestedDate: string;
+  reportDate?: string | null;
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface RadiologyRequestInput {
+  patientId: number;
+  doctorId: number;
+  studyType: string;
+  bodyPart: string;
+  priority?: string;
+  requestedDate: string;
+  notes?: string;
+}
+
+export interface RadiologyRequestUpdate {
+  status?: string;
+  findings?: string;
+  impression?: string;
+  reportDate?: string;
+  notes?: string;
+}
+
+export interface Medication {
+  id: number;
+  name: string;
+  genericName?: string | null;
+  category: string;
+  form: string;
+  strength?: string | null;
+  unit: string;
+  stockQuantity: number;
+  minStockLevel: number;
+  pricePerUnit?: number | null;
+  manufacturer?: string | null;
+  expiryDate?: string | null;
+  notes?: string | null;
+  status: string;
+  createdAt: string;
+}
+
+export interface MedicationInput {
+  name: string;
+  genericName?: string;
+  category: string;
+  form: string;
+  strength?: string;
+  unit: string;
+  stockQuantity: number;
+  minStockLevel: number;
+  pricePerUnit?: number;
+  manufacturer?: string;
+  expiryDate?: string;
+  notes?: string;
+  status?: string;
+}
+
+export interface InventoryItem {
+  id: number;
+  name: string;
+  category: string;
+  sku?: string | null;
+  quantity: number;
+  minQuantity: number;
+  unit: string;
+  costPerUnit?: number | null;
+  supplier?: string | null;
+  location?: string | null;
+  expiryDate?: string | null;
+  status: string;
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface InventoryItemInput {
+  name: string;
+  category: string;
+  sku?: string;
+  quantity: number;
+  minQuantity: number;
+  unit: string;
+  costPerUnit?: number;
+  supplier?: string;
+  location?: string;
+  expiryDate?: string;
+  status?: string;
+  notes?: string;
+}
+
+export interface Department {
+  id: number;
+  name: string;
+  nameAr?: string | null;
+  head?: string | null;
+  location?: string | null;
+  phone?: string | null;
+  status: string;
+  capacity?: number | null;
+  description?: string | null;
+  createdAt: string;
+}
+
+export interface DepartmentInput {
+  name: string;
+  nameAr?: string;
+  head?: string;
+  location?: string;
+  phone?: string;
+  status?: string;
+  capacity?: number;
+  description?: string;
+}
+
+export interface StaffMember {
+  id: number;
+  firstName: string;
+  lastName: string;
+  role: string;
+  departmentId?: number | null;
+  departmentName?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  nationalId?: string | null;
+  dateOfJoining?: string | null;
+  salary?: number | null;
+  status: string;
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface StaffInput {
+  firstName: string;
+  lastName: string;
+  role: string;
+  departmentId?: number;
+  phone?: string;
+  email?: string;
+  nationalId?: string;
+  dateOfJoining?: string;
+  salary?: number;
+  status?: string;
+  notes?: string;
+}
+
 export type ListPatientsParams = {
 search?: string;
 };
@@ -312,6 +505,33 @@ doctorId?: number;
 
 export type ListInvoicesParams = {
 patientId?: number;
+status?: string;
+};
+
+export type ListLabRequestsParams = {
+patientId?: number;
+doctorId?: number;
+status?: string;
+};
+
+export type ListRadiologyRequestsParams = {
+patientId?: number;
+doctorId?: number;
+status?: string;
+};
+
+export type ListMedicationsParams = {
+status?: string;
+category?: string;
+};
+
+export type ListInventoryParams = {
+status?: string;
+category?: string;
+};
+
+export type ListStaffParams = {
+departmentId?: number;
 status?: string;
 };
 

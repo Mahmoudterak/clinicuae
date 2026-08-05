@@ -41,17 +41,17 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { name: t("nav.records"), href: "/records", icon: FileText },
     { name: t("nav.prescriptions"), href: "/prescriptions", icon: Pill },
     { name: t("nav.invoices"), href: "/invoices", icon: Receipt },
+    { name: t("nav.lab"), href: "/lab", icon: TestTube },
+    { name: t("nav.radiology"), href: "/radiology", icon: Activity },
+    { name: t("nav.pharmacy"), href: "/pharmacy", icon: Package },
+    { name: t("nav.inventory"), href: "/inventory", icon: Package },
+    { name: t("nav.departments"), href: "/departments", icon: Building2 },
+    { name: t("nav.staff"), href: "/staff", icon: BriefcaseMedical },
   ]
 
   const comingSoonNavigation = [
-    { name: t("dashboard.lab"), icon: TestTube },
-    { name: t("dashboard.rad"), icon: Activity },
     { name: t("dashboard.payments"), icon: CreditCard },
     { name: t("dashboard.insurance"), icon: ShieldPlus },
-    { name: t("dashboard.pharmacy"), icon: Cross },
-    { name: t("dashboard.inventory"), icon: Package },
-    { name: t("dashboard.departments"), icon: Building2 },
-    { name: t("dashboard.staff"), icon: BriefcaseMedical },
     { name: t("dashboard.reports"), icon: LineChart },
     { name: t("dashboard.aiAssistant"), icon: Bot },
   ]
