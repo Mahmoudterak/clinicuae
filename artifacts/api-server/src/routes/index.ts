@@ -20,6 +20,8 @@ import bookingsRouter from "./onlineBookings";
 import zapierRouter from "./zapier";
 import settingsRouter from "./settings";
 import adminUsersRouter from "./adminUsers";
+import doctorAuthRouter from "./doctorAuth";
+import { superAdminRouter } from "./superAdmin";
 
 const router: IRouter = Router();
 
@@ -44,5 +46,7 @@ router.use(bookingsRouter);
 router.use(zapierRouter);
 router.use(settingsRouter);
 router.use(adminUsersRouter);
+router.use(doctorAuthRouter);
+router.use("/superadmin", superAdminRouter);
 
 export default router;

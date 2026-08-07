@@ -17,3 +17,6 @@ export * from "./onlineBookings";
 export * from "./zapier";
 export * from "./clinicSettings";
 export * from "./adminUsers";
+export * from "./doctorAccounts";
+export * from "./registeredClinics";
+export * from "./superAdminUsers";

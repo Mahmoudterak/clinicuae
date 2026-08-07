@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Building2, Users, ImageIcon, Eye, EyeOff, Plus, Trash2,
   ShieldCheck, Save, Upload, X, Key, Globe, Phone, Mail,
-  MapPin, Clock, Lock, Pencil, Loader2
+  MapPin, Clock, Lock, Pencil, Loader2, Stethoscope
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import logoUrl from "@/assets/clinic-os-logo.png";
 
-type Tab = "clinic" | "users" | "logo";
+import DoctorAccountsTab from "./DoctorAccountsTab";
+
+type Tab = "clinic" | "users" | "logo" | "doctors";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
@@ -456,9 +458,10 @@ export default function SettingsPage() {
   }
 
   const tabs: { id: Tab; label: string; labelAr: string; icon: React.ElementType }[] = [
-    { id: "clinic",  label: "Clinic Info",      labelAr: "بيانات العيادة",     icon: Building2 },
-    { id: "users",   label: "User Management",   labelAr: "إدارة المستخدمين",  icon: Users },
-    { id: "logo",    label: "Logo",              labelAr: "الشعار",             icon: ImageIcon },
+    { id: "clinic",  label: "Clinic Info",        labelAr: "بيانات العيادة",      icon: Building2 },
+    { id: "users",   label: "User Management",   labelAr: "إدارة المستخدمين",   icon: Users },
+    { id: "doctors", label: "Doctor Accounts",   labelAr: "حسابات الأطباء",     icon: Stethoscope },
+    { id: "logo",    label: "Logo",              labelAr: "الشعار",              icon: ImageIcon },
   ];
 
   return (
@@ -487,9 +490,10 @@ export default function SettingsPage() {
       </div>
 
       {/* Tab content */}
-      {tab === "clinic" && <ClinicTab />}
-      {tab === "users"  && <UsersTab />}
-      {tab === "logo"   && <LogoTab />}
+      {tab === "clinic"   && <ClinicTab />}
+      {tab === "users"    && <UsersTab />}
+      {tab === "doctors"  && <DoctorAccountsTab />}
+      {tab === "logo"     && <LogoTab />}
     </div>
   );
 }

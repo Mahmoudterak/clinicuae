@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/superadmin/"
+title = "Clinic OS — Super Admin"
+description = "A secure super-admin control panel for the Clinic OS platform owner. Manages all subscribed clinics, trial registrations, subscription plans, activation/suspension, access permissions, and system-wide statistics. Separate from individual clinic admin panels."
+version = "1.0.0"
+id = "artifacts/superadmin"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/superadmin/" ]
+localPort = 19460
+
+[services.development]
+run = "pnpm --filter @workspace/superadmin run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/superadmin", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/superadmin/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19460"
+BASE_PATH = "/superadmin/"
