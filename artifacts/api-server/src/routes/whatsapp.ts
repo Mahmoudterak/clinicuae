@@ -129,7 +129,7 @@ router.post("/whatsapp/messages/bulk", async (req, res): Promise<void> => {
   const [tpl] = await db.select().from(whatsappTemplatesTable).where(eq(whatsappTemplatesTable.id, parsed.data.templateId));
   if (!tpl) { res.status(404).json({ error: "Template not found" }); return; }
 
-  const patients = await db.select().from(patientsTable);
+  const patients = await db.select().from(patientsTable).where(eq(patientsTable.status, "active"));
   const msgBody = parsed.data.lang === "ar" ? tpl.bodyAr : tpl.body;
 
   let sent = 0, failed = 0;

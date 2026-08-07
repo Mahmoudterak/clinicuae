@@ -3,8 +3,13 @@ import { eq, desc } from "drizzle-orm";
 import { db, zapierWebhooksTable, zapierLogsTable } from "@workspace/db";
 import { z } from "zod";
 import { adminAuth } from "../middlewares/adminAuth";
+import dns from "dns";
 
 const router: IRouter = Router();
+
+const PRIVATE_IPv4_RE =
+  /^(127\.|10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|0\.0\.0\.0|169\.254\.)/;
+const PRIVATE_IPv6_RE = /^(::1$|fc|fd|fe8|fe9|fea|feb)/i;
 
 function isoWebhook(row: typeof zapierWebhooksTable.$inferSelect) {
   return {
@@ -18,7 +23,6 @@ function isoLog(row: typeof zapierLogsTable.$inferSelect) {
   return { ...row, createdAt: row.createdAt.toISOString() };
 }
 
-// Available event types
 export const ZAPIER_EVENTS = [
   { value: "new_patient",     label: "مريض جديد",          labelEn: "New Patient" },
   { value: "new_appointment", label: "موعد جديد",           labelEn: "New Appointment" },
@@ -27,7 +31,7 @@ export const ZAPIER_EVENTS = [
   { value: "new_booking",     label: "حجز إلكتروني جديد",   labelEn: "New Online Booking" },
 ];
 
-/** Validate that a webhook URL is a legitimate Zapier catch-hook (SSRF guard). */
+/** SSRF guard: only allow verified Zapier catch-hook URLs. */
 function isZapierUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
@@ -57,6 +61,39 @@ const UpdateWebhookBody = z.object({
   description: z.string().optional().nullable(),
 });
 
+/** Layer 2 – DNS-resolution check executed immediately before every fetch. */
+async function assertSafeHost(hostname: string): Promise<void> {
+  let address: string;
+  let family: number;
+  try {
+    const result = await dns.promises.lookup(hostname, { all: false });
+    address = result.address;
+    family = result.family;
+  } catch {
+    throw new Error("Webhook hostname could not be resolved");
+  }
+  if (family === 4) {
+    if (PRIVATE_IPv4_RE.test(address)) throw new Error("Webhook URL resolves to a private IPv4 address");
+  } else {
+    const mapped = address.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i);
+    if (mapped) {
+      if (PRIVATE_IPv4_RE.test(mapped[1])) throw new Error("Webhook URL resolves to a private IPv4-mapped address");
+    } else if (PRIVATE_IPv6_RE.test(address.toLowerCase())) {
+      throw new Error("Webhook URL resolves to a private IPv6 address");
+    }
+  }
+}
+
+/**
+ * SSRF-safe fetch: resolves DNS first, checks the IP, then fetches with
+ * redirects disabled so the response cannot chain to an internal resource.
+ */
+async function safeFetch(urlStr: string, options: RequestInit): Promise<Response> {
+  const url = new URL(urlStr);
+  await assertSafeHost(url.hostname);
+  return fetch(urlStr, { ...options, redirect: "error" });
+}
+
 // ── internal helper: fire a webhook ──────────────────────────────────────────
 export async function fireZapierWebhook(event: string, payload: Record<string, unknown>) {
   try {
@@ -67,13 +104,12 @@ export async function fireZapierWebhook(event: string, payload: Record<string, u
 
     for (const hook of hooks) {
       if (!hook.active) continue;
-      // SSRF guard: only fire to verified Zapier hook URLs
       if (!isZapierUrl(hook.webhookUrl)) continue;
 
       let success = false;
       let statusCode = "";
       try {
-        const res = await fetch(hook.webhookUrl, {
+        const res = await safeFetch(hook.webhookUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ event, data: payload, timestamp: new Date().toISOString() }),
@@ -81,21 +117,12 @@ export async function fireZapierWebhook(event: string, payload: Record<string, u
         });
         success = res.ok;
         statusCode = String(res.status);
-      } catch (e: any) {
+      } catch {
         statusCode = "error";
       }
-      // fire-and-forget logs + update lastFiredAt
-      db.insert(zapierLogsTable).values({
-        webhookId: hook.id,
-        event,
-        payload: JSON.stringify(payload),
-        statusCode,
-        success,
-      }).catch(() => {});
-      db.update(zapierWebhooksTable)
-        .set({ lastFiredAt: new Date() })
-        .where(eq(zapierWebhooksTable.id, hook.id))
-        .catch(() => {});
+      // fire-and-forget — payload intentionally omitted to avoid PII in logs
+      db.insert(zapierLogsTable).values({ webhookId: hook.id, event, statusCode, success }).catch(() => {});
+      db.update(zapierWebhooksTable).set({ lastFiredAt: new Date() }).where(eq(zapierWebhooksTable.id, hook.id)).catch(() => {});
     }
   } catch (_) {}
 }
@@ -132,7 +159,7 @@ router.patch("/zapier/webhooks/:id", adminAuth, async (req, res): Promise<void> 
   res.json(isoWebhook(row));
 });
 
-// ── delete webhook ────────────────────────────────────────────────────────────
+// ── delete webhook ────────────────────────────────────────────────name────────
 router.delete("/zapier/webhooks/:id", adminAuth, async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
@@ -155,7 +182,6 @@ router.post("/zapier/webhooks/:id/test", adminAuth, async (req, res): Promise<vo
     new_booking:     { id: 99, patientName: "أحمد العتيبي", patientPhone: "+971501234567", preferredDate: new Date().toISOString().split("T")[0], preferredTime: "10:00", status: "pending" },
   };
 
-  // SSRF guard: only fire to verified Zapier hook URLs
   if (!isZapierUrl(hook.webhookUrl)) {
     res.status(400).json({ error: "Webhook URL is not a valid Zapier catch-hook" });
     return;
@@ -165,7 +191,7 @@ router.post("/zapier/webhooks/:id/test", adminAuth, async (req, res): Promise<vo
   let statusCode = "";
   try {
     const testData = samplePayload[hook.event] ?? { message: "test" };
-    const r = await fetch(hook.webhookUrl, {
+    const r = await safeFetch(hook.webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ event: hook.event, data: testData, timestamp: new Date().toISOString(), test: true }),
@@ -177,14 +203,7 @@ router.post("/zapier/webhooks/:id/test", adminAuth, async (req, res): Promise<vo
     statusCode = "error: " + e.message;
   }
 
-  await db.insert(zapierLogsTable).values({
-    webhookId: hook.id,
-    event: hook.event,
-    payload: JSON.stringify({ test: true }),
-    statusCode,
-    success,
-  });
-
+  await db.insert(zapierLogsTable).values({ webhookId: hook.id, event: hook.event, statusCode, success });
   res.json({ success, statusCode });
 });
 

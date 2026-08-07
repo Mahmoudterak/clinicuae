@@ -5,14 +5,22 @@ type Role = "admin" | "doctor" | null;
 
 interface AuthData {
   role: Role;
+
   doctorId?: number;
+
   name?: string;
+  /** Server-issued HMAC-signed token — only present for admin sessions. */
+
   token?: string; // JWT admin token for server-side auth
+
+  serverToken?: string;
 }
 
 interface AuthContextType extends AuthData {
   login: (data: AuthData) => void;
   logout: () => void;
+  /** Bearer token for protected API calls. Undefined until admin logs in. */
+  bearerHeader: Record<string, string>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -47,12 +55,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLocation("/login");
   };
 
+  const bearerHeader: Record<string, string> = authData.serverToken
+    ? { Authorization: `Bearer ${authData.serverToken}` }
+    : {};
+
   if (isInitializing) {
     return <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground animate-pulse">Loading...</div>;
   }
 
   return (
-    <AuthContext.Provider value={{ ...authData, login, logout }}>
+    <AuthContext.Provider value={{ ...authData, login, logout, bearerHeader }}>
       {children}
     </AuthContext.Provider>
   );

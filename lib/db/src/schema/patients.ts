@@ -14,6 +14,7 @@ export const patientsTable = pgTable("patients", {
   allergies: text("allergies"),
   address: text("address"),
   notes: text("notes"),
+  status: text("status").notNull().default("active"), // "active" | "inactive"
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

@@ -69,6 +69,7 @@ function useZapierEvents() {
   return useQuery<ZapierEvent[]>({
     queryKey: ["zapier-events"],
     queryFn: async () => {
+      // events endpoint is public — no admin token needed
       const r = await fetch(`${BASE}/api/zapier/events`);
       if (!r.ok) throw new Error("Failed");
       return r.json();

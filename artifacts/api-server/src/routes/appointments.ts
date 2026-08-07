@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, and, desc, type SQL } from "drizzle-orm";
+import { fireZapierWebhook } from "./zapier";
 import { db, appointmentsTable, patientsTable, doctorsTable } from "@workspace/db";
 import {
   ListAppointmentsQueryParams,
@@ -48,26 +49,21 @@ router.get("/appointments", async (req, res): Promise<void> => {
 });
 
 router.post("/appointments", async (req, res): Promise<void> => {
-  const parsed = CreateAppointmentBody.safeParse(req.body);
+  const parsed = UpdateAppointmentBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const [row] = await db.insert(appointmentsTable).values(parsed.data).returning();
-  const [withName] = await withNames([row!]);
-  fireZapierWebhook("new_appointment", {
-    id: withName!.id,
-    patientName: withName!.patientName,
-    doctorName: withName!.doctorName,
-    date: withName!.date,
-    time: withName!.time,
-    status: withName!.status,
-  });
-  res.status(201).json(CreateAppointmentResponse.parse(withName));
+  const [row] = await db
+    .delete(appointmentsTable)
+    .where(eq(appointmentsTable.id, params.data.id))
+    .returning();
+  const [withName] = await withNames([row]);
+  res.json(UpdateAppointmentResponse.parse(withName));
 });
 
-router.patch("/appointments/:id", async (req, res): Promise<void> => {
-  const params = UpdateAppointmentParams.safeParse(req.params);
+router.delete("/appointments/:id", async (req, res): Promise<void> => {
+  const params = DeleteAppointmentParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
     return;
@@ -78,8 +74,7 @@ router.patch("/appointments/:id", async (req, res): Promise<void> => {
     return;
   }
   const [row] = await db
-    .update(appointmentsTable)
-    .set(parsed.data)
+    .delete(appointmentsTable)
     .where(eq(appointmentsTable.id, params.data.id))
     .returning();
   if (!row) {

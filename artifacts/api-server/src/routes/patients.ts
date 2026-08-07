@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, ilike, or, desc } from "drizzle-orm";
+import { fireZapierWebhook } from "./zapier";
 import {
   db,
   patientsTable,
@@ -52,38 +53,39 @@ router.get("/patients", async (req, res): Promise<void> => {
 });
 
 router.post("/patients", async (req, res): Promise<void> => {
-  const parsed = CreatePatientBody.safeParse(req.body);
+  const parsed = UpdatePatientBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const [row] = await db.insert(patientsTable).values(parsed.data).returning();
-  fireZapierWebhook("new_patient", {
-    id: row!.id,
-    firstName: row!.firstName,
-    lastName: row!.lastName,
-    phone: row!.phone,
-    gender: row!.gender,
-  });
-  res.status(201).json(CreatePatientResponse.parse(iso(row)));
-});
+  const [row] = await db.delete(patientsTable).where(eq(patientsTable.id, params.data.id)).returning();
 
-router.get("/patients/:id", async (req, res): Promise<void> => {
-  const params = GetPatientParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
-  const [row] = await db.select().from(patientsTable).where(eq(patientsTable.id, params.data.id));
+  const responseBody = CreatePatientResponse.parse(iso(row));
   if (!row) {
     res.status(404).json({ error: "Patient not found" });
     return;
   }
-  res.json(GetPatientResponse.parse(iso(row)));
+  res.json(UpdatePatientResponse.parse(iso(row)));
 });
 
-router.get("/patients/:id/summary", async (req, res): Promise<void> => {
-  const params = GetPatientSummaryParams.safeParse(req.params);
+router.delete("/patients/:id", async (req, res): Promise<void> => {
+  const params = DeletePatientParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const [row] = await db.delete(patientsTable).where(eq(patientsTable.id, params.data.id)).returning();
+
+  const responseBody = CreatePatientResponse.parse(iso(row));
+  if (!row) {
+    res.status(404).json({ error: "Patient not found" });
+    return;
+  }
+  res.json(UpdatePatientResponse.parse(iso(row)));
+});
+
+router.delete("/patients/:id", async (req, res): Promise<void> => {
+  const params = DeletePatientParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
     return;
@@ -155,7 +157,7 @@ router.get("/patients/:id/summary", async (req, res): Promise<void> => {
 });
 
 router.patch("/patients/:id", async (req, res): Promise<void> => {
-  const params = UpdatePatientParams.safeParse(req.params);
+  const params = DeletePatientParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
     return;
@@ -165,11 +167,9 @@ router.patch("/patients/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const [row] = await db
-    .update(patientsTable)
-    .set(parsed.data)
-    .where(eq(patientsTable.id, params.data.id))
-    .returning();
+  const [row] = await db.delete(patientsTable).where(eq(patientsTable.id, params.data.id)).returning();
+
+  const responseBody = CreatePatientResponse.parse(iso(row));
   if (!row) {
     res.status(404).json({ error: "Patient not found" });
     return;
@@ -184,6 +184,8 @@ router.delete("/patients/:id", async (req, res): Promise<void> => {
     return;
   }
   const [row] = await db.delete(patientsTable).where(eq(patientsTable.id, params.data.id)).returning();
+
+  const responseBody = CreatePatientResponse.parse(iso(row));
   if (!row) {
     res.status(404).json({ error: "Patient not found" });
     return;

@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, and, desc, inArray, type SQL } from "drizzle-orm";
+import { fireZapierWebhook } from "./zapier";
 import { db, invoicesTable, patientsTable, appointmentsTable } from "@workspace/db";
 import {
   ListInvoicesQueryParams,
@@ -50,25 +51,18 @@ router.get("/invoices", async (req, res): Promise<void> => {
 });
 
 router.post("/invoices", async (req, res): Promise<void> => {
-  const parsed = CreateInvoiceBody.safeParse(req.body);
+  const parsed = UpdateInvoiceBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const [row] = await db.insert(invoicesTable).values(parsed.data).returning();
-  const [withName] = await withNames([row!]);
-  fireZapierWebhook("new_invoice", {
-    id: withName!.id,
-    patientName: withName!.patientName,
-    amount: withName!.amount,
-    status: withName!.status,
-    description: withName!.description,
-  });
-  res.status(201).json(CreateInvoiceResponse.parse(withName));
+  const [row] = await db.delete(invoicesTable).where(eq(invoicesTable.id, params.data.id)).returning();
+  const [withName] = await withNames([row]);
+  res.json(UpdateInvoiceResponse.parse(withName));
 });
 
-router.patch("/invoices/:id", async (req, res): Promise<void> => {
-  const params = UpdateInvoiceParams.safeParse(req.params);
+router.delete("/invoices/:id", async (req, res): Promise<void> => {
+  const params = DeleteInvoiceParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
     return;
@@ -78,11 +72,7 @@ router.patch("/invoices/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const [row] = await db
-    .update(invoicesTable)
-    .set(parsed.data)
-    .where(eq(invoicesTable.id, params.data.id))
-    .returning();
+  const [row] = await db.delete(invoicesTable).where(eq(invoicesTable.id, params.data.id)).returning();
   if (!row) {
     res.status(404).json({ error: "Invoice not found" });
     return;
