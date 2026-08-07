@@ -281,7 +281,9 @@ export default {
     whatsappSent: "تم إرسال الفاتورة عبر واتساب",
     whatsappSimulated: "تمت المحاكاة — أضف مفاتيح API للإرسال الحقيقي",
     whatsappError: "فشل الإرسال عبر واتساب",
-    whatsappNoPhone: "لا يوجد رقم هاتف لهذا المريض"
+    whatsappNoPhone: "لا يوجد رقم هاتف لهذا المريض",
+    whatsappBadgeSent: "تم الإرسال عبر واتساب في {{date}}",
+    whatsappBadgeSimulated: "إرسال محاكى في {{date}}"
   },
   lab: {
     title: "المختبر",

@@ -281,7 +281,9 @@ export default {
     whatsappSent: "Invoice sent via WhatsApp",
     whatsappSimulated: "Simulated — add API keys to send for real",
     whatsappError: "Failed to send via WhatsApp",
-    whatsappNoPhone: "No phone number on file for this patient"
+    whatsappNoPhone: "No phone number on file for this patient",
+    whatsappBadgeSent: "Sent via WhatsApp on {{date}}",
+    whatsappBadgeSimulated: "Simulated send on {{date}}"
   },
   lab: {
     title: "Laboratory",

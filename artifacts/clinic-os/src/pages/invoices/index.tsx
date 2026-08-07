@@ -23,7 +23,7 @@ import {
   Printer,
   MessageSquare
 } from "lucide-react";
-import { useSendWaMessage } from "@/hooks/use-whatsapp";
+import { useSendWaMessage, useListWaMessages } from "@/hooks/use-whatsapp";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,6 +32,12 @@ import { format, parseISO } from "date-fns";
 import { ar as arLocale, enUS } from "date-fns/locale";
 import { useTranslation } from "@/i18n/context";
 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -111,6 +117,21 @@ export default function InvoicesList() {
   const updateInvoice = useUpdateInvoice();
   const deleteInvoice = useDeleteInvoice();
   const sendWaMessage = useSendWaMessage();
+  const { data: waMessages } = useListWaMessages();
+
+  // Returns the most recent WA message sent for a given invoice (matched by invoice number in body)
+  const getInvoiceWaMessage = (inv: any) => {
+    if (!waMessages) return null;
+    const invNum = `INV-${inv.id.toString().padStart(5, "0")}`;
+    return (
+      waMessages.find(
+        (m) =>
+          m.patientId === inv.patientId &&
+          m.body.includes(invNum) &&
+          (m.status === "sent" || m.status === "simulated")
+      ) ?? null
+    );
+  };
 
   // WhatsApp dialog state
   const [waInvoice, setWaInvoice] = useState<any | null>(null);
@@ -460,7 +481,33 @@ export default function InvoicesList() {
                       INV-{inv.id.toString().padStart(5, '0')}
                     </td>
                     <td className="px-6 py-4 font-medium text-foreground">
-                      {inv.patientName}
+                      <div className="flex items-center gap-2">
+                        <span>{inv.patientName}</span>
+                        {(() => {
+                          const waMsg = getInvoiceWaMessage(inv);
+                          if (!waMsg) return null;
+                          const sentTime = waMsg.sentAt ?? waMsg.createdAt;
+                          const formattedTime = format(new Date(sentTime), "MMM d, yyyy HH:mm", { locale });
+                          const label = waMsg.status === "simulated"
+                            ? t("invoices.whatsappBadgeSimulated", { date: formattedTime })
+                            : t("invoices.whatsappBadgeSent", { date: formattedTime });
+                          return (
+                            <TooltipProvider delayDuration={200}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-green-500/10 text-green-600 border border-green-500/20 cursor-default shrink-0">
+                                    <MessageSquare className="h-2.5 w-2.5" />
+                                    WA
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                  {label}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          );
+                        })()}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       {inv.description}
