@@ -97,10 +97,7 @@ router.patch("/bookings/:id", async (req, res): Promise<void> => {
   const [row] = await db.update(onlineBookingsTable).set(parsed.data).where(eq(onlineBookingsTable.id, id)).returning();
   if (!row) { res.status(404).json({ error: "Not found" }); return; }
 
-  // If confirmed, also create a real appointment
-  if (parsed.data.status === "confirmed" && row.doctorId && row.patientId === null) {
-    // Booking confirmed: doctor should verify and add patient manually for now
-  }
+  // If confirmed, doctor should verify and add patient manually for now
 
   const [enriched] = await withDoctorName([row]);
   res.json(enriched);
