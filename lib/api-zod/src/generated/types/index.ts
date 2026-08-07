@@ -7,9 +7,14 @@
  */
 
 export * from './activityItem';
+export * from './adminUser';
+export * from './adminUserInput';
+export * from './adminUserUpdate';
 export * from './appointment';
 export * from './appointmentInput';
 export * from './appointmentUpdate';
+export * from './clinicSettings';
+export * from './clinicSettingsInput';
 export * from './dashboardSummary';
 export * from './dayCount';
 export * from './department';
@@ -59,3 +64,5 @@ export * from './radiologyRequestInput';
 export * from './radiologyRequestUpdate';
 export * from './staffInput';
 export * from './staffMember';
+export * from './validateAdminCredentials';
+export * from './validateAdminResult';

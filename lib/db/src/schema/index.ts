@@ -15,3 +15,5 @@ export * from "./insurance";
 export * from "./whatsapp";
 export * from "./onlineBookings";
 export * from "./zapier";
+export * from "./clinicSettings";
+export * from "./adminUsers";

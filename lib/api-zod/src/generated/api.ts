@@ -830,6 +830,135 @@ export const CreateInsuranceRecordResponse = zod.object({
 })
 
 
+/**
+ * @summary Get clinic settings
+ */
+export const GetSettingsResponse = zod.object({
+  "id": zod.int(),
+  "clinicName": zod.string(),
+  "clinicNameAr": zod.string(),
+  "address": zod.string(),
+  "phone": zod.string(),
+  "email": zod.string(),
+  "website": zod.string(),
+  "currency": zod.string(),
+  "timezone": zod.string(),
+  "logoDataUrl": zod.string().nullish()
+})
+
+
+/**
+ * @summary Update clinic settings
+ */
+export const UpdateSettingsBody = zod.object({
+  "clinicName": zod.string().optional(),
+  "clinicNameAr": zod.string().optional(),
+  "address": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "email": zod.string().optional(),
+  "website": zod.string().optional(),
+  "currency": zod.string().optional(),
+  "timezone": zod.string().optional(),
+  "logoDataUrl": zod.string().nullish()
+})
+
+export const UpdateSettingsResponse = zod.object({
+  "id": zod.int(),
+  "clinicName": zod.string(),
+  "clinicNameAr": zod.string(),
+  "address": zod.string(),
+  "phone": zod.string(),
+  "email": zod.string(),
+  "website": zod.string(),
+  "currency": zod.string(),
+  "timezone": zod.string(),
+  "logoDataUrl": zod.string().nullish()
+})
+
+
+/**
+ * @summary List admin users
+ */
+export const ListAdminUsersResponseItem = zod.object({
+  "id": zod.int(),
+  "username": zod.string(),
+  "password": zod.string(),
+  "name": zod.string(),
+  "createdAt": zod.string()
+})
+export const ListAdminUsersResponse = zod.array(ListAdminUsersResponseItem)
+
+
+/**
+ * @summary Create admin user
+ */
+export const CreateAdminUserBody = zod.object({
+  "username": zod.string(),
+  "password": zod.string(),
+  "name": zod.string()
+})
+
+export const CreateAdminUserResponse = zod.object({
+  "id": zod.int(),
+  "username": zod.string(),
+  "password": zod.string(),
+  "name": zod.string(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Update admin user
+ */
+export const UpdateAdminUserParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const UpdateAdminUserBody = zod.object({
+  "username": zod.string().optional(),
+  "password": zod.string().optional(),
+  "name": zod.string().optional()
+})
+
+export const UpdateAdminUserResponse = zod.object({
+  "id": zod.int(),
+  "username": zod.string(),
+  "password": zod.string(),
+  "name": zod.string(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Delete admin user
+ */
+export const DeleteAdminUserParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const DeleteAdminUserResponse = zod.void()
+
+
+/**
+ * @summary Validate admin credentials
+ */
+export const ValidateAdminBody = zod.object({
+  "username": zod.string(),
+  "password": zod.string()
+})
+
+export const ValidateAdminResponse = zod.object({
+  "valid": zod.boolean(),
+  "user": zod.object({
+  "id": zod.int(),
+  "username": zod.string(),
+  "password": zod.string(),
+  "name": zod.string(),
+  "createdAt": zod.string()
+}).nullish()
+})
+
+
 export const UpdateInsuranceRecordParams = zod.object({
   "id": zod.coerce.number().int()
 })

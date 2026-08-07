@@ -542,6 +542,61 @@ export interface InsuranceInput {
   notes?: string;
 }
 
+export interface ClinicSettings {
+  id: number;
+  clinicName: string;
+  clinicNameAr: string;
+  address: string;
+  phone: string;
+  email: string;
+  website: string;
+  currency: string;
+  timezone: string;
+  logoDataUrl?: string | null;
+}
+
+export interface ClinicSettingsInput {
+  clinicName?: string;
+  clinicNameAr?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  currency?: string;
+  timezone?: string;
+  logoDataUrl?: string | null;
+}
+
+export interface AdminUser {
+  id: number;
+  username: string;
+  password: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface AdminUserInput {
+  username: string;
+  password: string;
+  name: string;
+}
+
+export interface AdminUserUpdate {
+  username?: string;
+  password?: string;
+  name?: string;
+}
+
+export interface ValidateAdminCredentials {
+  username: string;
+  password: string;
+}
+
+export interface ValidateAdminResult {
+  valid: boolean;
+  user?: AdminUser | null;
+}
+
 export type ListPatientsParams = {
 search?: string;
 };

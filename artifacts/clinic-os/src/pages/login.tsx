@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
-import { useListDoctors } from "@workspace/api-client-react";
+import { useListDoctors, useValidateAdmin } from "@workspace/api-client-react";
 import { useTranslation } from "@/i18n/context";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -15,19 +15,35 @@ export default function LoginPage() {
   const [activeTab, setActiveTab] = useState<"admin" | "doctor">("admin");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: doctors, isLoading } = useListDoctors();
+  const validateAdminMutation = useValidateAdmin();
 
-  const handleAdminLogin = (e: React.FormEvent) => {
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (username === "admin" && password === "admin123") {
-      login({ role: "admin", name: "System Admin" });
-    } else {
+    setIsSubmitting(true);
+    try {
+      const result = await validateAdminMutation.mutateAsync({
+        data: { username, password },
+      });
+      if (result.valid && result.user) {
+        login({ role: "admin", name: result.user.name });
+      } else {
+        toast({
+          variant: "destructive",
+          title: isRtl ? "فشل تسجيل الدخول" : "Login failed",
+          description: isRtl ? "اسم المستخدم أو كلمة المرور غير صحيحة." : "Invalid username or password.",
+        });
+      }
+    } catch {
       toast({
         variant: "destructive",
-        title: "Login failed",
-        description: "Invalid credentials. Try admin / admin123"
+        title: isRtl ? "فشل تسجيل الدخول" : "Login failed",
+        description: isRtl ? "اسم المستخدم أو كلمة المرور غير صحيحة." : "Invalid username or password.",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -125,8 +141,12 @@ export default function LoginPage() {
                   dir="ltr"
                 />
               </div>
-              <Button type="submit" className="w-full h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-md font-semibold mt-4">
-                {t("auth.loginBtn")}
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-md font-semibold mt-4"
+              >
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : t("auth.loginBtn")}
               </Button>
             </form>
           ) : (

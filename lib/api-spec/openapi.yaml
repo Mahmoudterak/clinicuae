@@ -24,6 +24,8 @@ tags:
   - name: staff
   - name: payments
   - name: insurance
+  - name: settings
+  - name: admin-users
 paths:
   /healthz:
     get:
@@ -592,6 +594,111 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/InsuranceRecord" }
+  /settings:
+    get:
+      operationId: getSettings
+      tags: [settings]
+      summary: Get clinic settings
+      responses:
+        "200":
+          description: Clinic settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ClinicSettings" }
+    put:
+      operationId: updateSettings
+      tags: [settings]
+      summary: Update clinic settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ClinicSettingsInput" }
+      responses:
+        "200":
+          description: Updated settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ClinicSettings" }
+
+  /admin-users:
+    get:
+      operationId: listAdminUsers
+      tags: [admin-users]
+      summary: List admin users
+      responses:
+        "200":
+          description: Admin users
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdminUser" }
+    post:
+      operationId: createAdminUser
+      tags: [admin-users]
+      summary: Create admin user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminUserInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminUser" }
+
+  /admin-users/{id}:
+    put:
+      operationId: updateAdminUser
+      tags: [admin-users]
+      summary: Update admin user
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminUserUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminUser" }
+    delete:
+      operationId: deleteAdminUser
+      tags: [admin-users]
+      summary: Delete admin user
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+
+  /admin-users/validate:
+    post:
+      operationId: validateAdmin
+      tags: [admin-users]
+      summary: Validate admin credentials
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ValidateAdminCredentials" }
+      responses:
+        "200":
+          description: Validation result
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ValidateAdminResult" }
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ValidateAdminResult" }
+
   /insurance/{id}:
     patch:
       operationId: updateInsuranceRecord
@@ -1495,3 +1602,72 @@ components:
         expiryDate: { type: string }
         status: { type: string }
         notes: { type: string }
+
+    ClinicSettings:
+      type: object
+      required: [id, clinicName, clinicNameAr, address, phone, email, website, currency, timezone]
+      properties:
+        id: { type: integer }
+        clinicName: { type: string }
+        clinicNameAr: { type: string }
+        address: { type: string }
+        phone: { type: string }
+        email: { type: string }
+        website: { type: string }
+        currency: { type: string }
+        timezone: { type: string }
+        logoDataUrl: { type: string, nullable: true }
+
+    ClinicSettingsInput:
+      type: object
+      properties:
+        clinicName: { type: string }
+        clinicNameAr: { type: string }
+        address: { type: string }
+        phone: { type: string }
+        email: { type: string }
+        website: { type: string }
+        currency: { type: string }
+        timezone: { type: string }
+        logoDataUrl: { type: string, nullable: true }
+
+    AdminUser:
+      type: object
+      required: [id, username, password, name, createdAt]
+      properties:
+        id: { type: integer }
+        username: { type: string }
+        password: { type: string }
+        name: { type: string }
+        createdAt: { type: string }
+
+    AdminUserInput:
+      type: object
+      required: [username, password, name]
+      properties:
+        username: { type: string }
+        password: { type: string }
+        name: { type: string }
+
+    AdminUserUpdate:
+      type: object
+      properties:
+        username: { type: string }
+        password: { type: string }
+        name: { type: string }
+
+    ValidateAdminCredentials:
+      type: object
+      required: [username, password]
+      properties:
+        username: { type: string }
+        password: { type: string }
+
+    ValidateAdminResult:
+      type: object
+      required: [valid]
+      properties:
+        valid: { type: boolean }
+        user:
+          nullable: true
+          $ref: "#/components/schemas/AdminUser"

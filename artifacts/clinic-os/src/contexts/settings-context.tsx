@@ -1,6 +1,19 @@
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  useGetSettings,
+  useUpdateSettings,
+  useListAdminUsers,
+  useCreateAdminUser,
+  useUpdateAdminUser,
+  useDeleteAdminUser,
+  getGetSettingsQueryKey,
+  getListAdminUsersQueryKey,
+} from "@workspace/api-client-react";
+import type { ClinicSettings as ApiClinicSettings, AdminUser as ApiAdminUser } from "@workspace/api-client-react";
 
-export interface ClinicSettings {
+// Re-export types used by consumers
+export type ClinicSettings = {
   clinicName: string;
   clinicNameAr: string;
   address: string;
@@ -9,139 +22,131 @@ export interface ClinicSettings {
   website: string;
   currency: string;
   timezone: string;
-  logoDataUrl: string | null; // base64 or null = use default
-}
+  logoDataUrl: string | null;
+};
 
-export interface AdminUser {
-  id: string;
+export type AdminUser = {
+  id: number;
   username: string;
   password: string;
   name: string;
   createdAt: string;
-}
+};
 
 export interface SettingsState {
   clinic: ClinicSettings;
   admins: AdminUser[];
 }
 
-const DEFAULT_SETTINGS: SettingsState = {
-  clinic: {
-    clinicName: "Clinic OS",
-    clinicNameAr: "كلينيك OS",
-    address: "",
-    phone: "",
-    email: "",
-    website: "",
-    currency: "AED",
-    timezone: "Asia/Dubai",
-    logoDataUrl: null,
-  },
-  admins: [
-    {
-      id: "admin-1",
-      username: "admin",
-      password: "admin123",
-      name: "System Administrator",
-      createdAt: new Date().toISOString(),
-    },
-  ],
+const DEFAULT_CLINIC: ClinicSettings = {
+  clinicName: "Clinic OS",
+  clinicNameAr: "كلينيك OS",
+  address: "",
+  phone: "",
+  email: "",
+  website: "",
+  currency: "AED",
+  timezone: "Asia/Dubai",
+  logoDataUrl: null,
 };
 
-const STORAGE_KEY = "clinic-os-settings";
+function toClinicSettings(api: ApiClinicSettings): ClinicSettings {
+  return {
+    clinicName: api.clinicName,
+    clinicNameAr: api.clinicNameAr,
+    address: api.address,
+    phone: api.phone,
+    email: api.email,
+    website: api.website,
+    currency: api.currency,
+    timezone: api.timezone,
+    logoDataUrl: api.logoDataUrl ?? null,
+  };
+}
+
+function toAdminUser(api: ApiAdminUser): AdminUser {
+  return {
+    id: api.id,
+    username: api.username,
+    password: api.password,
+    name: api.name,
+    createdAt: api.createdAt,
+  };
+}
 
 interface SettingsContextType {
   settings: SettingsState;
-  updateClinic: (data: Partial<ClinicSettings>) => void;
-  setLogo: (dataUrl: string | null) => void;
-  addAdmin: (user: Omit<AdminUser, "id" | "createdAt">) => void;
-  updateAdmin: (id: string, data: Partial<AdminUser>) => void;
-  deleteAdmin: (id: string) => void;
+  isLoading: boolean;
+  updateClinic: (data: Partial<ClinicSettings>) => Promise<void>;
+  setLogo: (dataUrl: string | null) => Promise<void>;
+  addAdmin: (user: Omit<AdminUser, "id" | "createdAt">) => Promise<void>;
+  updateAdmin: (id: number, data: Partial<Omit<AdminUser, "id" | "createdAt">>) => Promise<void>;
+  deleteAdmin: (id: number) => Promise<void>;
   validateAdmin: (username: string, password: string) => AdminUser | null;
 }
 
 const SettingsContext = createContext<SettingsContextType | null>(null);
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
-  const [settings, setSettings] = useState<SettingsState>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        // Merge with defaults to handle new fields added later
-        return {
-          clinic: { ...DEFAULT_SETTINGS.clinic, ...parsed.clinic },
-          admins: parsed.admins?.length ? parsed.admins : DEFAULT_SETTINGS.admins,
-        };
-      }
-    } catch {}
-    return DEFAULT_SETTINGS;
-  });
+  const queryClient = useQueryClient();
 
-  const persist = useCallback((next: SettingsState) => {
-    setSettings(next);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  }, []);
+  const { data: settingsData, isLoading: settingsLoading } = useGetSettings();
+  const { data: adminsData, isLoading: adminsLoading } = useListAdminUsers();
 
-  const updateClinic = useCallback((data: Partial<ClinicSettings>) => {
-    setSettings(prev => {
-      const next = { ...prev, clinic: { ...prev.clinic, ...data } };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
-  }, []);
+  const updateSettingsMutation = useUpdateSettings();
+  const createAdminMutation = useCreateAdminUser();
+  const updateAdminMutation = useUpdateAdminUser();
+  const deleteAdminMutation = useDeleteAdminUser();
 
-  const setLogo = useCallback((dataUrl: string | null) => {
-    updateClinic({ logoDataUrl: dataUrl });
+  const clinic: ClinicSettings = settingsData ? toClinicSettings(settingsData) : DEFAULT_CLINIC;
+  const admins: AdminUser[] = adminsData ? adminsData.map(toAdminUser) : [];
+  const isLoading = settingsLoading || adminsLoading;
+
+  const settings: SettingsState = { clinic, admins };
+
+  const invalidateSettings = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: getGetSettingsQueryKey() });
+  }, [queryClient]);
+
+  const invalidateAdmins = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: getListAdminUsersQueryKey() });
+  }, [queryClient]);
+
+  const updateClinic = useCallback(async (data: Partial<ClinicSettings>) => {
+    const current = settingsData ? toClinicSettings(settingsData) : DEFAULT_CLINIC;
+    await updateSettingsMutation.mutateAsync({ data: { ...current, ...data } });
+    invalidateSettings();
+  }, [settingsData, updateSettingsMutation, invalidateSettings]);
+
+  const setLogo = useCallback(async (dataUrl: string | null) => {
+    await updateClinic({ logoDataUrl: dataUrl });
   }, [updateClinic]);
 
-  const addAdmin = useCallback((user: Omit<AdminUser, "id" | "createdAt">) => {
-    setSettings(prev => {
-      const next = {
-        ...prev,
-        admins: [
-          ...prev.admins,
-          { ...user, id: `admin-${Date.now()}`, createdAt: new Date().toISOString() },
-        ],
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
-  }, []);
+  const addAdmin = useCallback(async (user: Omit<AdminUser, "id" | "createdAt">) => {
+    await createAdminMutation.mutateAsync({ data: user });
+    invalidateAdmins();
+  }, [createAdminMutation, invalidateAdmins]);
 
-  const updateAdmin = useCallback((id: string, data: Partial<AdminUser>) => {
-    setSettings(prev => {
-      const next = {
-        ...prev,
-        admins: prev.admins.map(a => (a.id === id ? { ...a, ...data } : a)),
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
-  }, []);
+  const updateAdmin = useCallback(async (id: number, data: Partial<Omit<AdminUser, "id" | "createdAt">>) => {
+    await updateAdminMutation.mutateAsync({ id, data });
+    invalidateAdmins();
+  }, [updateAdminMutation, invalidateAdmins]);
 
-  const deleteAdmin = useCallback((id: string) => {
-    setSettings(prev => {
-      const next = { ...prev, admins: prev.admins.filter(a => a.id !== id) };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
-  }, []);
+  const deleteAdmin = useCallback(async (id: number) => {
+    await deleteAdminMutation.mutateAsync({ id });
+    invalidateAdmins();
+  }, [deleteAdminMutation, invalidateAdmins]);
 
   const validateAdmin = useCallback(
     (username: string, password: string): AdminUser | null => {
-      return (
-        settings.admins.find(
-          a => a.username === username && a.password === password
-        ) ?? null
-      );
+      return admins.find(a => a.username === username && a.password === password) ?? null;
     },
-    [settings.admins]
+    [admins]
   );
 
   return (
     <SettingsContext.Provider
-      value={{ settings, updateClinic, setLogo, addAdmin, updateAdmin, deleteAdmin, validateAdmin }}
+      value={{ settings, isLoading, updateClinic, setLogo, addAdmin, updateAdmin, deleteAdmin, validateAdmin }}
     >
       {children}
     </SettingsContext.Provider>

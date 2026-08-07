@@ -18,6 +18,8 @@ import insuranceRouter from "./insuranceRecords";
 import whatsappRouter from "./whatsapp";
 import bookingsRouter from "./onlineBookings";
 import zapierRouter from "./zapier";
+import settingsRouter from "./settings";
+import adminUsersRouter from "./adminUsers";
 
 const router: IRouter = Router();
 
@@ -40,5 +42,7 @@ router.use(insuranceRouter);
 router.use(whatsappRouter);
 router.use(bookingsRouter);
 router.use(zapierRouter);
+router.use(settingsRouter);
+router.use(adminUsersRouter);
 
 export default router;
