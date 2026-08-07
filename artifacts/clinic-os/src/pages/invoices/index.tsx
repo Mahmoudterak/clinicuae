@@ -495,13 +495,17 @@ export default function InvoicesList() {
                             <TooltipProvider delayDuration={200}>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-green-500/10 text-green-600 border border-green-500/20 cursor-default shrink-0">
+                                  <span
+                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-green-500/10 text-green-600 border border-green-500/20 cursor-pointer shrink-0 hover:bg-green-500/20 transition-colors"
+                                    onClick={(e) => { e.stopPropagation(); handleOpenWhatsapp(inv); }}
+                                  >
                                     <MessageSquare className="h-2.5 w-2.5" />
                                     WA
                                   </span>
                                 </TooltipTrigger>
                                 <TooltipContent side="top">
-                                  {label}
+                                  <p>{label}</p>
+                                  <p className="text-[10px] opacity-70 mt-0.5">{t("invoices.whatsappBadgeResend")}</p>
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>

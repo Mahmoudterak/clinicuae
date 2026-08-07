@@ -283,7 +283,8 @@ export default {
     whatsappError: "فشل الإرسال عبر واتساب",
     whatsappNoPhone: "لا يوجد رقم هاتف لهذا المريض",
     whatsappBadgeSent: "تم الإرسال عبر واتساب في {{date}}",
-    whatsappBadgeSimulated: "إرسال محاكى في {{date}}"
+    whatsappBadgeSimulated: "إرسال محاكى في {{date}}",
+    whatsappBadgeResend: "انقر لإعادة الإرسال"
   },
   lab: {
     title: "المختبر",

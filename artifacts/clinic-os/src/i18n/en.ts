@@ -283,7 +283,8 @@ export default {
     whatsappError: "Failed to send via WhatsApp",
     whatsappNoPhone: "No phone number on file for this patient",
     whatsappBadgeSent: "Sent via WhatsApp on {{date}}",
-    whatsappBadgeSimulated: "Simulated send on {{date}}"
+    whatsappBadgeSimulated: "Simulated send on {{date}}",
+    whatsappBadgeResend: "Click to resend"
   },
   lab: {
     title: "Laboratory",
