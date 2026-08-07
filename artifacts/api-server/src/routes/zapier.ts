@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { eq, desc } from "drizzle-orm";
 import { db, zapierWebhooksTable, zapierLogsTable } from "@workspace/db";
 import { z } from "zod";
+import { adminAuth } from "../middlewares/adminAuth";
 
 const router: IRouter = Router();
 
@@ -26,10 +27,22 @@ export const ZAPIER_EVENTS = [
   { value: "new_booking",     label: "حجز إلكتروني جديد",   labelEn: "New Online Booking" },
 ];
 
+/** Validate that a webhook URL is a legitimate Zapier catch-hook (SSRF guard). */
+function isZapierUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" && parsed.hostname === "hooks.zapier.com";
+  } catch {
+    return false;
+  }
+}
+
 const WebhookBody = z.object({
   name: z.string().min(1),
   event: z.string().min(1),
-  webhookUrl: z.string().url(),
+  webhookUrl: z.string().url().refine(isZapierUrl, {
+    message: "Webhook URL must be a valid Zapier catch-hook (https://hooks.zapier.com/...)",
+  }),
   active: z.boolean().optional(),
   description: z.string().optional().nullable(),
 });
@@ -37,7 +50,9 @@ const WebhookBody = z.object({
 const UpdateWebhookBody = z.object({
   name: z.string().min(1).optional(),
   event: z.string().min(1).optional(),
-  webhookUrl: z.string().url().optional(),
+  webhookUrl: z.string().url().refine(isZapierUrl, {
+    message: "Webhook URL must be a valid Zapier catch-hook (https://hooks.zapier.com/...)",
+  }).optional(),
   active: z.boolean().optional(),
   description: z.string().optional().nullable(),
 });
@@ -52,6 +67,9 @@ export async function fireZapierWebhook(event: string, payload: Record<string, u
 
     for (const hook of hooks) {
       if (!hook.active) continue;
+      // SSRF guard: only fire to verified Zapier hook URLs
+      if (!isZapierUrl(hook.webhookUrl)) continue;
+
       let success = false;
       let statusCode = "";
       try {
@@ -82,19 +100,21 @@ export async function fireZapierWebhook(event: string, payload: Record<string, u
   } catch (_) {}
 }
 
-// ── list events ───────────────────────────────────────────────────────────────
+// ── list events (public — non-sensitive metadata) ─────────────────────────────
 router.get("/zapier/events", (_req, res): void => {
   res.json(ZAPIER_EVENTS);
 });
 
+// ── all routes below require a valid admin JWT ────────────────────────────────
+
 // ── list webhooks ─────────────────────────────────────────────────────────────
-router.get("/zapier/webhooks", async (_req, res): Promise<void> => {
+router.get("/zapier/webhooks", adminAuth, async (_req, res): Promise<void> => {
   const rows = await db.select().from(zapierWebhooksTable).orderBy(desc(zapierWebhooksTable.createdAt));
   res.json(rows.map(isoWebhook));
 });
 
 // ── create webhook ────────────────────────────────────────────────────────────
-router.post("/zapier/webhooks", async (req, res): Promise<void> => {
+router.post("/zapier/webhooks", adminAuth, async (req, res): Promise<void> => {
   const parsed = WebhookBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const [row] = await db.insert(zapierWebhooksTable).values(parsed.data).returning();
@@ -102,7 +122,7 @@ router.post("/zapier/webhooks", async (req, res): Promise<void> => {
 });
 
 // ── update webhook ────────────────────────────────────────────────────────────
-router.patch("/zapier/webhooks/:id", async (req, res): Promise<void> => {
+router.patch("/zapier/webhooks/:id", adminAuth, async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
   const parsed = UpdateWebhookBody.safeParse(req.body);
@@ -113,7 +133,7 @@ router.patch("/zapier/webhooks/:id", async (req, res): Promise<void> => {
 });
 
 // ── delete webhook ────────────────────────────────────────────────────────────
-router.delete("/zapier/webhooks/:id", async (req, res): Promise<void> => {
+router.delete("/zapier/webhooks/:id", adminAuth, async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
   await db.delete(zapierWebhooksTable).where(eq(zapierWebhooksTable.id, id));
@@ -121,7 +141,7 @@ router.delete("/zapier/webhooks/:id", async (req, res): Promise<void> => {
 });
 
 // ── test-fire webhook ─────────────────────────────────────────────────────────
-router.post("/zapier/webhooks/:id/test", async (req, res): Promise<void> => {
+router.post("/zapier/webhooks/:id/test", adminAuth, async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
   const [hook] = await db.select().from(zapierWebhooksTable).where(eq(zapierWebhooksTable.id, id));
@@ -134,6 +154,12 @@ router.post("/zapier/webhooks/:id/test", async (req, res): Promise<void> => {
     invoice_paid:    { id: 99, patientName: "أحمد العتيبي", amount: 350, paidDate: new Date().toISOString() },
     new_booking:     { id: 99, patientName: "أحمد العتيبي", patientPhone: "+971501234567", preferredDate: new Date().toISOString().split("T")[0], preferredTime: "10:00", status: "pending" },
   };
+
+  // SSRF guard: only fire to verified Zapier hook URLs
+  if (!isZapierUrl(hook.webhookUrl)) {
+    res.status(400).json({ error: "Webhook URL is not a valid Zapier catch-hook" });
+    return;
+  }
 
   let success = false;
   let statusCode = "";
@@ -163,7 +189,7 @@ router.post("/zapier/webhooks/:id/test", async (req, res): Promise<void> => {
 });
 
 // ── list logs ─────────────────────────────────────────────────────────────────
-router.get("/zapier/logs", async (_req, res): Promise<void> => {
+router.get("/zapier/logs", adminAuth, async (_req, res): Promise<void> => {
   const rows = await db.select().from(zapierLogsTable).orderBy(desc(zapierLogsTable.createdAt)).limit(100);
   res.json(rows.map(isoLog));
 });

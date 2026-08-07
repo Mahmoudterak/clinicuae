@@ -7,6 +7,7 @@ interface AuthData {
   role: Role;
   doctorId?: number;
   name?: string;
+  token?: string; // JWT admin token for server-side auth
 }
 
 interface AuthContextType extends AuthData {

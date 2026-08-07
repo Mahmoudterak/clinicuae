@@ -12,6 +12,7 @@ import {
   DeletePaymentParams,
 } from "@workspace/api-zod";
 import { iso } from "../lib/serialize";
+import { fireZapierWebhook } from "./zapier";
 
 const router: IRouter = Router();
 
@@ -37,6 +38,13 @@ router.post("/payments", async (req, res): Promise<void> => {
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const [row] = await db.insert(paymentsTable).values(parsed.data).returning();
   const [r] = await withNames([row!]);
+  fireZapierWebhook("invoice_paid", {
+    id: r!.id,
+    patientName: r!.patientName,
+    invoiceId: r!.invoiceId,
+    amount: r!.amount,
+    paidDate: r!.createdAt,
+  });
   res.status(201).json(CreatePaymentResponse.parse(r));
 });
 

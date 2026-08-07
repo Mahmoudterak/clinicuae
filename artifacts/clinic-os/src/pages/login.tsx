@@ -32,18 +32,18 @@ export default function LoginPage() {
     e.preventDefault();
     setAdminLoading(true);
     try {
-      const res = await fetch(`${BASE}/api/admin-users/validate`, {
+      const res = await fetch(`${BASE}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: adminUser, password: adminPass }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        toast({ variant: "destructive", title: isRtl ? "فشل تسجيل الدخول" : "Login failed", description: err.error ?? (isRtl ? "بيانات غير صحيحة" : "Invalid credentials") });
+        toast({ variant: "destructive", title: isRtl ? "فشل تسجيل الدخول" : "Login failed", description: (err as any).error ?? (isRtl ? "بيانات غير صحيحة" : "Invalid credentials") });
         return;
       }
       const data = await res.json();
-      login({ role: "admin", name: data.name ?? adminUser });
+      login({ role: "admin", name: data.name ?? adminUser, token: data.token });
     } catch {
       toast({ variant: "destructive", title: isRtl ? "خطأ" : "Error", description: isRtl ? "تعذر الاتصال بالخادم" : "Could not reach server" });
     } finally {
@@ -62,7 +62,7 @@ export default function LoginPage() {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        toast({ variant: "destructive", title: isRtl ? "فشل تسجيل الدخول" : "Login failed", description: err.error ?? (isRtl ? "بيانات غير صحيحة" : "Invalid credentials") });
+        toast({ variant: "destructive", title: isRtl ? "فشل تسجيل الدخول" : "Login failed", description: (err as any).error ?? (isRtl ? "بيانات غير صحيحة" : "Invalid credentials") });
         return;
       }
       const data = await res.json();

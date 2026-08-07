@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { eq, desc, and } from "drizzle-orm";
 import { db, onlineBookingsTable, doctorsTable, appointmentsTable } from "@workspace/db";
 import { z } from "zod";
+import { fireZapierWebhook } from "./zapier";
 
 const router: IRouter = Router();
 
@@ -66,6 +67,14 @@ router.post("/public/bookings", async (req, res): Promise<void> => {
   const parsed = CreateBookingBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const [row] = await db.insert(onlineBookingsTable).values(parsed.data).returning();
+  fireZapierWebhook("new_booking", {
+    id: row!.id,
+    patientName: row!.patientName,
+    patientPhone: row!.patientPhone,
+    preferredDate: row!.preferredDate,
+    preferredTime: row!.preferredTime,
+    status: row!.status,
+  });
   res.status(201).json(isoBooking(row!));
 });
 

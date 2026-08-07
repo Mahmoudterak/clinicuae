@@ -12,6 +12,7 @@ import {
   DeleteAppointmentParams,
 } from "@workspace/api-zod";
 import { iso } from "../lib/serialize";
+import { fireZapierWebhook } from "./zapier";
 
 const router: IRouter = Router();
 
@@ -54,6 +55,14 @@ router.post("/appointments", async (req, res): Promise<void> => {
   }
   const [row] = await db.insert(appointmentsTable).values(parsed.data).returning();
   const [withName] = await withNames([row!]);
+  fireZapierWebhook("new_appointment", {
+    id: withName!.id,
+    patientName: withName!.patientName,
+    doctorName: withName!.doctorName,
+    date: withName!.date,
+    time: withName!.time,
+    status: withName!.status,
+  });
   res.status(201).json(CreateAppointmentResponse.parse(withName));
 });
 

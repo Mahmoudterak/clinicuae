@@ -24,6 +24,7 @@ import {
   GetPatientSummaryResponse,
 } from "@workspace/api-zod";
 import { iso } from "../lib/serialize";
+import { fireZapierWebhook } from "./zapier";
 
 const router: IRouter = Router();
 
@@ -57,6 +58,13 @@ router.post("/patients", async (req, res): Promise<void> => {
     return;
   }
   const [row] = await db.insert(patientsTable).values(parsed.data).returning();
+  fireZapierWebhook("new_patient", {
+    id: row!.id,
+    firstName: row!.firstName,
+    lastName: row!.lastName,
+    phone: row!.phone,
+    gender: row!.gender,
+  });
   res.status(201).json(CreatePatientResponse.parse(iso(row)));
 });
 

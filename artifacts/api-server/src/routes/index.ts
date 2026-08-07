@@ -22,6 +22,7 @@ import settingsRouter from "./settings";
 import adminUsersRouter from "./adminUsers";
 import doctorAuthRouter from "./doctorAuth";
 import { superAdminRouter } from "./superAdmin";
+import authRouter from "./auth";
 
 const router: IRouter = Router();
 
@@ -48,5 +49,6 @@ router.use(settingsRouter);
 router.use(adminUsersRouter);
 router.use(doctorAuthRouter);
 router.use("/superadmin", superAdminRouter);
+router.use(authRouter);
 
 export default router;

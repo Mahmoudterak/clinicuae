@@ -41,17 +41,27 @@ interface ZapierLog {
   createdAt: string;
 }
 
-// ── hooks ─────────────────────────────────────────────────────────────────────
+// ── helpers ───────────────────────────────────────────────────────────────────
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-function useZapierWebhooks() {
+function authHeaders(token?: string): HeadersInit {
+  return token
+    ? { "Content-Type": "application/json", Authorization: `Bearer ${token}` }
+    : { "Content-Type": "application/json" };
+}
+
+// ── hooks ─────────────────────────────────────────────────────────────────────
+function useZapierWebhooks(token?: string) {
   return useQuery<ZapierWebhook[]>({
-    queryKey: ["zapier-webhooks"],
+    queryKey: ["zapier-webhooks", token],
     queryFn: async () => {
-      const r = await fetch(`${BASE}/api/zapier/webhooks`);
+      const r = await fetch(`${BASE}/api/zapier/webhooks`, {
+        headers: { Authorization: `Bearer ${token ?? ""}` },
+      });
       if (!r.ok) throw new Error("Failed");
       return r.json();
     },
+    enabled: !!token,
   });
 }
 
@@ -66,14 +76,17 @@ function useZapierEvents() {
   });
 }
 
-function useZapierLogs() {
+function useZapierLogs(token?: string) {
   return useQuery<ZapierLog[]>({
-    queryKey: ["zapier-logs"],
+    queryKey: ["zapier-logs", token],
     queryFn: async () => {
-      const r = await fetch(`${BASE}/api/zapier/logs`);
+      const r = await fetch(`${BASE}/api/zapier/logs`, {
+        headers: { Authorization: `Bearer ${token ?? ""}` },
+      });
       if (!r.ok) throw new Error("Failed");
       return r.json();
     },
+    enabled: !!token,
     refetchInterval: 10000,
   });
 }
@@ -198,12 +211,12 @@ function WebhookCard({
 // ── main page ─────────────────────────────────────────────────────────────────
 export default function ZapierPage() {
   const { isRtl } = useTranslation();
-  const { role } = useAuth();
+  const { role, token } = useAuth();
   const qc = useQueryClient();
 
-  const { data: webhooks = [], isLoading } = useZapierWebhooks();
+  const { data: webhooks = [], isLoading } = useZapierWebhooks(token);
   const { data: events = [] } = useZapierEvents();
-  const { data: logs = [] } = useZapierLogs();
+  const { data: logs = [] } = useZapierLogs(token);
 
   const [open, setOpen] = useState(false);
   const [testing, setTesting] = useState<number | null>(null);
@@ -214,20 +227,27 @@ export default function ZapierPage() {
     mutationFn: async (data: typeof form) => {
       const r = await fetch(`${BASE}/api/zapier/webhooks`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(token),
         body: JSON.stringify(data),
       });
-      if (!r.ok) throw new Error("Failed");
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        throw new Error((err as any).error ?? "Failed");
+      }
       return r.json();
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["zapier-webhooks"] }); setOpen(false); setForm({ name: "", event: "", webhookUrl: "", description: "" }); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["zapier-webhooks"] });
+      setOpen(false);
+      setForm({ name: "", event: "", webhookUrl: "", description: "" });
+    },
   });
 
   const toggleMutation = useMutation({
     mutationFn: async ({ id, active }: { id: number; active: boolean }) => {
       const r = await fetch(`${BASE}/api/zapier/webhooks/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(token),
         body: JSON.stringify({ active }),
       });
       if (!r.ok) throw new Error("Failed");
@@ -238,7 +258,10 @@ export default function ZapierPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const r = await fetch(`${BASE}/api/zapier/webhooks/${id}`, { method: "DELETE" });
+      const r = await fetch(`${BASE}/api/zapier/webhooks/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token ?? ""}` },
+      });
       if (!r.ok) throw new Error("Failed");
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["zapier-webhooks"] }),
@@ -248,7 +271,10 @@ export default function ZapierPage() {
     setTesting(id);
     setTestResult(null);
     try {
-      const r = await fetch(`${BASE}/api/zapier/webhooks/${id}/test`, { method: "POST" });
+      const r = await fetch(`${BASE}/api/zapier/webhooks/${id}/test`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token ?? ""}` },
+      });
       const data = await r.json();
       setTestResult({ id, success: data.success });
       setTimeout(() => setTestResult(null), 4000);
@@ -431,6 +457,7 @@ export default function ZapierPage() {
                 dir="ltr"
                 className="font-mono text-sm"
               />
+              <p className="text-xs text-gray-400">يجب أن يبدأ الرابط بـ https://hooks.zapier.com/</p>
             </div>
             <div className="space-y-1.5">
               <Label>وصف (اختياري)</Label>
@@ -440,6 +467,9 @@ export default function ZapierPage() {
                 onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
               />
             </div>
+            {createMutation.isError && (
+              <p className="text-xs text-red-500">{(createMutation.error as Error).message}</p>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>إلغاء</Button>
