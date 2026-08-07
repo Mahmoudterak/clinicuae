@@ -25,10 +25,18 @@ import {
   ClipboardList,
   Stethoscope,
   CreditCard,
+  MessageSquare,
 } from "lucide-react";
 import { format, parseISO, differenceInYears } from "date-fns";
 import { ar as arLocale, enUS } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
+import { useListWaMessages } from "@/hooks/use-whatsapp";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type Section = "records" | "prescriptions" | "invoices" | "appointments";
 
@@ -44,6 +52,20 @@ export default function PatientDetail() {
   const { data: summary, isLoading, error } = useGetPatientSummary(patientId, {
     query: { enabled: !!patientId, queryKey: getGetPatientSummaryQueryKey(patientId) },
   });
+  const { data: waMessages } = useListWaMessages();
+
+  const getInvoiceWaMessage = (inv: { id: number; patientId?: number | null }) => {
+    if (!waMessages) return null;
+    const invNum = `INV-${inv.id.toString().padStart(5, "0")}`;
+    return (
+      waMessages.find(
+        (m) =>
+          m.patientId === inv.patientId &&
+          m.body.includes(invNum) &&
+          (m.status === "sent" || m.status === "simulated")
+      ) ?? null
+    );
+  };
 
   if (isLoading) {
     return (
@@ -339,7 +361,16 @@ export default function PatientDetail() {
               <div className="space-y-3">
                 {invoices.length === 0
                   ? <EmptyState icon={<Receipt className="h-10 w-10" />} message={t("patientDetail.noInvoices")} />
-                  : invoices.map(inv => (
+                  : invoices.map(inv => {
+                    const waMsg = getInvoiceWaMessage(inv);
+                    const sentTime = waMsg ? (waMsg.sentAt ?? waMsg.createdAt) : null;
+                    const formattedTime = sentTime ? format(new Date(sentTime), "MMM d, yyyy HH:mm", { locale }) : "";
+                    const waLabel = waMsg
+                      ? waMsg.status === "simulated"
+                        ? t("invoices.whatsappBadgeSimulated", { date: formattedTime })
+                        : t("invoices.whatsappBadgeSent", { date: formattedTime })
+                      : null;
+                    return (
                     <div key={inv.id} className="border rounded-xl bg-card hover:border-indigo-300 transition-colors p-4 flex items-center gap-4">
                       <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${
                         inv.status === "paid"    ? "bg-emerald-100 dark:bg-emerald-900/40" :
@@ -350,7 +381,24 @@ export default function PatientDetail() {
                                                     <Clock className="h-5 w-5 text-amber-500" />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm">{inv.description}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-sm">{inv.description}</p>
+                          {waMsg && waLabel && (
+                            <TooltipProvider delayDuration={200}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-green-500/10 text-green-600 border border-green-500/20 cursor-default shrink-0">
+                                    <MessageSquare className="h-2.5 w-2.5" />
+                                    WA
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                  {waLabel}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </div>
                         <p className="text-xs text-muted-foreground mt-0.5 font-mono">INV-{inv.id.toString().padStart(5, "0")} · {format(parseISO(inv.issuedDate), "MMM d, yyyy", { locale })}</p>
                       </div>
                       <div className="text-end shrink-0">
@@ -361,7 +409,8 @@ export default function PatientDetail() {
                         }`}>{t(`status.${inv.status}`)}</span>
                       </div>
                     </div>
-                  ))
+                    );
+                  })
                 }
               </div>
             )}
