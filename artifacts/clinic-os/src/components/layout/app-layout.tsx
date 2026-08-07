@@ -26,7 +26,8 @@ import {
   ShieldAlert,
   MessageSquareMore,
   CalendarCheck,
-  ExternalLink
+  ExternalLink,
+  Zap
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { ThemeToggle } from "../theme-provider"
@@ -67,6 +68,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     ...(role === 'admin' ? [
       { name: isRtl ? "واتساب الأعمال" : "WhatsApp", href: "/whatsapp", icon: MessageSquareMore },
       { name: isRtl ? "الحجوزات الإلكترونية" : "Online Bookings", href: "/bookings", icon: CalendarCheck },
+      { name: "Zapier", href: "/zapier", icon: Zap },
       { name: isRtl ? "الإعدادات" : "Settings", href: "/settings", icon: Settings },
     ] : []),
   ]

@@ -13,7 +13,7 @@ import { useTranslation } from "@/i18n/context";
 import { format, parseISO, isAfter, startOfDay } from "date-fns";
 import { ar as arLocale, enUS } from "date-fns/locale";
 import {
-  Calendar, Users, Pill, FileText, CheckCircle2, Clock, Ban
+  Calendar, Users, Pill, FileText, CheckCircle2, Clock, Ban, Stethoscope
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
@@ -38,11 +38,18 @@ export default function DoctorPortal() {
 
   if (role !== 'doctor' || !doctorId) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
-        <h2 className="text-2xl font-bold">Doctor Access Only</h2>
-        <p className="text-muted-foreground">Please log in as a doctor to view this portal.</p>
-        <Link href="/login">
-          <Button className="bg-indigo-600 hover:bg-indigo-700">Log In as Doctor</Button>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center">
+          <Stethoscope className="w-8 h-8 text-indigo-500" />
+        </div>
+        <h2 className="text-2xl font-bold">بوابة الطبيب</h2>
+        <p className="text-muted-foreground text-sm max-w-xs">
+          {role === 'admin'
+            ? 'هذه الصفحة مخصصة للأطباء فقط. سجّل الدخول بحساب طبيب للوصول إليها.'
+            : 'يرجى تسجيل الدخول كطبيب للوصول إلى هذه الصفحة.'}
+        </p>
+        <Link href="/">
+          <Button className="bg-indigo-600 hover:bg-indigo-700">العودة للوحة التحكم</Button>
         </Link>
       </div>
     );

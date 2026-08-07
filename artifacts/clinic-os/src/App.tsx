@@ -12,6 +12,7 @@ import SettingsPage from './pages/settings/index';
 import WhatsAppPage from './pages/whatsapp/index';
 import BookingsPage from './pages/bookings/index';
 import PublicBookingPage from './pages/book/index';
+import ZapierPage from './pages/zapier/index';
 import NotFound from '@/pages/not-found';
 
 import LoginPage from './pages/login';
@@ -82,6 +83,7 @@ function ProtectedRoutes() {
         <Route path="/settings" component={SettingsPage} />
         <Route path="/whatsapp" component={WhatsAppPage} />
         <Route path="/bookings" component={BookingsPage} />
+        <Route path="/zapier" component={ZapierPage} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>

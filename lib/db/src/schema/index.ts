@@ -14,3 +14,4 @@ export * from "./payments";
 export * from "./insurance";
 export * from "./whatsapp";
 export * from "./onlineBookings";
+export * from "./zapier";
