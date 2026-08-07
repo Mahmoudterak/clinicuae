@@ -20,8 +20,11 @@ import {
   XCircle,
   Clock,
   DollarSign,
-  Printer
+  Printer,
+  MessageSquare
 } from "lucide-react";
+import { useSendWaMessage } from "@/hooks/use-whatsapp";
+import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -107,6 +110,48 @@ export default function InvoicesList() {
   const createInvoice = useCreateInvoice();
   const updateInvoice = useUpdateInvoice();
   const deleteInvoice = useDeleteInvoice();
+  const sendWaMessage = useSendWaMessage();
+
+  // WhatsApp dialog state
+  const [waInvoice, setWaInvoice] = useState<any | null>(null);
+  const [waPhone, setWaPhone] = useState("");
+  const [waBody, setWaBody] = useState("");
+  const [waOpen, setWaOpen] = useState(false);
+
+  const handleOpenWhatsapp = (inv: any) => {
+    const patient = patients?.find(p => p.id === inv.patientId);
+    const phone = patient?.phone ?? "";
+    const invNum = `INV-${inv.id.toString().padStart(5, "0")}`;
+    const amount = new Intl.NumberFormat("en-AE", { style: "currency", currency: "AED" }).format(inv.amount);
+    const dateStr = inv.issuedDate;
+    const msg = isRtl
+      ? `مرحباً ${inv.patientName}،\n\nيرجى الاطلاع على فاتورتك:\nرقم الفاتورة: ${invNum}\nالوصف: ${inv.description}\nالمبلغ: ${amount}\nتاريخ الإصدار: ${dateStr}\n\nشكراً لاختياركم عيادتنا.`
+      : `Hello ${inv.patientName},\n\nPlease find your invoice details below:\nInvoice #: ${invNum}\nDescription: ${inv.description}\nAmount: ${amount}\nIssued: ${dateStr}\n\nThank you for choosing our clinic.`;
+    setWaInvoice(inv);
+    setWaPhone(phone);
+    setWaBody(msg);
+    setWaOpen(true);
+  };
+
+  const handleSendWhatsapp = async () => {
+    if (!waInvoice || !waPhone.trim() || !waBody.trim()) return;
+    try {
+      const result: any = await sendWaMessage.mutateAsync({
+        patientId: waInvoice.patientId ?? null,
+        patientPhone: waPhone,
+        patientName: waInvoice.patientName,
+        body: waBody,
+      });
+      setWaOpen(false);
+      if (result?.simulated) {
+        toast({ title: t("invoices.whatsappSimulated") });
+      } else {
+        toast({ title: t("invoices.whatsappSent") });
+      }
+    } catch {
+      toast({ title: t("invoices.whatsappError"), variant: "destructive" });
+    }
+  };
 
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(invoiceSchema),
@@ -476,6 +521,10 @@ export default function InvoicesList() {
                             <DropdownMenuItem onClick={() => handleEdit(inv)}>
                               <Pencil className="me-2 h-4 w-4" /> {t("invoices.editInvoice")}
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleOpenWhatsapp(inv)}>
+                              <MessageSquare className="me-2 h-4 w-4 text-green-600" />
+                              <span className="text-green-700 dark:text-green-400">{t("invoices.sendWhatsapp")}</span>
+                            </DropdownMenuItem>
                             <DropdownMenuItem 
                               className="text-destructive focus:text-destructive focus:bg-destructive/10"
                               onClick={() => setDeletingId(inv.id)}
@@ -493,6 +542,57 @@ export default function InvoicesList() {
           </table>
         </div>
       </div>
+
+      {/* WhatsApp Send Dialog */}
+      <Dialog open={waOpen} onOpenChange={(open) => { setWaOpen(open); if (!open) setWaInvoice(null); }}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <div className="h-7 w-7 rounded-lg bg-green-500 flex items-center justify-center text-white font-bold text-sm shadow shadow-green-500/30">W</div>
+              {t("invoices.whatsappTitle")}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium leading-none">{t("invoices.whatsappPhone")}</label>
+              <Input
+                value={waPhone}
+                onChange={e => setWaPhone(e.target.value)}
+                placeholder="+971500000000"
+                dir="ltr"
+              />
+              {waInvoice && !patients?.find(p => p.id === waInvoice.patientId)?.phone && (
+                <p className="text-xs text-amber-600">{t("invoices.whatsappNoPhone")}</p>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium leading-none">{t("invoices.whatsappMessage")}</label>
+              <Textarea
+                value={waBody}
+                onChange={e => setWaBody(e.target.value)}
+                rows={7}
+                className="resize-none font-mono text-sm"
+              />
+              <p className="text-xs text-muted-foreground text-end">{waBody.length} {isRtl ? "حرف" : "chars"}</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setWaOpen(false)} disabled={sendWaMessage.isPending}>
+              {t("common.cancel")}
+            </Button>
+            <Button
+              onClick={handleSendWhatsapp}
+              disabled={sendWaMessage.isPending || !waPhone.trim() || !waBody.trim()}
+              className="gap-2 bg-green-600 hover:bg-green-700 text-white"
+            >
+              {sendWaMessage.isPending
+                ? <Loader2 className="h-4 w-4 animate-spin" />
+                : <MessageSquare className="h-4 w-4" />}
+              {t("invoices.whatsappSend")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
         <AlertDialogContent>

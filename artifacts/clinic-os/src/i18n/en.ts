@@ -272,7 +272,16 @@ export default {
     created: "Invoice created successfully",
     updated: "Invoice updated successfully",
     markedPaid: "Invoice marked as paid",
-    deleted: "Invoice deleted"
+    deleted: "Invoice deleted",
+    sendWhatsapp: "Send via WhatsApp",
+    whatsappTitle: "Send Invoice via WhatsApp",
+    whatsappPhone: "Patient Phone Number",
+    whatsappMessage: "Message",
+    whatsappSend: "Send",
+    whatsappSent: "Invoice sent via WhatsApp",
+    whatsappSimulated: "Simulated — add API keys to send for real",
+    whatsappError: "Failed to send via WhatsApp",
+    whatsappNoPhone: "No phone number on file for this patient"
   },
   lab: {
     title: "Laboratory",

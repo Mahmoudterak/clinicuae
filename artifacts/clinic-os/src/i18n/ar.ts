@@ -272,7 +272,16 @@ export default {
     created: "تم إنشاء الفاتورة بنجاح",
     updated: "تم تحديث الفاتورة بنجاح",
     markedPaid: "تم تحديد الفاتورة كمدفوعة",
-    deleted: "تم حذف الفاتورة"
+    deleted: "تم حذف الفاتورة",
+    sendWhatsapp: "إرسال عبر واتساب",
+    whatsappTitle: "إرسال الفاتورة عبر واتساب",
+    whatsappPhone: "رقم هاتف المريض",
+    whatsappMessage: "نص الرسالة",
+    whatsappSend: "إرسال",
+    whatsappSent: "تم إرسال الفاتورة عبر واتساب",
+    whatsappSimulated: "تمت المحاكاة — أضف مفاتيح API للإرسال الحقيقي",
+    whatsappError: "فشل الإرسال عبر واتساب",
+    whatsappNoPhone: "لا يوجد رقم هاتف لهذا المريض"
   },
   lab: {
     title: "المختبر",
