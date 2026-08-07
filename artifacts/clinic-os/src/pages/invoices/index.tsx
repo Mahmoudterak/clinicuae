@@ -1,4 +1,5 @@
 import { useAuth } from "@/contexts/auth-context";
+import { useSettings } from "@/contexts/settings-context";
 import { useState } from "react";
 import { 
   useListInvoices, 
@@ -18,7 +19,8 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  DollarSign
+  DollarSign,
+  Printer
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -71,6 +73,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { generateInvoicePDF } from "@/lib/pdf-utils";
 
 const invoiceSchema = z.object({
   patientId: z.coerce.number().min(1, "Patient is required"),
@@ -86,6 +89,7 @@ type InvoiceFormValues = z.infer<typeof invoiceSchema>;
 export default function InvoicesList() {
   const { t, isRtl } = useTranslation();
   const locale = isRtl ? arLocale : enUS;
+  const { settings } = useSettings();
 
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const { data: invoices, isLoading } = useListInvoices(
@@ -182,6 +186,24 @@ export default function InvoicesList() {
         }
       }
     );
+  };
+
+  const handlePrintInvoice = (inv: any) => {
+    generateInvoicePDF({
+      id: inv.id,
+      patientName: inv.patientName,
+      description: inv.description,
+      amount: inv.amount,
+      status: inv.status,
+      issuedDate: inv.issuedDate,
+      dueDate: inv.dueDate,
+      paidDate: inv.paidDate,
+      clinicName: settings.clinic.clinicName,
+      clinicAddress: settings.clinic.address || undefined,
+      clinicPhone: settings.clinic.phone || undefined,
+      clinicEmail: settings.clinic.email || undefined,
+      logoDataUrl: settings.clinic.logoDataUrl,
+    });
   };
 
   return (
@@ -447,6 +469,9 @@ export default function InvoicesList() {
                                 {t("invoices.markPaid")}
                               </DropdownMenuItem>
                             )}
+                            <DropdownMenuItem onClick={() => handlePrintInvoice(inv)}>
+                              <Printer className="me-2 h-4 w-4" /> {t("invoices.printInvoice")}
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => handleEdit(inv)}>
                               <Pencil className="me-2 h-4 w-4" /> {t("invoices.editInvoice")}

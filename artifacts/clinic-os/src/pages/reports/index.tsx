@@ -1,4 +1,5 @@
 import { useAuth } from "@/contexts/auth-context";
+import { useSettings } from "@/contexts/settings-context";
 import { 
   useListPatients, 
   useListDoctors, 
@@ -13,7 +14,9 @@ import {
 } from "recharts";
 import { format, parseISO, subMonths } from "date-fns";
 import { ar as arLocale, enUS } from "date-fns/locale";
-import { Loader2 } from "lucide-react";
+import { Loader2, FileDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { generateReportPDF } from "@/lib/pdf-utils";
 
 const COLORS = ['#4F46E5', '#8B5CF6', '#10B981', '#F59E0B', '#3B82F6', '#EF4444'];
 
@@ -22,6 +25,7 @@ export default function Reports() {
   const locale = isRtl ? arLocale : enUS;
   const numLocale = isRtl ? 'ar-AE' : 'en-US';
   const { role, doctorId } = useAuth();
+  const { settings } = useSettings();
 
   const { data: patients, isLoading: l1 } = useListPatients();
   const { data: doctors, isLoading: l2 } = useListDoctors();
@@ -81,11 +85,38 @@ export default function Reports() {
   }, {});
   const genderChartData = Object.entries(genderCounts || {}).map(([name, value]) => ({ name, value }));
 
+  const handleExportPDF = () => {
+    generateReportPDF({
+      clinicName: settings.clinic.clinicName,
+      clinicAddress: settings.clinic.address || undefined,
+      logoDataUrl: settings.clinic.logoDataUrl,
+      totalRevenue,
+      avgRevenue,
+      totalPending,
+      paidCount: paidInvoices.length,
+      pendingCount: pendingInvoices.length,
+      revenueByMonth: revenueChartData as { name: string; value: number }[],
+      totalAppointments: appts?.length || 0,
+      statusCounts: statusCounts || {},
+      doctorStats: doctorChartData.map(d => ({ name: d.name, count: d.value as number })),
+      totalLabs,
+      totalRads,
+      totalPatients: scopedPatients?.length || 0,
+      genderCounts: genderCounts || {},
+    });
+  };
+
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">{t("nav.reports")}</h1>
-        <p className="text-muted-foreground mt-1">Data insights across the clinic.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">{t("nav.reports")}</h1>
+          <p className="text-muted-foreground mt-1">Data insights across the clinic.</p>
+        </div>
+        <Button onClick={handleExportPDF} className="gap-2 shrink-0">
+          <FileDown className="h-4 w-4" />
+          {t("reports.exportPDF")}
+        </Button>
       </div>
 
       {/* Financial Section */}

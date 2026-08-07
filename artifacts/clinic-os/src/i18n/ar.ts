@@ -268,6 +268,7 @@ export default {
     markPaid: "تحديد كمدفوع",
     deleteTitle: "حذف الفاتورة؟",
     deleteDesc: "لا يمكن التراجع عن هذا الإجراء. سيؤدي هذا إلى حذف سجل الحسابات بشكل دائم.",
+    printInvoice: "طباعة الفاتورة",
     created: "تم إنشاء الفاتورة بنجاح",
     updated: "تم تحديث الفاتورة بنجاح",
     markedPaid: "تم تحديد الفاتورة كمدفوعة",
@@ -451,7 +452,8 @@ export default {
     totalRadiology: "طلبات الأشعة",
     male: "ذكر",
     female: "أنثى",
-    other: "أخرى"
+    other: "أخرى",
+    exportPDF: "تصدير PDF"
   },
   aiAssistant: {
     title: "مساعد الذكاء الاصطناعي",

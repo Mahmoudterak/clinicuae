@@ -268,6 +268,7 @@ export default {
     markPaid: "Mark as Paid",
     deleteTitle: "Delete Invoice?",
     deleteDesc: "This action cannot be undone. This will permanently delete the billing record.",
+    printInvoice: "Print Invoice",
     created: "Invoice created successfully",
     updated: "Invoice updated successfully",
     markedPaid: "Invoice marked as paid",
@@ -451,7 +452,8 @@ export default {
     totalRadiology: "Radiology Requests",
     male: "Male",
     female: "Female",
-    other: "Other"
+    other: "Other",
+    exportPDF: "Export PDF"
   },
   aiAssistant: {
     title: "AI Assistant",
