@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "@/i18n/context";
-import { Zap, Plus, Trash2, Play, CheckCircle2, XCircle, ToggleLeft, ToggleRight, ExternalLink, Loader2, AlertCircle } from "lucide-react";
+import { Zap, Plus, Trash2, Play, CheckCircle2, XCircle, ToggleLeft, ToggleRight, ExternalLink, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -38,6 +38,8 @@ interface ZapierLog {
   event: string;
   statusCode: string;
   success: boolean;
+  retryCount: number;
+  finalOutcome: string | null;
   createdAt: string;
 }
 
@@ -382,6 +384,7 @@ export default function ZapierPage() {
                     <tr>
                       <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400">الحدث</th>
                       <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400">الحالة</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400">المحاولات</th>
                       <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400">الوقت</th>
                     </tr>
                   </thead>
@@ -395,13 +398,33 @@ export default function ZapierPage() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1.5">
-                            {log.success
-                              ? <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
-                              : <XCircle className="w-3.5 h-3.5 text-red-500" />}
-                            <span className={`text-xs font-mono ${log.success ? "text-green-600" : "text-red-500"}`}>
+                            {log.finalOutcome === "retried_success" ? (
+                              <RefreshCw className="w-3.5 h-3.5 text-amber-500" />
+                            ) : log.success ? (
+                              <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+                            ) : (
+                              <XCircle className="w-3.5 h-3.5 text-red-500" />
+                            )}
+                            <span className={`text-xs font-mono ${
+                              log.finalOutcome === "retried_success"
+                                ? "text-amber-600"
+                                : log.success
+                                  ? "text-green-600"
+                                  : "text-red-500"
+                            }`}>
                               {log.statusCode}
                             </span>
                           </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          {log.retryCount > 0 ? (
+                            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 font-medium">
+                              <RefreshCw className="w-3 h-3" />
+                              {log.retryCount} {log.retryCount === 1 ? "إعادة" : "إعادات"}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-gray-400">—</span>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-xs text-gray-400">
                           {new Date(log.createdAt).toLocaleString("ar-AE")}

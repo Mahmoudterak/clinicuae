@@ -94,6 +94,14 @@ async function safeFetch(urlStr: string, options: RequestInit): Promise<Response
   return fetch(urlStr, { ...options, redirect: "error" });
 }
 
+// ── retry configuration ───────────────────────────────────────────────────────
+const MAX_DELIVERY_ATTEMPTS = 3; // 1 initial + 2 retries (configurable)
+const BACKOFF_BASE_MS = 1000;    // 1 s, 2 s, 4 s …
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 // ── internal helper: fire a webhook ──────────────────────────────────────────
 export async function fireZapierWebhook(event: string, payload: Record<string, unknown>) {
   try {
@@ -108,21 +116,43 @@ export async function fireZapierWebhook(event: string, payload: Record<string, u
 
       let success = false;
       let statusCode = "";
-      try {
-        const res = await safeFetch(hook.webhookUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ event, data: payload, timestamp: new Date().toISOString() }),
-          signal: AbortSignal.timeout(8000),
-        });
-        success = res.ok;
-        statusCode = String(res.status);
-      } catch {
-        statusCode = "error";
+      let attempt = 0;
+
+      while (attempt < MAX_DELIVERY_ATTEMPTS) {
+        if (attempt > 0) {
+          // Exponential back-off before each retry
+          await sleep(BACKOFF_BASE_MS * Math.pow(2, attempt - 1));
+        }
+        try {
+          const res = await safeFetch(hook.webhookUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ event, data: payload, timestamp: new Date().toISOString() }),
+            signal: AbortSignal.timeout(8000),
+          });
+          success = res.ok;
+          statusCode = String(res.status);
+        } catch (err: any) {
+          statusCode = "error";
+          success = false;
+        }
+        attempt++;
+        if (success) break;
       }
+
+      const retryCount = attempt - 1; // number of retries (0 = succeeded/failed on first attempt)
+      const finalOutcome = success
+        ? (retryCount > 0 ? "retried_success" : "success")
+        : "failed";
+
       // fire-and-forget — payload intentionally omitted to avoid PII in logs
-      db.insert(zapierLogsTable).values({ webhookId: hook.id, event, statusCode, success }).catch(() => {});
-      db.update(zapierWebhooksTable).set({ lastFiredAt: new Date() }).where(eq(zapierWebhooksTable.id, hook.id)).catch(() => {});
+      db.insert(zapierLogsTable)
+        .values({ webhookId: hook.id, event, statusCode, success, retryCount, finalOutcome })
+        .catch(() => {});
+      db.update(zapierWebhooksTable)
+        .set({ lastFiredAt: new Date() })
+        .where(eq(zapierWebhooksTable.id, hook.id))
+        .catch(() => {});
     }
   } catch (_) {}
 }

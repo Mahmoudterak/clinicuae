@@ -39,4 +39,12 @@ export async function runStartupMigration(): Promise<void> {
       created_at  timestamptz NOT NULL DEFAULT now()
     )
   `);
+
+  // Retry tracking columns for zapier_logs (idempotent adds)
+  await db.execute(sql`
+    ALTER TABLE zapier_logs ADD COLUMN IF NOT EXISTS retry_count integer NOT NULL DEFAULT 0
+  `);
+  await db.execute(sql`
+    ALTER TABLE zapier_logs ADD COLUMN IF NOT EXISTS final_outcome text
+  `);
 }

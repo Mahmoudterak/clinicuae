@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -20,6 +20,10 @@ export const zapierLogsTable = pgTable("zapier_logs", {
   payload: text("payload"),
   statusCode: text("status_code"),
   success: boolean("success").notNull().default(false),
+  /** Number of delivery attempts made (0 = first attempt succeeded or failed with no retries) */
+  retryCount: integer("retry_count").notNull().default(0),
+  /** 'success' | 'failed' | 'retried_success' — set after all attempts are exhausted */
+  finalOutcome: text("final_outcome"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
