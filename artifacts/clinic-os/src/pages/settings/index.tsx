@@ -140,7 +140,6 @@ function UsersTab() {
   const { settings, addAdmin, updateAdmin, deleteAdmin } = useSettings();
   const { isRtl } = useTranslation();
   const { toast } = useToast();
-  const [showPasswords, setShowPasswords] = useState<Record<number, boolean>>({});
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<AdminUser | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -157,28 +156,40 @@ function UsersTab() {
 
   const openEdit = (u: AdminUser) => {
     setEditTarget(u);
-    setForm({ username: u.username, password: u.password, name: u.name });
+    // Password is never returned from the server — start blank so admin sets a new one if desired
+    setForm({ username: u.username, password: "", name: u.name });
     setShowFormPass(false);
     setModalOpen(true);
   };
 
   const save = async () => {
-    if (!form.username.trim() || !form.password.trim() || !form.name.trim()) {
+    if (!form.username.trim() || !form.name.trim()) {
       toast({ title: isRtl ? "خطأ" : "Error", description: isRtl ? "يرجى ملء جميع الحقول." : "Please fill all fields.", variant: "destructive" });
+      return;
+    }
+    // When creating, password is required
+    if (!editTarget && !form.password.trim()) {
+      toast({ title: isRtl ? "خطأ" : "Error", description: isRtl ? "كلمة المرور مطلوبة." : "Password is required.", variant: "destructive" });
       return;
     }
     setSaving(true);
     try {
       if (editTarget) {
-        await updateAdmin(editTarget.id, form);
+        // Only send password if admin typed a new one
+        const updates: { username?: string; password?: string; name?: string } = {
+          username: form.username,
+          name: form.name,
+        };
+        if (form.password.trim()) updates.password = form.password;
+        await updateAdmin(editTarget.id, updates);
         toast({ title: isRtl ? "تم التحديث" : "Updated", description: isRtl ? "تم تحديث بيانات المستخدم." : "User updated successfully." });
       } else {
-        await addAdmin(form);
+        await addAdmin({ username: form.username, password: form.password, name: form.name });
         toast({ title: isRtl ? "تم الإضافة" : "Added", description: isRtl ? "تم إضافة المستخدم." : "User added successfully." });
       }
       setModalOpen(false);
-    } catch (err: any) {
-      const msg = err?.message?.includes("already exists")
+    } catch (err: unknown) {
+      const msg = (err instanceof Error && err.message?.includes("already exists"))
         ? (isRtl ? "اسم المستخدم موجود مسبقاً." : "Username already exists.")
         : (isRtl ? "حدث خطأ. حاول مرة أخرى." : "An error occurred. Please try again.");
       toast({ title: isRtl ? "خطأ" : "Error", description: msg, variant: "destructive" });
@@ -231,18 +242,6 @@ function UsersTab() {
                   <Key className="h-3 w-3" />
                   <span dir="ltr">{u.username}</span>
                 </span>
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Lock className="h-3 w-3" />
-                  <span dir="ltr" className="font-mono">
-                    {showPasswords[u.id] ? u.password : "•".repeat(Math.min(u.password.length, 10))}
-                  </span>
-                  <button
-                    onClick={() => setShowPasswords(p => ({ ...p, [u.id]: !p[u.id] }))}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {showPasswords[u.id] ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                  </button>
-                </span>
               </div>
             </div>
             <div className="flex items-center gap-1 shrink-0">
@@ -276,13 +275,20 @@ function UsersTab() {
               <Input value={form.username} onChange={e => setForm(p => ({ ...p, username: e.target.value }))} placeholder="admin" dir="ltr" />
             </div>
             <div className="space-y-1.5">
-              <Label>{isRtl ? "كلمة المرور" : "Password"}</Label>
+              <Label>
+                {isRtl ? "كلمة المرور" : "Password"}
+                {editTarget && (
+                  <span className="ms-2 text-xs text-muted-foreground font-normal">
+                    {isRtl ? "(اتركها فارغة للإبقاء على الحالية)" : "(leave blank to keep current)"}
+                  </span>
+                )}
+              </Label>
               <div className="relative">
                 <Input
                   type={showFormPass ? "text" : "password"}
                   value={form.password}
                   onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
-                  placeholder="••••••••"
+                  placeholder={editTarget ? (isRtl ? "اتركها فارغة للإبقاء" : "Leave blank to keep current") : "••••••••"}
                   className="pe-10"
                   dir="ltr"
                 />

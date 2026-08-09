@@ -56,8 +56,27 @@ router.post("/invoices", async (req, res): Promise<void> => {
     .insert(invoicesTable)
     .values({ ...parsed.data, clinicId: cid })
     .returning();
-  const [withName] = await withNames([row!], cid);
+  if (!row) { res.status(500).json({ error: "Failed to create invoice" }); return; }
+  if (parsed.data.status === "paid") void fireZapierWebhook("invoice.paid", iso(row) as Record<string, unknown>, cid);
+  const [withName] = await withNames([row], cid);
   res.status(201).json(CreateInvoiceResponse.parse(withName));
+});
+
+router.put("/invoices/:id", async (req, res): Promise<void> => {
+  const params = UpdateInvoiceParams.safeParse(req.params);
+  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
+  const parsed = UpdateInvoiceBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+  const cid = req.clinicId!;
+  const [row] = await db
+    .update(invoicesTable)
+    .set(parsed.data)
+    .where(and(eq(invoicesTable.clinicId, cid), eq(invoicesTable.id, params.data.id)))
+    .returning();
+  if (!row) { res.status(404).json({ error: "Invoice not found" }); return; }
+  if (parsed.data.status === "paid") void fireZapierWebhook("invoice.paid", iso(row) as Record<string, unknown>, cid);
+  const [withName] = await withNames([row], cid);
+  res.json(UpdateInvoiceResponse.parse(withName));
 });
 
 router.patch("/invoices/:id", async (req, res): Promise<void> => {
@@ -72,7 +91,7 @@ router.patch("/invoices/:id", async (req, res): Promise<void> => {
     .where(and(eq(invoicesTable.clinicId, cid), eq(invoicesTable.id, params.data.id)))
     .returning();
   if (!row) { res.status(404).json({ error: "Invoice not found" }); return; }
-  if (parsed.data.status === "paid") void fireZapierWebhook("invoice.paid", iso(row));
+  if (parsed.data.status === "paid") void fireZapierWebhook("invoice.paid", iso(row) as Record<string, unknown>, cid);
   const [withName] = await withNames([row], cid);
   res.json(UpdateInvoiceResponse.parse(withName));
 });

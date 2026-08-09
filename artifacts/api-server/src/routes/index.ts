@@ -1,4 +1,3 @@
-import { Router, type IRouter } from "express";
 import healthRouter from "./health";
 import patientsRouter from "./patients";
 import doctorsRouter from "./doctors";
@@ -27,8 +26,43 @@ import patientAuthRouter from "./patientAuth";
 import branchesRouter from "./branches";
 import storageRouter from "./storage";
 import demoRequestsRouter from "./demoRequests";
+import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
+import { adminAuth } from "../middlewares/adminAuth";
 
 const router: IRouter = Router();
+
+/**
+ * Routes that do NOT require admin authentication.
+ * Everything else is protected by the adminAuth guard below.
+ */
+const PUBLIC_EXACT: Record<string, string[]> = {
+  "/health":                  ["GET"],
+  "/auth/login":              ["POST"],
+  "/admin-users/validate":    ["POST"],
+  "/patient-auth/login":      ["POST"],
+  "/patient/me":              ["GET"],   // protected separately by patientAuth middleware
+  "/doctor-auth/login":       ["POST"],
+};
+
+function selectiveAdminAuth(req: Request, res: Response, next: NextFunction): void {
+  const path = req.path;
+
+  // Allow all /public/* routes (online booking portal)
+  if (path.startsWith("/public/")) { next(); return; }
+
+  // Allow all /superadmin/* routes (super-admin has its own auth guard)
+  if (path.startsWith("/superadmin")) { next(); return; }
+
+  // Allow explicitly listed public endpoints
+  const allowed = PUBLIC_EXACT[path];
+  if (allowed && allowed.includes(req.method)) { next(); return; }
+
+  // Everything else requires an admin JWT
+  adminAuth(req, res, next);
+}
+
+// Apply selective auth before all routes
+router.use(selectiveAdminAuth);
 
 router.use(authRouter);
 router.use(healthRouter);
@@ -58,6 +92,5 @@ router.use(patientAuthRouter);
 router.use(branchesRouter);
 router.use(storageRouter);
 router.use(demoRequestsRouter);
-
 
 export default router;

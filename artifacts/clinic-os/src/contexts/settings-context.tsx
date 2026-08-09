@@ -28,9 +28,22 @@ export type ClinicSettings = {
 export type AdminUser = {
   id: number;
   username: string;
-  password: string;
   name: string;
   createdAt: string;
+};
+
+/** Input for creating a new admin — password is required */
+export type AdminUserInput = {
+  username: string;
+  password: string;
+  name: string;
+};
+
+/** Input for updating an admin — all fields optional */
+export type AdminUserUpdate = {
+  username?: string;
+  password?: string;
+  name?: string;
 };
 
 export interface SettingsState {
@@ -68,7 +81,6 @@ function toAdminUser(api: ApiAdminUser): AdminUser {
   return {
     id: api.id,
     username: api.username,
-    password: api.password,
     name: api.name,
     createdAt: api.createdAt,
   };
@@ -79,10 +91,9 @@ interface SettingsContextType {
   isLoading: boolean;
   updateClinic: (data: Partial<ClinicSettings>) => Promise<void>;
   setLogo: (dataUrl: string | null) => Promise<void>;
-  addAdmin: (user: Omit<AdminUser, "id" | "createdAt">) => Promise<void>;
-  updateAdmin: (id: number, data: Partial<Omit<AdminUser, "id" | "createdAt">>) => Promise<void>;
+  addAdmin: (user: AdminUserInput) => Promise<void>;
+  updateAdmin: (id: number, data: AdminUserUpdate) => Promise<void>;
   deleteAdmin: (id: number) => Promise<void>;
-  validateAdmin: (username: string, password: string) => AdminUser | null;
 }
 
 const SettingsContext = createContext<SettingsContextType | null>(null);
@@ -122,12 +133,12 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     await updateClinic({ logoDataUrl: dataUrl });
   }, [updateClinic]);
 
-  const addAdmin = useCallback(async (user: Omit<AdminUser, "id" | "createdAt">) => {
+  const addAdmin = useCallback(async (user: AdminUserInput) => {
     await createAdminMutation.mutateAsync({ data: user });
     invalidateAdmins();
   }, [createAdminMutation, invalidateAdmins]);
 
-  const updateAdmin = useCallback(async (id: number, data: Partial<Omit<AdminUser, "id" | "createdAt">>) => {
+  const updateAdmin = useCallback(async (id: number, data: AdminUserUpdate) => {
     await updateAdminMutation.mutateAsync({ id, data });
     invalidateAdmins();
   }, [updateAdminMutation, invalidateAdmins]);
@@ -137,16 +148,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     invalidateAdmins();
   }, [deleteAdminMutation, invalidateAdmins]);
 
-  const validateAdmin = useCallback(
-    (username: string, password: string): AdminUser | null => {
-      return admins.find(a => a.username === username && a.password === password) ?? null;
-    },
-    [admins]
-  );
-
   return (
     <SettingsContext.Provider
-      value={{ settings, isLoading, updateClinic, setLogo, addAdmin, updateAdmin, deleteAdmin, validateAdmin }}
+      value={{ settings, isLoading, updateClinic, setLogo, addAdmin, updateAdmin, deleteAdmin }}
     >
       {children}
     </SettingsContext.Provider>

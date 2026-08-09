@@ -57,8 +57,27 @@ router.post("/appointments", async (req, res): Promise<void> => {
     .insert(appointmentsTable)
     .values({ ...parsed.data, clinicId: cid })
     .returning();
-  const [withName] = await withNames([row!], cid);
+  if (!row) { res.status(500).json({ error: "Failed to create appointment" }); return; }
+  if (parsed.data.status === "completed") void fireZapierWebhook("appointment.completed", iso(row) as Record<string, unknown>, cid);
+  const [withName] = await withNames([row], cid);
   res.status(201).json(CreateAppointmentResponse.parse(withName));
+});
+
+router.put("/appointments/:id", async (req, res): Promise<void> => {
+  const params = UpdateAppointmentParams.safeParse(req.params);
+  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
+  const parsed = UpdateAppointmentBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+  const cid = req.clinicId!;
+  const [row] = await db
+    .update(appointmentsTable)
+    .set(parsed.data)
+    .where(and(eq(appointmentsTable.clinicId, cid), eq(appointmentsTable.id, params.data.id)))
+    .returning();
+  if (!row) { res.status(404).json({ error: "Appointment not found" }); return; }
+  if (parsed.data.status === "completed") void fireZapierWebhook("appointment.completed", iso(row) as Record<string, unknown>, cid);
+  const [withName] = await withNames([row], cid);
+  res.json(UpdateAppointmentResponse.parse(withName));
 });
 
 router.patch("/appointments/:id", async (req, res): Promise<void> => {
@@ -73,7 +92,7 @@ router.patch("/appointments/:id", async (req, res): Promise<void> => {
     .where(and(eq(appointmentsTable.clinicId, cid), eq(appointmentsTable.id, params.data.id)))
     .returning();
   if (!row) { res.status(404).json({ error: "Appointment not found" }); return; }
-  if (parsed.data.status === "completed") void fireZapierWebhook("appointment.completed", iso(row));
+  if (parsed.data.status === "completed") void fireZapierWebhook("appointment.completed", iso(row) as Record<string, unknown>, cid);
   const [withName] = await withNames([row], cid);
   res.json(UpdateAppointmentResponse.parse(withName));
 });

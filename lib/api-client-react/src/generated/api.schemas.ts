@@ -570,7 +570,6 @@ export interface ClinicSettingsInput {
 export interface AdminUser {
   id: number;
   username: string;
-  password: string;
   name: string;
   createdAt: string;
 }
@@ -670,4 +669,3 @@ export type ListStaffParams = {
 departmentId?: number;
 status?: string;
 };
-

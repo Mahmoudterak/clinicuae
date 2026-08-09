@@ -3,11 +3,19 @@ import jwt from "jsonwebtoken";
 import { eq } from "drizzle-orm";
 import { db, adminUsersTable } from "@workspace/db";
 import { logSecurityEvent } from "../lib/securityLogger";
+import bcrypt from "bcryptjs";
 
 const router: IRouter = Router();
 
 const JWT_SECRET = process.env.SESSION_SECRET ?? "dev-secret-change-me";
+const BCRYPT_ROUNDS = 10;
 const ADMIN_USER = process.env.ADMIN_USERNAME ?? "admin";
+const adminPass = process.env.ADMIN_PASSWORD;
+
+/** Detect whether a stored value is already a bcrypt hash */
+function isBcryptHash(value: string): boolean {
+  return /^\$2[aby]\$\d{2}\$/.test(value);
+}
 
 router.post("/auth/login", async (req, res): Promise<void> => {
   const { username, password } = (req.body ?? {}) as { username?: string; password?: string };
@@ -26,8 +34,17 @@ router.post("/auth/login", async (req, res): Promise<void> => {
       .limit(1);
 
     if (admin) {
-      // Password check (plain-text for now; Task #9 will add scrypt hashing)
-      const passwordMatch = admin.password === password;
+      // bcrypt comparison with migration path for legacy plain-text passwords
+      let passwordMatch: boolean;
+      if (isBcryptHash(admin.password)) {
+        passwordMatch = await bcrypt.compare(password, admin.password);
+      } else {
+        passwordMatch = admin.password === password;
+        if (passwordMatch) {
+          const newHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+          await db.update(adminUsersTable).set({ password: newHash }).where(eq(adminUsersTable.id, admin.id));
+        }
+      }
 
       if (!passwordMatch || admin.status === "suspended") {
         await logSecurityEvent({
@@ -49,11 +66,11 @@ router.post("/auth/login", async (req, res): Promise<void> => {
         .set({ lastLoginAt: new Date() })
         .where(eq(adminUsersTable.id, admin.id));
 
-    const token = jwt.sign(
-      { role: "admin", clinicId: admin.clinicId, adminName: username },
-      JWT_SECRET,
-      { expiresIn: "24h" },
-    );
+      const token = jwt.sign(
+        { role: "admin", userId: admin.id, clinicId: admin.clinicId, adminName: username },
+        JWT_SECRET,
+        { expiresIn: "24h" },
+      );
 
       await logSecurityEvent({
         req,
@@ -64,12 +81,7 @@ router.post("/auth/login", async (req, res): Promise<void> => {
         success: true,
       });
 
-      res.json({
-        token,
-        role: "admin",
-        name: admin.name,
-        clinicId: admin.clinicId,
-      });
+      res.json({ token, role: "admin", name: admin.name, clinicId: admin.clinicId });
       return;
     }
   } catch (dbErr) {
@@ -77,7 +89,6 @@ router.post("/auth/login", async (req, res): Promise<void> => {
   }
 
   // ── 2. Env-var fallback (single-tenant / legacy mode) ────────────────────
-  const adminPass = process.env.ADMIN_PASSWORD;
   if (!adminPass) {
     await logSecurityEvent({
       req,
@@ -89,26 +100,30 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     return;
   }
 
-  if (username === ADMIN_USER && password === adminPass) {
-    // Env-var mode: no clinicId — operates in single-tenant mode.
-    // CLINIC_ID env var can scope it to a specific clinic.
-    const clinicId = process.env.CLINIC_ID ? parseInt(process.env.CLINIC_ID, 10) : undefined;
-    const token = jwt.sign(
-      { role: "admin", clinicId, adminName: username },
-      JWT_SECRET,
-      { expiresIn: "24h" },
-    );
+  if (username === ADMIN_USER) {
+    const envPasswordMatch = isBcryptHash(adminPass)
+      ? await bcrypt.compare(password, adminPass)
+      : password === adminPass;
 
-    await logSecurityEvent({
-      req,
-      eventType: "login_success",
-      description: `Env-var admin "${username}" logged in`,
-      clinicId: clinicId ?? null,
-      success: true,
-    });
+    if (envPasswordMatch) {
+      const clinicId = process.env.CLINIC_ID ? parseInt(process.env.CLINIC_ID, 10) : undefined;
+      const token = jwt.sign(
+        { role: "admin", clinicId, adminName: username },
+        JWT_SECRET,
+        { expiresIn: "24h" },
+      );
 
-    res.json({ token, role: "admin", name: "System Admin", clinicId: clinicId ?? null });
-    return;
+      await logSecurityEvent({
+        req,
+        eventType: "login_success",
+        description: `Env-var admin "${username}" logged in`,
+        clinicId: clinicId ?? null,
+        success: true,
+      });
+
+      res.json({ token, role: "admin", name: "System Admin", clinicId: clinicId ?? null });
+      return;
+    }
   }
 
   await logSecurityEvent({

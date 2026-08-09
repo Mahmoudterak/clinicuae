@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { useLocation } from "wouter";
+import { setAuthTokenGetter } from "@workspace/api-client-react";
 
 type Role = "admin" | "doctor" | null;
 
@@ -55,8 +56,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLocation("/login");
   };
 
-  const bearerHeader: Record<string, string> = authData.serverToken
-    ? { Authorization: `Bearer ${authData.serverToken}` }
+  // Wire the admin JWT into the generated API client so all codegen'd calls also send auth.
+  useEffect(() => {
+    const t = authData.token ?? null;
+    setAuthTokenGetter(t ? () => t : null);
+    return () => setAuthTokenGetter(null);
+  }, [authData.token]);
+
+  // Use `token` (admin JWT) for bearer header — `serverToken` was a legacy unused field.
+  const bearerHeader: Record<string, string> = authData.token
+    ? { Authorization: `Bearer ${authData.token}` }
     : {};
 
   if (isInitializing) {

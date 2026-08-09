@@ -23,6 +23,10 @@ declare global {
   }
 }
 
+/**
+ * General admin guard: verifies JWT, enforces role === "admin",
+ * and extracts clinicId/adminId onto the request object.
+ */
 export function adminAuth(req: Request, res: Response, next: NextFunction): void {
   const auth = req.headers.authorization;
   if (!auth?.startsWith("Bearer ")) {
@@ -32,6 +36,10 @@ export function adminAuth(req: Request, res: Response, next: NextFunction): void
   const token = auth.slice(7);
   try {
     const payload = jwt.verify(token, JWT_SECRET) as AdminJwtPayload;
+    if (payload.role !== "admin") {
+      res.status(403).json({ error: "Forbidden — admin role required" });
+      return;
+    }
     req.adminJwt = payload;
     if (payload.clinicId) req.clinicId = payload.clinicId;
     if (payload.adminId) req.adminId = payload.adminId;
@@ -54,6 +62,10 @@ export function requireClinic(req: Request, res: Response, next: NextFunction): 
   const token = auth.slice(7);
   try {
     const payload = jwt.verify(token, JWT_SECRET) as AdminJwtPayload;
+    if (payload.role !== "admin") {
+      res.status(403).json({ error: "Forbidden — admin role required" });
+      return;
+    }
     req.adminJwt = payload;
     if (!payload.clinicId) {
       res.status(403).json({ error: "Forbidden — no clinic scope in token" });

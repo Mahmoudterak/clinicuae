@@ -5,7 +5,6 @@ import { z } from "zod";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import jwt from "jsonwebtoken";
-import { adminAuth } from "../middlewares/adminAuth";
 
 const router: IRouter = Router();
 const scryptAsync = promisify(scrypt);
@@ -37,27 +36,7 @@ export function patientAuth(req: Request, res: Response, next: NextFunction): vo
   }
 }
 
-// ── POST /patient-auth/login ──────────────────────────────────────────────────
-router.post("/patient-auth/login", async (req, res): Promise<void> => {
-  const parsed = z.object({ patientId: z.number(), phone: z.string(), pin: z.string().min(4).max(6) }).safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
-
-  const [account] = await db.select().from(patientAccountsTable)
-    .where(eq(patientAccountsTable.phone, parsed.data.phone));
-
-  if (!account || !(await verifyPin(account.pinHash, parsed.data.pin))) {
-    res.status(401).json({ error: "رقم الجوال أو الرقم السري غير صحيح" });
-    return;
-  }
-
-  const [patient] = await db.select().from(patientsTable).where(eq(patientsTable.id, parsed.data.patientId));
-  if (!patient) { res.status(404).json({ error: "Patient not found" }); return; }
-
-  const token = jwt.sign({ role: "patient", patientId: patient.id }, JWT_SECRET, { expiresIn: "7d" });
-  res.json({ token, patient: { id: patient.id, firstName: patient.firstName, lastName: patient.lastName, phone: patient.phone } });
-});
-
-// ── Clinic admin auth middleware ──────────────────────────────────────────────
+/** Clinic admin auth: requires role=admin or role=doctor with a clinicId */
 function clinicAdminAuth(req: Request, res: Response, next: NextFunction): void {
   const auth = req.headers.authorization;
   if (!auth?.startsWith("Bearer ")) { res.status(401).json({ error: "Unauthorized" }); return; }
@@ -74,16 +53,34 @@ function clinicAdminAuth(req: Request, res: Response, next: NextFunction): void 
   }
 }
 
+// ── POST /patient-auth/login ──────────────────────────────────────────────────
+router.post("/patient-auth/login", async (req, res): Promise<void> => {
+  const parsed = z.object({ phone: z.string(), pin: z.string().min(4).max(6) }).safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+
+  const [account] = await db.select().from(patientAccountsTable)
+    .where(eq(patientAccountsTable.phone, parsed.data.phone));
+
+  if (!account || !(await verifyPin(account.pinHash, parsed.data.pin))) {
+    res.status(401).json({ error: "رقم الجوال أو الرقم السري غير صحيح" });
+    return;
+  }
+
+  const [patient] = await db.select().from(patientsTable).where(eq(patientsTable.id, account.patientId));
+  if (!patient) { res.status(404).json({ error: "Patient not found" }); return; }
+
+  const token = jwt.sign({ role: "patient", patientId: patient.id }, JWT_SECRET, { expiresIn: "7d" });
+  res.json({ token, patient: { id: patient.id, firstName: patient.firstName, lastName: patient.lastName, phone: patient.phone } });
+});
+
 // ── POST /patient-auth/setup ── clinic admin creates/resets patient PIN ───────
 router.post("/patient-auth/setup", clinicAdminAuth, async (req, res): Promise<void> => {
   const parsed = z.object({ patientId: z.number(), phone: z.string(), pin: z.string().min(4).max(6) }).safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
-  // Verify the patient belongs to this clinic
   const [patient] = await db.select().from(patientsTable).where(eq(patientsTable.id, parsed.data.patientId));
   if (!patient) { res.status(404).json({ error: "Patient not found" }); return; }
 
-  // Verify the supplied phone matches the patient's phone on record
   if (patient.phone !== parsed.data.phone) {
     res.status(400).json({ error: "Phone number does not match patient record" });
     return;

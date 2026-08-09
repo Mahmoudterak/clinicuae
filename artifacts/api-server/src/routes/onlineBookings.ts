@@ -64,11 +64,21 @@ router.get("/public/booked-slots", async (req, res): Promise<void> => {
 
 // Public: create booking
 router.post("/public/bookings", async (req, res): Promise<void> => {
-  const parsed = UpdateBookingBody.safeParse(req.body);
+  const parsed = CreateBookingBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
-  const [row] = await db.update(onlineBookingsTable).set(parsed.data).where(eq(onlineBookingsTable.id, id)).returning();
-  res.status(201).json(isoBooking(row!));
+  const [row] = await db.insert(onlineBookingsTable).values(parsed.data).returning();
+  if (!row) { res.status(500).json({ error: "Failed to create booking" }); return; }
+  res.status(201).json(isoBooking(row));
+  // fire-and-forget after response is sent
+  void fireZapierWebhook("new_booking", {
+    id: row.id,
+    patientName: row.patientName,
+    patientPhone: row.patientPhone,
+    preferredDate: row.preferredDate,
+    preferredTime: row.preferredTime ?? null,
+    status: row.status,
+  });
 });
 
 // Admin: list all bookings
@@ -89,11 +99,6 @@ router.patch("/bookings/:id", async (req, res): Promise<void> => {
 
   const [row] = await db.update(onlineBookingsTable).set(parsed.data).where(eq(onlineBookingsTable.id, id)).returning();
   if (!row) { res.status(404).json({ error: "Not found" }); return; }
-
-  // If confirmed, doctor should verify and add patient manually for now
-  if (parsed.data.status === "confirmed" && row.doctorId) {
-    // Booking confirmed: doctor can then create a formal appointment
-  }
 
   const [enriched] = await withDoctorName([row]);
   res.json(enriched);

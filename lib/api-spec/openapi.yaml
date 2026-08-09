@@ -1754,11 +1754,10 @@ components:
 
     AdminUser:
       type: object
-      required: [id, username, password, name, createdAt]
+      required: [id, username, name, createdAt]
       properties:
         id: { type: integer }
         username: { type: string }
-        password: { type: string }
         name: { type: string }
         createdAt: { type: string }
 

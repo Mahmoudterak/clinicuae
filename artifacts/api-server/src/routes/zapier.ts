@@ -103,7 +103,9 @@ function sleep(ms: number): Promise<void> {
 }
 
 // ── internal helper: fire a webhook ──────────────────────────────────────────
-export async function fireZapierWebhook(event: string, payload: Record<string, unknown>) {
+// clinicId is accepted for forward-compatibility but not yet used for filtering
+// (zapier_webhooks table is not yet tenant-scoped)
+export async function fireZapierWebhook(event: string, payload: Record<string, unknown>, _clinicId?: number) {
   try {
     const hooks = await db
       .select()
@@ -120,7 +122,6 @@ export async function fireZapierWebhook(event: string, payload: Record<string, u
 
       while (attempt < MAX_DELIVERY_ATTEMPTS) {
         if (attempt > 0) {
-          // Exponential back-off before each retry
           await sleep(BACKOFF_BASE_MS * Math.pow(2, attempt - 1));
         }
         try {
@@ -140,12 +141,11 @@ export async function fireZapierWebhook(event: string, payload: Record<string, u
         if (success) break;
       }
 
-      const retryCount = attempt - 1; // number of retries (0 = succeeded/failed on first attempt)
+      const retryCount = attempt - 1;
       const finalOutcome = success
         ? (retryCount > 0 ? "retried_success" : "success")
         : "failed";
 
-      // fire-and-forget — payload intentionally omitted to avoid PII in logs
       db.insert(zapierLogsTable)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .values({ webhookId: hook.id, event, statusCode, success, retryCount, finalOutcome } as any)
@@ -163,8 +163,6 @@ router.get("/zapier/events", (_req, res): void => {
   res.json(ZAPIER_EVENTS);
 });
 
-// ── all routes below require a valid admin JWT ────────────────────────────────
-
 // ── list webhooks ─────────────────────────────────────────────────────────────
 router.get("/zapier/webhooks", adminAuth, async (_req, res): Promise<void> => {
   const rows = await db.select().from(zapierWebhooksTable).orderBy(desc(zapierWebhooksTable.createdAt));
@@ -179,8 +177,8 @@ router.post("/zapier/webhooks", adminAuth, async (req, res): Promise<void> => {
   res.status(201).json(isoWebhook(row!));
 });
 
-// ── update webhook ────────────────────────────────────────────────────────────
-router.patch("/zapier/webhooks/:id", adminAuth, async (req, res): Promise<void> => {
+// ── delete webhook ────────────────────────────────────────────────────────────
+router.delete("/zapier/webhooks/:id", adminAuth, async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
   const parsed = UpdateWebhookBody.safeParse(req.body);
@@ -190,8 +188,16 @@ router.patch("/zapier/webhooks/:id", adminAuth, async (req, res): Promise<void> 
   res.json(isoWebhook(row));
 });
 
-// ── delete webhook ────────────────────────────────────────────────name────────
+// ── delete webhook ────────────────────────────────────────────────────────────
 router.delete("/zapier/webhooks/:id", adminAuth, async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+  await db.delete(zapierWebhooksTable).where(eq(zapierWebhooksTable.id, id));
+  res.sendStatus(204);
+});
+
+// ── test-fire webhook ─────────────────────────────────────────────────────────
+router.post("/zapier/webhooks/:id/test", adminAuth, async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
   await db.delete(zapierWebhooksTable).where(eq(zapierWebhooksTable.id, id));

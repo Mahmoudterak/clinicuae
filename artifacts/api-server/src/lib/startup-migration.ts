@@ -4,9 +4,10 @@
  * API server self-provisions required schema on every fresh database — no
  * separate migration step needed.
  */
-import { db } from "@workspace/db";
+import { db, adminUsersTable } from "@workspace/db";
 import { sql } from "drizzle-orm";
 import { ObjectStorageService } from "./objectStorage";
+import bcrypt from "bcryptjs";
 
 export async function runStartupMigration(): Promise<void> {
   // patients.status — added to support active/inactive filtering
@@ -68,14 +69,55 @@ export async function runStartupMigration(): Promise<void> {
     CREATE INDEX IF NOT EXISTS demo_requests_created_idx ON demo_requests (created_at)
   `);
 
-  // Migrate base64 logos to GCS object storage (one-time, idempotent)
+  // Migrate base64 logos to object storage (one-time, idempotent)
   await migrateBase64LogosToStorage();
+
+  // ── Admin password hashing ───────────────────────────────────────────────────
+  // Hash every plaintext password in admin_users before serving any traffic.
+  // This is idempotent: bcrypt hashes start with "$2", so already-hashed rows
+  // are skipped.
+  const BCRYPT_ROUNDS = 10;
+  const isBcryptHash = (v: string) => /^\$2[aby]\$\d{2}\$/.test(v);
+
+  const admins = await db.select().from(adminUsersTable);
+
+  for (const admin of admins) {
+    if (!isBcryptHash(admin.password)) {
+      const hashed = await bcrypt.hash(admin.password, BCRYPT_ROUNDS);
+      await db
+        .update(adminUsersTable)
+        .set({ password: hashed })
+        .where(sql`id = ${admin.id}`);
+    }
+  }
+
+  // ── Default admin bootstrap ──────────────────────────────────────────────────
+  // Only runs when the table is completely empty (fresh deployment).
+  // Requires ADMIN_PASSWORD env var — no fallback to a guessable default.
+  if (admins.length === 0) {
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    const adminUsername = process.env.ADMIN_USERNAME ?? "admin";
+    if (!adminPassword) {
+      console.warn(
+        "[startup] admin_users table is empty but ADMIN_PASSWORD is not set. " +
+        "No default admin was created. Set ADMIN_PASSWORD to bootstrap a first admin account."
+      );
+    } else {
+      const hashed = await bcrypt.hash(adminPassword, BCRYPT_ROUNDS);
+      await db.insert(adminUsersTable).values({
+        username: adminUsername,
+        password: hashed,
+        name: "System Administrator",
+      });
+      console.info("[startup] Default admin account created.");
+    }
+  }
 }
 
 /**
  * Finds all clinic_settings rows where logo_data_url starts with "data:",
- * uploads each blob to GCS, and replaces the column value with the object path.
- * Safe to run repeatedly — rows already migrated won't start with "data:".
+ * uploads each blob to object storage, and replaces the column value with
+ * the object path. Safe to run repeatedly — migrated rows won't start with "data:".
  */
 async function migrateBase64LogosToStorage(): Promise<void> {
   const rows = await db.execute<{ id: number; logo_data_url: string }>(sql`
@@ -96,7 +138,7 @@ async function migrateBase64LogosToStorage(): Promise<void> {
       const commaIndex = dataUrl.indexOf(',');
       if (commaIndex === -1) continue;
 
-      const header = dataUrl.slice(0, commaIndex); // e.g. "data:image/png;base64"
+      const header = dataUrl.slice(0, commaIndex);
       const base64Data = dataUrl.slice(commaIndex + 1);
 
       const mimeMatch = header.match(/^data:([^;]+)/);
