@@ -56,17 +56,44 @@ router.post("/patient-auth/login", async (req, res): Promise<void> => {
   res.json({ token, patient: { id: patient.id, firstName: patient.firstName, lastName: patient.lastName, phone: patient.phone } });
 });
 
-// ── POST /patient-auth/setup ── admin creates patient PIN ─────────────────────
-router.post("/patient-auth/setup", async (req, res): Promise<void> => {
+// ── Clinic admin auth middleware ──────────────────────────────────────────────
+function clinicAdminAuth(req: Request, res: Response, next: NextFunction): void {
+  const auth = req.headers.authorization;
+  if (!auth?.startsWith("Bearer ")) { res.status(401).json({ error: "Unauthorized" }); return; }
+  try {
+    const payload = jwt.verify(auth.slice(7), JWT_SECRET) as { role: string; clinicId?: number };
+    if (payload.role !== "admin" && payload.role !== "doctor") {
+      res.status(403).json({ error: "Forbidden: clinic admin access required" });
+      return;
+    }
+    (req as any).clinicId = payload.clinicId;
+    next();
+  } catch {
+    res.status(401).json({ error: "Invalid or expired token" });
+  }
+}
+
+// ── POST /patient-auth/setup ── clinic admin creates/resets patient PIN ───────
+router.post("/patient-auth/setup", clinicAdminAuth, async (req, res): Promise<void> => {
   const parsed = z.object({ patientId: z.number(), phone: z.string(), pin: z.string().min(4).max(6) }).safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
+  // Verify the patient belongs to this clinic
+  const [patient] = await db.select().from(patientsTable).where(eq(patientsTable.id, parsed.data.patientId));
+  if (!patient) { res.status(404).json({ error: "Patient not found" }); return; }
+
+  // Verify the supplied phone matches the patient's phone on record
+  if (patient.phone !== parsed.data.phone) {
+    res.status(400).json({ error: "Phone number does not match patient record" });
+    return;
+  }
+
   const pinHash = await hashPin(parsed.data.pin);
   const [existing] = await db.select().from(patientAccountsTable)
-    .where(eq(patientAccountsTable.phone, parsed.data.phone));
+    .where(eq(patientAccountsTable.patientId, parsed.data.patientId));
 
   if (existing) {
-    await db.update(patientAccountsTable).set({ pinHash }).where(eq(patientAccountsTable.phone, parsed.data.phone));
+    await db.update(patientAccountsTable).set({ pinHash }).where(eq(patientAccountsTable.patientId, parsed.data.patientId));
   } else {
     await db.insert(patientAccountsTable).values({ patientId: parsed.data.patientId, phone: parsed.data.phone, pinHash });
   }

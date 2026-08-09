@@ -24,4 +24,14 @@ export interface DashboardStats {
   suspended: number;
   cancelled: number;
   mrr: number;
+  arr: number;
+  totalPatients: number;
+  totalDoctors: number;
+  totalAppointments: number;
+  planBreakdown: {
+    trial: number;
+    starter: number;
+    pro: number;
+    medical_center: number;
+  };
 }

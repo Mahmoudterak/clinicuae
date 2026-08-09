@@ -11,31 +11,50 @@ import FeatureFlags from '@/pages/feature-flags';
 import SystemHealth from '@/pages/system-health';
 import SaSettings from '@/pages/sa-settings';
 import Developer from '@/pages/developer';
-import Users from '@/pages/users';
 import Communications from '@/pages/communications';
 import Backups from '@/pages/backups';
 import SecurityPage from '@/pages/security';
 import SandboxPage from '@/pages/sandbox';
-import { useAuth } from '@/hooks/use-auth';
+import { AccessDenied } from '@/components/layout/AccessDenied';
+import UsersPage from '@/pages/users';
+import { AuthContext, useAuthState, useAuth, hasPermission, type SuperAdminRole, ROLE_PERMISSIONS } from '@/hooks/use-auth';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
 });
 
-function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  const { isAuthenticated } = useAuth();
+function ProtectedRoute({
+  component: Component,
+  permission,
+}: {
+  component: React.ComponentType;
+  permission?: keyof typeof ROLE_PERMISSIONS;
+}) {
+  const { isAuthenticated, user } = useAuth();
   const [, setLocation] = useLocation();
+
   if (!isAuthenticated) {
     setLocation('/login');
     return null;
   }
+
+  if (permission && !hasPermission(user?.role as SuperAdminRole | undefined, permission)) {
+    return <AccessDenied />;
+  }
+
   return <Component />;
 }
 
-function Protected({ component: Component }: { component: React.ComponentType }) {
+function Protected({
+  component,
+  permission,
+}: {
+  component: React.ComponentType;
+  permission?: keyof typeof ROLE_PERMISSIONS;
+}) {
   return (
     <AdminLayout>
-      <ProtectedRoute component={Component} />
+      <ProtectedRoute component={component} permission={permission} />
     </AdminLayout>
   );
 }
@@ -44,19 +63,19 @@ function Router() {
   return (
     <Switch>
       <Route path="/login" component={Login} />
-      <Route path="/">{() => <Protected component={Dashboard} />}</Route>
-      <Route path="/clinics">{() => <Protected component={Clinics} />}</Route>
-      <Route path="/users">{() => <Protected component={Users} />}</Route>
-      <Route path="/subscriptions">{() => <Protected component={Subscriptions} />}</Route>
-      <Route path="/audit-logs">{() => <Protected component={AuditLogs} />}</Route>
-      <Route path="/feature-flags">{() => <Protected component={FeatureFlags} />}</Route>
-      <Route path="/system-health">{() => <Protected component={SystemHealth} />}</Route>
-      <Route path="/settings">{() => <Protected component={SaSettings} />}</Route>
-      <Route path="/developer">{() => <Protected component={Developer} />}</Route>
-      <Route path="/communications">{() => <Protected component={Communications} />}</Route>
-      <Route path="/backups">{() => <Protected component={Backups} />}</Route>
-      <Route path="/security">{() => <Protected component={SecurityPage} />}</Route>
-      <Route path="/sandbox">{() => <Protected component={SandboxPage} />}</Route>
+      <Route path="/">{() => <Protected component={Dashboard} permission="readDashboard" />}</Route>
+      <Route path="/clinics">{() => <Protected component={Clinics} permission="readClinics" />}</Route>
+      <Route path="/subscriptions">{() => <Protected component={Subscriptions} permission="managePlans" />}</Route>
+      <Route path="/audit-logs">{() => <Protected component={AuditLogs} permission="viewAuditLogs" />}</Route>
+      <Route path="/feature-flags">{() => <Protected component={FeatureFlags} permission="managePlatform" />}</Route>
+      <Route path="/system-health">{() => <Protected component={SystemHealth} permission="viewSystemHealth" />}</Route>
+      <Route path="/settings">{() => <Protected component={SaSettings} permission="managePlatform" />}</Route>
+      <Route path="/developer">{() => <Protected component={Developer} permission="viewDeveloper" />}</Route>
+      <Route path="/users">{() => <Protected component={UsersPage} permission="manageUsers" />}</Route>
+      <Route path="/communications">{() => <Protected component={Communications} permission="managePlatform" />}</Route>
+      <Route path="/backups">{() => <Protected component={Backups} permission="managePlatform" />}</Route>
+      <Route path="/security">{() => <Protected component={SecurityPage} permission="managePlatform" />}</Route>
+      <Route path="/sandbox">{() => <Protected component={SandboxPage} permission="viewDeveloper" />}</Route>
       <Route>
         <AdminLayout>
           <div className="flex h-[50vh] flex-col items-center justify-center text-center space-y-4">
@@ -69,13 +88,20 @@ function Router() {
   );
 }
 
+/** Single shared auth state — all consumers read from this context. */
+function AuthProvider({ children }: { children: React.ReactNode }) {
+  const authState = useAuthState();
+  return <AuthContext.Provider value={authState}>{children}</AuthContext.Provider>;
+}
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-        <Router />
-      </WouterRouter>
-      <Toaster />
+      <AuthProvider>
+        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+          <Router />
+        </WouterRouter>
+        <Toaster />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

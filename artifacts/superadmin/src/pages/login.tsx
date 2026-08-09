@@ -34,10 +34,15 @@ export default function Login() {
         body: JSON.stringify({ username, password })
       })
       
+      if (!data.role) {
+        setError('حساب غير مكوَّن: يرجى التواصل مع Super Admin لتحديد الدور')
+        return
+      }
       login({
         token: data.token,
         name: data.name,
-        username: data.username
+        username: data.username,
+        role: data.role,
       })
       setLocation('/')
     } catch (err: any) {

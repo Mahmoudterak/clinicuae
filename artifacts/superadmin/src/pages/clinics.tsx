@@ -10,10 +10,13 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Loader2, Plus, Search, Pencil, Trash2, ShieldAlert, CheckCircle2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { planLabels, statusBadges } from "@/lib/constants"
+import { useAuth, hasPermission } from "@/hooks/use-auth"
 
 export default function Clinics() {
   const { data: clinics, isLoading } = useClinics()
   const { toast } = useToast()
+  const { user } = useAuth()
+  const canManage = hasPermission(user?.role, "manageClinic")
   
   const createClinic = useCreateClinic()
   const updateClinic = useUpdateClinic()
@@ -119,10 +122,12 @@ export default function Clinics() {
           <h1 className="text-3xl font-bold tracking-tight">إدارة العيادات</h1>
           <p className="text-muted-foreground mt-1">عرض وإدارة جميع العيادات المشتركة في المنصة</p>
         </div>
-        <Button onClick={handleOpenCreate} className="gap-2 shrink-0">
-          <Plus className="w-4 h-4" />
-          إضافة عيادة
-        </Button>
+        {canManage && (
+          <Button onClick={handleOpenCreate} className="gap-2 shrink-0">
+            <Plus className="w-4 h-4" />
+            إضافة عيادة
+          </Button>
+        )}
       </div>
 
       <div className="bg-card rounded-xl border border-border shadow-sm">
@@ -198,40 +203,42 @@ export default function Clinics() {
                         {new Date(clinic.createdAt).toLocaleDateString('ar-SA')}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8" 
-                            title={clinic.status === 'active' ? 'إيقاف' : 'تفعيل'}
-                            onClick={() => handleToggleStatus(clinic)}
-                            disabled={updateClinic.isPending}
-                          >
-                            {clinic.status === 'active' ? (
-                              <ShieldAlert className="h-4 w-4 text-amber-500" />
-                            ) : (
-                              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                            )}
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8" 
-                            title="تعديل"
-                            onClick={() => handleOpenEdit(clinic)}
-                          >
-                            <Pencil className="h-4 w-4 text-blue-500" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive" 
-                            title="حذف"
-                            onClick={() => handleOpenDelete(clinic)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
+                        {canManage && (
+                          <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8" 
+                              title={clinic.status === 'active' ? 'إيقاف' : 'تفعيل'}
+                              onClick={() => handleToggleStatus(clinic)}
+                              disabled={updateClinic.isPending}
+                            >
+                              {clinic.status === 'active' ? (
+                                <ShieldAlert className="h-4 w-4 text-amber-500" />
+                              ) : (
+                                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                              )}
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8" 
+                              title="تعديل"
+                              onClick={() => handleOpenEdit(clinic)}
+                            >
+                              <Pencil className="h-4 w-4 text-blue-500" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive" 
+                              title="حذف"
+                              onClick={() => handleOpenDelete(clinic)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        )}
                       </TableCell>
                     </TableRow>
                   )
