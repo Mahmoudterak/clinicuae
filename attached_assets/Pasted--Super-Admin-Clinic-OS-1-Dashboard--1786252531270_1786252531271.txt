@@ -1,0 +1,495 @@
+🏥 شكل Super Admin في Clinic OS
+1. Dashboard — نظرة النظام بالكامل
+
+يظهر لك:
+
+المؤشر	البيانات
+🏥 إجمالي العيادات	248
+🟢 العيادات النشطة	221
+⏳ التجارب المجانية	18
+🔴 الموقوفة	9
+👨‍⚕️ إجمالي الأطباء	1,842
+👥 إجمالي المرضى	126,450
+📅 المواعيد هذا الشهر	38,240
+💰 الإيرادات	284,500 AED
+💳 الاشتراكات النشطة	221
+💾 Storage	1.8 TB
+⚠️ System Errors	7
+
+وتحتها:
+
+Revenue Analytics
+New Clinics
+Subscription Growth
+Active Users
+API Usage
+Storage Usage
+System Health
+Recent Activities
+2. 🏢 Clinics / Tenants
+
+هذه أهم صفحة.
+
+كل Clinic هي Tenant مستقل.
+
+البيانات:
+Clinic ID
+Clinic Name
+Logo
+Owner
+Email
+Phone
+Country
+City
+Plan
+Status
+Trial Ends
+Subscription
+Doctors
+Employees
+Patients
+Branches
+Storage
+Created At
+Last Activity
+Actions
+View
+Login as Clinic
+Edit
+Suspend
+Activate
+Change Plan
+Reset Password
+Manage Subscription
+View Usage
+Delete
+
+لكن Delete يجب أن يكون محميًا جدًا، ويفضل Soft Delete.
+
+3. 💳 Subscriptions
+
+إدارة الاشتراكات:
+
+Plans
+Pricing
+Billing Cycle
+Active Subscriptions
+Trials
+Expired
+Cancelled
+Failed Payments
+Renewals
+
+مثلاً:
+
+Clinic Pro
+Price: 499 AED / Month
+
+Doctors: 10
+Employees: 25
+Patients: Unlimited
+Storage: 50 GB
+Branches: 3
+
+والـ Super Admin يستطيع تعديل:
+
+السعر
+Limits
+Features
+مدة التجربة
+حالة الخطة
+4. 👥 Users
+
+كل مستخدمي المنصة:
+
+User ID
+Name
+Email
+Role
+Clinic
+Status
+Last Login
+Created At
+IP
+
+والـ Super Admin يستطيع:
+
+Disable User
+Reset Password
+Force Logout
+Change Role
+Login as User
+View Activity
+5. 🔐 Roles & Permissions
+
+هنا تتحكم في النظام كله.
+
+مثلاً:
+
+Super Admin
+Platform Admin
+Support Agent
+Billing Admin
+Developer
+Security Admin
+
+ثم Permissions:
+
+clinics.read
+clinics.create
+clinics.update
+clinics.delete
+
+users.read
+users.update
+
+subscriptions.manage
+payments.manage
+
+system.settings
+system.logs
+system.backups
+developer.tools
+6. 🛠️ Developer Tools
+
+هذه الصفحة مهمة جدًا في مشروعك.
+
+لا تجعل أدوات التطوير مبعثرة داخل النظام.
+
+Developer Console
+System Status
+API Console
+Database
+Logs
+Error Logs
+Webhook Logs
+Email Logs
+Storage
+Cache
+Jobs / Queue
+Cron Jobs
+Feature Flags
+Environment
+System Variables
+API Console
+
+يمكنك مشاهدة:
+
+GET
+POST
+PUT
+PATCH
+DELETE
+
+مع:
+
+Endpoint
+Request
+Response
+Status Code
+Response Time
+User
+Tenant
+Timestamp
+7. 🗄️ Database Explorer
+
+لكن ليس Database مباشر بدون حماية.
+
+الأفضل:
+
+Tables
+Records
+Relationships
+Indexes
+Migrations
+Database Health
+
+مثلاً:
+
+clinics
+users
+patients
+doctors
+appointments
+medical_records
+prescriptions
+invoices
+payments
+subscriptions
+audit_logs
+
+مع Read-only افتراضيًا.
+
+وأي تعديل مباشر يحتاج:
+
+Super Admin Confirmation + Audit Log
+
+8. 📋 System Logs
+
+كل شيء يحدث في النظام يجب أن يكون قابلًا للتتبع.
+
+مثلاً:
+
+08:42
+Super Admin
+Changed Clinic #102
+Plan: Basic → Pro
+
+08:37
+Clinic #102
+Doctor created
+
+08:31
+User #812
+Login
+
+08:20
+Payment Webhook
+Stripe → Success
+
+الحقول:
+
+Actor
+Action
+Resource
+Tenant
+IP
+Device
+Timestamp
+Old Value
+New Value
+9. 🚩 Feature Flags
+
+هذه من أهم أدوات SaaS.
+
+مثلاً:
+
+WhatsApp Integration       ON
+AI Assistant               OFF
+Online Payments            ON
+Inventory                  ON
+Pharmacy                   OFF
+Laboratory                 ON
+Radiology                  OFF
+Dark Mode                  ON
+
+وتستطيع تشغيل Feature:
+
+Global
+
+على كل العيادات.
+
+أو:
+
+Tenant Specific
+
+على Clinic واحدة فقط.
+
+وهذا ممتاز جدًا أثناء التطوير والـ Beta Testing.
+
+10. 🏥 Platform Settings
+
+إعدادات النظام المركزي:
+
+Platform Name
+Logo
+Favicon
+Default Currency
+Default Language
+Timezone
+Email Provider
+SMS Provider
+WhatsApp
+Payment Gateway
+Storage Provider
+Analytics
+Maintenance Mode
+11. 📧 Communications
+
+مركز الرسائل:
+
+Email Templates
+SMS Templates
+WhatsApp Templates
+Push Notifications
+System Announcements
+
+مثلاً:
+
+Trial Expiring
+
+Your free trial expires in 3 days.
+
+يمكن تحديد:
+
+Trigger
+Audience
+Template
+Channel
+12. 💾 Backups
+Database Backup
+File Backup
+Automatic Backup
+Backup History
+Restore
+Download Backup
+
+ويظهر:
+
+Last Backup
+Backup Size
+Status
+Duration
+Created By
+
+⚠️ عمليات Restore يجب أن تكون محمية جدًا وبصلاحيات منفصلة.
+
+13. 📊 System Health
+
+صفحة تقنية تعرض:
+
+API                 🟢 Healthy
+Database            🟢 Healthy
+Storage             🟢 Healthy
+Authentication      🟢 Healthy
+Email               🟢 Healthy
+WhatsApp            🟢 Healthy
+Payments            🟢 Healthy
+Background Jobs     🟢 Healthy
+
+ثم:
+
+CPU
+RAM
+Database Connections
+API Latency
+Error Rate
+Requests/min
+Storage
+Queue
+14. 🔑 Security Center
+
+مهمة جدًا لأن النظام يتعامل مع بيانات طبية حساسة.
+
+يجب أن تحتوي على:
+
+Login Attempts
+Failed Logins
+Suspicious Activity
+Active Sessions
+Devices
+IP Addresses
+2FA
+Password Policies
+Session Policies
+Audit Logs
+
+والأهم:
+
+Tenant Isolation
+
+يجب أن يكون مستحيلًا أن:
+
+Clinic A
+
+تصل إلى:
+
+Clinic B Patients
+Clinic B Doctors
+Clinic B Medical Records
+
+حتى لو حاول المستخدم الوصول للـ API مباشرة.
+
+15. 🧪 Developer Sandbox
+
+أقترح إضافة بيئة:
+
+Production
+Staging
+Development
+Sandbox
+
+حتى تستطيع اختبار:
+
+Features
+APIs
+Webhooks
+Payments
+Database migrations
+
+بدون التأثير على العيادات الحقيقية.
+
+الهيكل النهائي للـ Sidebar
+
+أراه بهذا الشكل:
+
+🏥 Clinic OS
+│
+├── 📊 Overview
+│
+├── 🏢 Clinics
+│   ├── All Clinics
+│   ├── Active
+│   ├── Trials
+│   └── Suspended
+│
+├── 👥 Users
+│
+├── 💳 Subscriptions
+│   ├── Plans
+│   ├── Payments
+│   └── Transactions
+│
+├── 📈 Analytics
+│
+├── 🛠️ Developer
+│   ├── API Console
+│   ├── Database
+│   ├── Logs
+│   ├── Webhooks
+│   ├── Jobs
+│   ├── Feature Flags
+│   └── System Health
+│
+├── 🔐 Security
+│
+├── 📧 Communications
+│
+├── 💾 Backups
+│
+├── ⚙️ Platform Settings
+│
+└── 📋 Audit Logs
+والأهم: فصل الصلاحيات
+
+لا تجعل Super Admin حسابًا عاديًا له role = super_admin فقط.
+
+الأفضل معماريًا:
+
+Platform
+   │
+   ├── Super Admin
+   │      └── Full Platform Access
+   │
+   ├── Platform Admin
+   │      └── Operational Access
+   │
+   ├── Support
+   │      └── Support Access
+   │
+   └── Developer
+          └── Technical Access
+
+وفي المقابل:
+
+Tenant
+   │
+   ├── Clinic Owner
+   ├── Doctor
+   ├── Nurse
+   ├── Receptionist
+   ├── Accountant
+   └── Employee
+
+هذه هي البنية التي أنصح أن نبني عليها Clinic OS:
+الـ Super Admin لا يدير عيادة واحدة؛ يدير الـ Platform نفسها، بينما كل عيادة لديها Tenant Admin مستقل وبيانات معزولة بالكامل.

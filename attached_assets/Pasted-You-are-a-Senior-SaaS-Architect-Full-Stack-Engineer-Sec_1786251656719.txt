@@ -1,0 +1,920 @@
+You are a Senior SaaS Architect, Full-Stack Engineer, Security Engineer, and DevOps Engineer.
+
+You are working on the existing Clinic OS project.
+
+Your task is to BUILD and COMPLETE a professional SUPER ADMIN CONTROL CENTER for Clinic OS.
+
+IMPORTANT:
+Do not create a mockup.
+Do not create static UI only.
+Do not use fake data unless explicitly required for an empty state.
+Connect every feature to the existing database, authentication, APIs, and application architecture.
+
+Before making changes:
+
+1. Inspect the entire existing codebase.
+2. Understand the current architecture.
+3. Identify the database schema.
+4. Identify authentication and authorization.
+5. Identify existing tenant/company structure.
+6. Identify existing users, roles, subscriptions, and billing.
+7. Reuse existing components whenever possible.
+8. Do not break existing Clinic/Tenant functionality.
+
+==================================================
+SUPER ADMIN ARCHITECTURE
+==================================================
+
+Create a separate PLATFORM ADMINISTRATION layer.
+
+The Super Admin manages the entire Clinic OS platform.
+
+The Super Admin must NOT belong to a normal clinic tenant.
+
+Architecture:
+
+Platform
+ ├── Super Admin
+ ├── Platform Admin
+ ├── Support Admin
+ ├── Billing Admin
+ ├── Developer
+ └── Security Admin
+
+Tenant
+ ├── Clinic Owner
+ ├── Doctor
+ ├── Nurse
+ ├── Receptionist
+ ├── Accountant
+ └── Staff
+
+Implement strict separation between Platform users and Tenant users.
+
+==================================================
+SUPER ADMIN DASHBOARD
+==================================================
+
+Create:
+
+/super-admin
+
+Dashboard cards:
+
+- Total Clinics
+- Active Clinics
+- Trial Clinics
+- Suspended Clinics
+- Total Users
+- Total Doctors
+- Total Patients
+- Total Appointments
+- Active Subscriptions
+- Monthly Recurring Revenue
+- Annual Recurring Revenue
+- Failed Payments
+- Storage Usage
+- API Requests
+- System Errors
+
+Charts:
+
+- Revenue Growth
+- New Clinics
+- Subscription Growth
+- Active Users
+- Patient Growth
+- Appointment Growth
+- API Usage
+- Storage Usage
+
+Add:
+
+- Recent Activity
+- Recent Registrations
+- Failed Payments
+- System Alerts
+- System Health
+
+All statistics must come from real database data.
+
+==================================================
+CLINICS / TENANTS
+==================================================
+
+Create:
+
+/super-admin/clinics
+
+Display:
+
+- Clinic ID
+- Clinic Name
+- Logo
+- Owner
+- Email
+- Phone
+- Country
+- City
+- Plan
+- Status
+- Trial End
+- Subscription Status
+- Doctors Count
+- Employees Count
+- Patients Count
+- Branches Count
+- Storage Usage
+- Created At
+- Last Activity
+
+Actions:
+
+- View
+- Edit
+- Activate
+- Suspend
+- Change Plan
+- View Subscription
+- View Usage
+- View Activity
+- Login As Clinic
+- Reset Owner Password
+- Soft Delete
+
+Add:
+
+- Search
+- Filters
+- Sorting
+- Pagination
+- Export
+- Bulk Actions
+
+NEVER permanently delete a tenant by default.
+
+Use soft delete.
+
+==================================================
+CLINIC DETAILS
+==================================================
+
+Create:
+
+/super-admin/clinics/[id]
+
+Tabs:
+
+Overview
+Users
+Doctors
+Patients
+Appointments
+Branches
+Subscription
+Payments
+Storage
+Activity
+Audit Logs
+Settings
+
+Show complete tenant usage.
+
+Add:
+
+"Login as Clinic"
+
+This must use a secure impersonation mechanism.
+
+Never expose or reveal the clinic owner's password.
+
+Every impersonation action must be logged.
+
+==================================================
+SUBSCRIPTIONS
+==================================================
+
+Create:
+
+/super-admin/subscriptions
+
+Features:
+
+- Plans
+- Active Subscriptions
+- Trials
+- Expired
+- Cancelled
+- Failed Payments
+- Renewals
+- Transactions
+
+Plan management:
+
+- Create Plan
+- Edit Plan
+- Activate/Deactivate Plan
+- Change Price
+- Monthly Price
+- Annual Price
+- Trial Duration
+- User Limit
+- Doctor Limit
+- Storage Limit
+- Branch Limit
+- Feature Access
+
+Create feature entitlements.
+
+Example:
+
+patients
+appointments
+medical_records
+prescriptions
+laboratory
+radiology
+inventory
+pharmacy
+reports
+whatsapp
+api
+ai_assistant
+
+==================================================
+USERS
+==================================================
+
+Create:
+
+/super-admin/users
+
+Fields:
+
+- User ID
+- Name
+- Email
+- Role
+- Tenant
+- Status
+- Last Login
+- Created At
+- IP
+- Device
+
+Actions:
+
+- View
+- Disable
+- Enable
+- Force Logout
+- Reset Password
+- Change Role
+- Login As User
+- View Sessions
+- View Activity
+
+==================================================
+ROLES & PERMISSIONS
+==================================================
+
+Create:
+
+/super-admin/roles
+
+Platform roles:
+
+Super Admin
+Platform Admin
+Support Admin
+Billing Admin
+Developer
+Security Admin
+
+Create granular permissions:
+
+platform.read
+platform.manage
+
+clinics.read
+clinics.create
+clinics.update
+clinics.suspend
+clinics.delete
+
+users.read
+users.manage
+
+subscriptions.read
+subscriptions.manage
+
+payments.read
+payments.manage
+
+system.settings
+system.logs
+system.backups
+system.database
+
+developer.tools
+developer.api
+developer.webhooks
+
+security.read
+security.manage
+
+audit.read
+
+Enforce permissions on both:
+
+Frontend
+Backend/API
+
+Never rely only on frontend permissions.
+
+==================================================
+DEVELOPER CENTER
+==================================================
+
+Create:
+
+/super-admin/developer
+
+Sections:
+
+API Console
+Database Explorer
+System Logs
+Error Logs
+Webhook Logs
+Email Logs
+Background Jobs
+Cron Jobs
+Feature Flags
+System Health
+Environment
+Cache
+Storage
+
+==================================================
+API CONSOLE
+==================================================
+
+Create a secure API testing interface.
+
+Display:
+
+Method
+Endpoint
+Request
+Response
+Status Code
+Response Time
+User
+Tenant
+Timestamp
+
+Support:
+
+GET
+POST
+PUT
+PATCH
+DELETE
+
+Do not expose secrets.
+
+==================================================
+DATABASE EXPLORER
+==================================================
+
+Create a SAFE database explorer.
+
+Display:
+
+Tables
+Columns
+Indexes
+Relations
+Migrations
+Database Health
+
+Default mode:
+
+READ ONLY
+
+Do not allow arbitrary SQL execution from the browser.
+
+If SQL execution already exists in the architecture, restrict it to a highly privileged server-side operation with:
+
+- confirmation
+- audit log
+- rate limiting
+- read-only default
+
+Never expose database credentials.
+
+==================================================
+SYSTEM LOGS
+==================================================
+
+Create:
+
+/super-admin/logs
+
+Track:
+
+- Login
+- Logout
+- User creation
+- User deletion
+- Clinic creation
+- Clinic suspension
+- Plan changes
+- Payment events
+- Subscription changes
+- Permission changes
+- Settings changes
+- Impersonation
+- API requests
+- Security events
+- System errors
+
+Each log must include:
+
+- Actor
+- Action
+- Resource
+- Resource ID
+- Tenant
+- IP
+- User Agent
+- Timestamp
+- Previous Value
+- New Value
+
+==================================================
+FEATURE FLAGS
+==================================================
+
+Create:
+
+/super-admin/feature-flags
+
+Features:
+
+- Global Enable/Disable
+- Tenant-specific Enable/Disable
+- Environment-specific Enable/Disable
+
+Example:
+
+WhatsApp
+AI Assistant
+Online Payments
+Inventory
+Pharmacy
+Laboratory
+Radiology
+API Access
+Dark Mode
+
+Do not require deployment to enable/disable normal feature flags.
+
+==================================================
+SYSTEM HEALTH
+==================================================
+
+Create:
+
+/super-admin/system-health
+
+Monitor:
+
+- API
+- Database
+- Authentication
+- Storage
+- Email
+- WhatsApp
+- Payment Gateway
+- Background Jobs
+- Queue
+- Cache
+
+Metrics:
+
+- Response Time
+- Error Rate
+- Requests/min
+- Database Connections
+- Storage
+- Queue Size
+- Failed Jobs
+
+Show:
+
+Healthy
+Warning
+Critical
+
+==================================================
+SECURITY CENTER
+==================================================
+
+Create:
+
+/super-admin/security
+
+Include:
+
+- Active Sessions
+- Failed Login Attempts
+- Suspicious Activity
+- IP Monitoring
+- Devices
+- 2FA Status
+- Password Policies
+- Session Policies
+- Security Events
+
+Implement:
+
+Rate Limiting
+Session Revocation
+Force Logout
+2FA support
+Secure password reset
+Audit logging
+
+==================================================
+COMMUNICATION CENTER
+==================================================
+
+Create:
+
+/super-admin/communications
+
+Manage:
+
+Email Templates
+SMS Templates
+WhatsApp Templates
+Push Notifications
+System Announcements
+
+Template variables:
+
+{{clinic_name}}
+{{user_name}}
+{{trial_days}}
+{{plan_name}}
+{{subscription_date}}
+
+Add preview functionality.
+
+==================================================
+BACKUPS
+==================================================
+
+Create:
+
+/super-admin/backups
+
+Display:
+
+- Backup Date
+- Type
+- Size
+- Status
+- Duration
+- Created By
+
+Support:
+
+Create Backup
+List Backups
+Backup Verification
+Restore
+
+RESTORE MUST require:
+
+- explicit confirmation
+- elevated permission
+- audit log
+
+Never expose storage credentials.
+
+==================================================
+PLATFORM SETTINGS
+==================================================
+
+Create:
+
+/super-admin/settings
+
+Sections:
+
+General
+Branding
+Localization
+Currency
+Timezone
+Email
+SMS
+WhatsApp
+Payments
+Storage
+Authentication
+Security
+Maintenance
+
+Settings must be stored persistently.
+
+==================================================
+MAINTENANCE MODE
+==================================================
+
+Create a global maintenance mode.
+
+When enabled:
+
+- Display maintenance page to normal users.
+- Super Admin remains accessible.
+- Show maintenance message.
+- Optional scheduled start/end time.
+
+==================================================
+MULTI-TENANT SECURITY
+==================================================
+
+THIS IS CRITICAL.
+
+Every tenant-owned database record must contain a tenant identifier where appropriate.
+
+Example:
+
+tenant_id
+
+Every API must validate:
+
+1. authenticated user
+2. user role
+3. tenant membership
+4. requested resource ownership
+
+Never allow:
+
+Clinic A → Clinic B data
+
+Test for:
+
+- Patients
+- Doctors
+- Appointments
+- Medical Records
+- Prescriptions
+- Invoices
+- Payments
+- Files
+- Reports
+
+==================================================
+AUDIT SYSTEM
+==================================================
+
+Create immutable audit logs for privileged actions.
+
+Super Admin actions must always be logged.
+
+Examples:
+
+- Login as Clinic
+- Suspend Clinic
+- Change Plan
+- Change Permissions
+- Delete User
+- Modify Platform Settings
+- Restore Backup
+- Change Feature Flag
+
+==================================================
+UI / UX
+==================================================
+
+Create a premium SaaS admin interface.
+
+Design inspiration:
+
+Linear
+Stripe Dashboard
+Vercel Dashboard
+HubSpot
+Modern Healthcare SaaS
+
+Requirements:
+
+- Responsive
+- Desktop optimized
+- Tablet optimized
+- Mobile compatible
+- Light Mode
+- Dark Mode
+- RTL Arabic
+- English
+- Clean Sidebar
+- Breadcrumbs
+- Data Tables
+- Filters
+- Search
+- Modals
+- Drawers
+- Toast Notifications
+- Loading States
+- Empty States
+- Error States
+- Confirmation dialogs
+
+Use consistent design tokens.
+
+==================================================
+PERFORMANCE
+==================================================
+
+Use:
+
+- Server-side pagination
+- Database indexes
+- Query optimization
+- Lazy loading
+- Caching where appropriate
+- Debounced search
+- Efficient aggregation queries
+
+Do not load thousands of records into the browser unnecessarily.
+
+==================================================
+SECURITY RULES
+==================================================
+
+NEVER:
+
+- expose secrets
+- expose database credentials
+- expose API keys
+- trust frontend role checks
+- allow arbitrary client-side database queries
+- allow unauthorized tenant access
+
+Implement:
+
+- server-side authorization
+- RBAC
+- tenant isolation
+- rate limiting
+- audit logging
+- secure sessions
+- CSRF protection where applicable
+- input validation
+- output validation
+
+==================================================
+DATABASE
+==================================================
+
+Inspect the existing schema first.
+
+Do not duplicate existing tables.
+
+Create migrations only when required.
+
+Use proper:
+
+Foreign Keys
+Indexes
+Unique Constraints
+Cascade Rules
+Soft Delete where appropriate
+Timestamps
+
+==================================================
+TESTING
+==================================================
+
+Create tests for:
+
+- Super Admin authentication
+- RBAC
+- Tenant isolation
+- Clinic creation
+- Clinic suspension
+- Subscription changes
+- User management
+- Impersonation
+- Audit logs
+- Feature flags
+- API authorization
+
+Test cross-tenant access explicitly.
+
+==================================================
+EXECUTION
+==================================================
+
+Do NOT stop after creating the UI.
+
+Implement:
+
+Database
+Backend
+API
+Authorization
+Frontend
+Validation
+Error Handling
+Loading States
+Audit Logs
+Tests
+
+Use the existing project architecture whenever possible.
+
+Do not rewrite the entire project unnecessarily.
+
+After implementation run:
+
+npm install
+
+npm run lint
+
+npm run typecheck
+
+npm test
+
+npm run build
+
+If any command fails:
+
+1. Analyze the error.
+2. Fix it.
+3. Run the command again.
+4. Continue until it passes.
+
+Do not leave TODOs.
+
+Do not leave placeholder functionality.
+
+Do not use fake APIs.
+
+Do not use mock data for production functionality.
+
+==================================================
+FINAL QA
+==================================================
+
+Before finishing verify:
+
+[ ] Super Admin login
+[ ] Platform dashboard
+[ ] Clinic management
+[ ] User management
+[ ] Roles & permissions
+[ ] Subscription management
+[ ] Payments
+[ ] Developer tools
+[ ] API console
+[ ] Logs
+[ ] Webhooks
+[ ] Feature flags
+[ ] System health
+[ ] Security center
+[ ] Communications
+[ ] Backups
+[ ] Platform settings
+[ ] Audit logs
+[ ] Tenant isolation
+[ ] Responsive UI
+[ ] RTL Arabic
+[ ] Dark mode
+[ ] Build successful
+[ ] Tests successful
+
+Finally create:
+
+SUPER_ADMIN_DOCUMENTATION.md
+
+Document:
+
+- Architecture
+- Roles
+- Permissions
+- Database structure
+- API structure
+- Tenant isolation
+- Security model
+- Developer tools
+- Deployment requirements
+- Environment variables
+- Backup strategy
+- Recovery strategy
+
+Do not stop until the Super Admin Control Center is production-ready.

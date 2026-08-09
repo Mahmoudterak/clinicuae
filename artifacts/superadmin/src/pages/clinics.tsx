@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Loader2, Plus, Search, Pencil, Trash2, ShieldAlert, CheckCircle2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { planLabels, statusBadges } from "./dashboard"
+import { planLabels, statusBadges } from "@/lib/constants"
 
 export default function Clinics() {
   const { data: clinics, isLoading } = useClinics()

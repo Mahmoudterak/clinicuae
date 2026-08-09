@@ -3,22 +3,56 @@ import { Button } from '@/components/ui/button';
 import {
   Mic, MessageCircle, Pill, BrainCircuit, Calendar, Wallet,
   BarChart3, Package, ArrowLeft, CheckCircle2, Stethoscope, Zap,
-  Star, ChevronDown, Users, TrendingUp, Shield, Clock,
+  Star, Users, TrendingUp, Shield, Clock, Lock, RefreshCw,
+  Smartphone, Globe, HeartPulse, Building2,
 } from 'lucide-react';
 import React, { useState } from 'react';
 import { Link } from 'wouter';
 
 // ── data ──────────────────────────────────────────────────────────────────────
 const features = [
-  { icon: BrainCircuit,   title: 'ملف المريض الذكي',           desc: 'سجل طبي وإداري شامل مع مساعد ذكاء اصطناعي داخل كل ملف.',                  enLabel: 'Intelligent EMR' },
-  { icon: Calendar,       title: 'الحجز الإلكتروني',            desc: 'صفحة حجز مخصصة للمرضى وإدارة كاملة من لوحة التحكم.',                      enLabel: 'Online Booking' },
-  { icon: MessageCircle,  title: 'تكامل واتساب المتقدم',       desc: 'إرسال رسائل تلقائية، تذكيرات، وفواتير مباشرةً للمرضى عبر واتساب.',         enLabel: 'WhatsApp Sync' },
-  { icon: Wallet,         title: 'الحسابات والفواتير',          desc: 'إصدار فواتير، تتبع المدفوعات، وتصدير PDF باحترافية.',                       enLabel: 'Finance & Billing' },
-  { icon: BarChart3,      title: 'التقارير والتحليلات',         desc: 'مؤشرات أداء، إيرادات، وإحصاءات مرضى بتقارير قابلة للتصدير.',               enLabel: 'Reports & Analytics' },
-  { icon: Zap,            title: 'تكامل Zapier',                desc: 'ربط Clinic OS بآلاف التطبيقات تلقائياً — Google Sheets، Slack، وأكثر.',    enLabel: 'Zapier Integration' },
-  { icon: Package,        title: 'إدارة المخزون',               desc: 'متابعة المواد الطبية، الاستهلاك، والمبيعات بدقة.',                           enLabel: 'Inventory' },
-  { icon: Mic,            title: 'الإدخال الصوتي',              desc: 'إدخال بيانات بسرعة عبر الصوت واللهجة العامية.',                             enLabel: 'Voice Input' },
-  { icon: Pill,           title: 'الروشتة الإلكترونية',         desc: 'وصف الأدوية بدقة وسرعة مع قاعدة بيانات أدوية متكاملة.',                    enLabel: 'e-Prescription' },
+  { icon: BrainCircuit,   title: 'ملف المريض الذكي',           desc: 'سجل طبي وإداري شامل مع مساعد ذكاء اصطناعي داخل كل ملف. وصول فوري لتاريخ المريض، الوصفات، والنتائج.',  enLabel: 'Intelligent EMR' },
+  { icon: Calendar,       title: 'الحجز الإلكتروني',            desc: 'صفحة حجز مخصصة للمرضى مع تأكيد فوري وإدارة كاملة من لوحة التحكم. قلّل الغيابات بتذكيرات تلقائية.',     enLabel: 'Online Booking' },
+  { icon: MessageCircle,  title: 'تكامل واتساب المتقدم',        desc: 'إرسال رسائل تلقائية، تذكيرات مواعيد، وفواتير مباشرةً للمرضى عبر واتساب. تواصل بالطريقة التي يفضلها مرضاك.', enLabel: 'WhatsApp Sync' },
+  { icon: Wallet,         title: 'الحسابات والفواتير',           desc: 'إصدار فواتير احترافية، تتبع المدفوعات، وتصدير PDF. دعم طرق دفع متعددة وتقارير مالية شاملة.',              enLabel: 'Finance & Billing' },
+  { icon: BarChart3,      title: 'التقارير والتحليلات',          desc: 'مؤشرات أداء، إيرادات، وإحصاءات مرضى بتقارير قابلة للتصدير. اتخذ قرارات مبنية على بيانات حقيقية.',        enLabel: 'Reports & Analytics' },
+  { icon: Zap,            title: 'تكامل Zapier',                 desc: 'ربط Clinic OS بآلاف التطبيقات تلقائياً — Google Sheets، Slack، CRM، والبريد الإلكتروني.',                enLabel: 'Zapier Integration' },
+  { icon: Package,        title: 'إدارة المخزون',                desc: 'متابعة المواد الطبية، الاستهلاك، والمبيعات بدقة. تنبيهات تلقائية عند انخفاض الكميات.',                    enLabel: 'Inventory' },
+  { icon: Pill,           title: 'الروشتة الإلكترونية',          desc: 'وصف الأدوية بدقة وسرعة مع قاعدة بيانات أدوية متكاملة. تحميل تلقائي من الروشتة للفاتورة.',               enLabel: 'e-Prescription' },
+  { icon: Mic,            title: 'الإدخال الصوتي',               desc: 'إدخال بيانات المريض والملاحظات بسرعة عبر الصوت واللهجة العامية. وفّر ساعات يومياً.',                     enLabel: 'Voice Input' },
+];
+
+const whyItems = [
+  {
+    icon: Globe,
+    title: 'سحابي بالكامل',
+    desc: 'لا تثبيت، لا خوادم، لا تكاليف IT. استخدم النظام من أي جهاز في أي مكان بكلمة مرور واحدة.',
+  },
+  {
+    icon: Lock,
+    title: 'أمان وخصوصية',
+    desc: 'بياناتك مشفرة بالكامل مع نسخ احتياطية يومية تلقائية وبروتوكول HTTPS. امتثال كامل للوائح الصحية.',
+  },
+  {
+    icon: RefreshCw,
+    title: 'تحديثات مستمرة',
+    desc: 'ميزات جديدة كل أسبوع بدون أي تكلفة إضافية. نظامك يتطور مع احتياجات عيادتك.',
+  },
+  {
+    icon: Smartphone,
+    title: 'يعمل على كل الأجهزة',
+    desc: 'جوال، تابلت، أو كمبيوتر — واجهة متجاوبة مصممة لتجربة مستخدم مثالية على كل شاشة.',
+  },
+  {
+    icon: HeartPulse,
+    title: 'مصمم للسوق العربي',
+    desc: 'واجهة عربية بالكامل مع دعم RTL، أسماء عربية، وعملة الدرهم الإماراتي. لا ترجمة آلية.',
+  },
+  {
+    icon: Building2,
+    title: 'للعيادة والمركز الطبي',
+    desc: 'من طبيب واحد إلى مراكز طبية متعددة الفروع والأطباء — النظام يكبر معك.',
+  },
 ];
 
 const plans = [
@@ -84,10 +118,10 @@ const plans = [
 ];
 
 const stats = [
-  { icon: Users,    value: '+500',   label: 'عيادة تستخدم النظام' },
-  { icon: Star,     value: '4.9',    label: 'تقييم المستخدمين' },
-  { icon: TrendingUp, value: '40%', label: 'توفير في وقت الإدارة' },
-  { icon: Shield,   value: '99.9%',  label: 'وقت التشغيل' },
+  { icon: Users,      value: '+500',  label: 'عيادة تستخدم النظام' },
+  { icon: Star,       value: '4.9',   label: 'تقييم المستخدمين' },
+  { icon: TrendingUp, value: '40%',   label: 'توفير في وقت الإدارة' },
+  { icon: Shield,     value: '99.9%', label: 'وقت التشغيل' },
 ];
 
 // ── App screenshot mockups ─────────────────────────────────────────────────────
@@ -97,7 +131,6 @@ const screens = [
     labelEn: 'Dashboard',
     content: (
       <div className="flex h-full bg-slate-950 text-slate-300 text-xs overflow-hidden">
-        {/* Sidebar */}
         <div className="w-44 bg-slate-900 border-l border-white/5 p-3 shrink-0">
           <div className="flex items-center gap-2 mb-6 p-2">
             <div className="w-6 h-6 rounded-lg bg-indigo-500 flex items-center justify-center"><Stethoscope className="w-3 h-3 text-white" /></div>
@@ -110,14 +143,12 @@ const screens = [
             </div>
           ))}
         </div>
-        {/* Main */}
         <div className="flex-1 p-4 overflow-hidden flex flex-col gap-3">
           <div className="text-white font-bold text-sm mb-1">مرحباً، د. محمد 👋</div>
-          {/* KPI cards */}
           <div className="grid grid-cols-4 gap-2">
             {[
               { label: 'مرضى اليوم', val: '24', color: 'text-blue-400' },
-              { label: 'المواعيد', val: '18', color: 'text-indigo-400' },
+              { label: 'المواعيد',   val: '18', color: 'text-indigo-400' },
               { label: 'الإيرادات', val: '12,400', color: 'text-green-400' },
               { label: 'فواتير معلقة', val: '6', color: 'text-yellow-400' },
             ].map((k,i) => (
@@ -127,7 +158,6 @@ const screens = [
               </div>
             ))}
           </div>
-          {/* Chart */}
           <div className="flex-1 bg-white/5 border border-white/5 rounded-xl p-3 relative overflow-hidden">
             <div className="text-white/60 text-[10px] mb-3">إيرادات الأسبوع (درهم)</div>
             <div className="flex items-end gap-1 h-24">
@@ -157,11 +187,11 @@ const screens = [
         </div>
         <div className="flex-1 overflow-hidden">
           {[
-            { name: 'أحمد العتيبي',   age: '34', spec: 'طب عام',     status: 'نشط',   color: 'bg-green-100 text-green-700' },
-            { name: 'سارة المنصوري',  age: '28', spec: 'أمراض جلدية', status: 'نشط',   color: 'bg-green-100 text-green-700' },
-            { name: 'خالد الزهراني', age: '52', spec: 'قلب وأوعية',  status: 'متابعة', color: 'bg-yellow-100 text-yellow-700' },
-            { name: 'فاطمة الحربي',  age: '41', spec: 'طب عام',     status: 'نشط',   color: 'bg-green-100 text-green-700' },
-            { name: 'محمد القحطاني', age: '29', spec: 'عظام',        status: 'جديد',  color: 'bg-blue-100 text-blue-700' },
+            { name: 'أحمد العتيبي',   age: '34', spec: 'طب عام',      status: 'نشط',    color: 'bg-green-100 text-green-700' },
+            { name: 'سارة المنصوري',  age: '28', spec: 'أمراض جلدية', status: 'نشط',    color: 'bg-green-100 text-green-700' },
+            { name: 'خالد الزهراني', age: '52', spec: 'قلب وأوعية',   status: 'متابعة', color: 'bg-yellow-100 text-yellow-700' },
+            { name: 'فاطمة الحربي',  age: '41', spec: 'طب عام',      status: 'نشط',    color: 'bg-green-100 text-green-700' },
+            { name: 'محمد القحطاني', age: '29', spec: 'عظام',         status: 'جديد',   color: 'bg-blue-100 text-blue-700' },
           ].map((p,i) => (
             <div key={i} className={`flex items-center gap-3 px-4 py-3 border-b border-slate-50 ${i%2===0?'bg-white':'bg-slate-50/50'}`}>
               <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center shrink-0">{p.name[0]}</div>
@@ -190,11 +220,11 @@ const screens = [
         </div>
         <div className="flex-1 overflow-hidden">
           {[
-            { name: 'أحمد العتيبي',   amount: '350',  status: 'مدفوع',    color: 'bg-green-100 text-green-700',  wa: true },
-            { name: 'سارة المنصوري',  amount: '650',  status: 'معلق',     color: 'bg-yellow-100 text-yellow-700', wa: false },
-            { name: 'خالد الزهراني', amount: '1,200', status: 'مدفوع',    color: 'bg-green-100 text-green-700',  wa: true },
-            { name: 'فاطمة الحربي',  amount: '450',  status: 'متأخر',    color: 'bg-red-100 text-red-700',      wa: false },
-            { name: 'محمد القحطاني', amount: '250',  status: 'معلق',     color: 'bg-yellow-100 text-yellow-700', wa: false },
+            { name: 'أحمد العتيبي',   amount: '350',   status: 'مدفوع', color: 'bg-green-100 text-green-700',  wa: true },
+            { name: 'سارة المنصوري',  amount: '650',   status: 'معلق',  color: 'bg-yellow-100 text-yellow-700', wa: false },
+            { name: 'خالد الزهراني', amount: '1,200', status: 'مدفوع', color: 'bg-green-100 text-green-700',  wa: true },
+            { name: 'فاطمة الحربي',  amount: '450',   status: 'متأخر', color: 'bg-red-100 text-red-700',      wa: false },
+            { name: 'محمد القحطاني', amount: '250',   status: 'معلق',  color: 'bg-yellow-100 text-yellow-700', wa: false },
           ].map((inv,i) => (
             <div key={i} className={`flex items-center gap-3 px-4 py-3 border-b border-slate-50 ${i%2===0?'bg-white':'bg-slate-50/50'}`}>
               <div className="flex-1 min-w-0">
@@ -219,11 +249,10 @@ const screens = [
           <span className="font-bold text-slate-900">واتساب الأعمال</span>
         </div>
         <div className="flex flex-col gap-2 p-3 overflow-hidden">
-          {/* Template cards */}
           {[
-            { title: 'تذكير موعد',        desc: 'تذكير تلقائي قبل الموعد بـ 24 ساعة', color: 'border-l-4 border-indigo-400' },
-            { title: 'إرسال الفاتورة',    desc: 'إرسال ملخص الفاتورة للمريض مباشرةً', color: 'border-l-4 border-green-400' },
-            { title: 'رسالة ترحيب',       desc: 'استقبال المرضى الجدد تلقائياً',       color: 'border-l-4 border-blue-400' },
+            { title: 'تذكير موعد',         desc: 'تذكير تلقائي قبل الموعد بـ 24 ساعة', color: 'border-l-4 border-indigo-400' },
+            { title: 'إرسال الفاتورة',     desc: 'إرسال ملخص الفاتورة للمريض مباشرةً', color: 'border-l-4 border-green-400' },
+            { title: 'رسالة ترحيب',        desc: 'استقبال المرضى الجدد تلقائياً',       color: 'border-l-4 border-blue-400' },
             { title: 'متابعة بعد الزيارة', desc: 'تواصل مع المريض بعد الكشف',           color: 'border-l-4 border-violet-400' },
           ].map((t,i) => (
             <div key={i} className={`bg-white rounded-xl p-3 ${t.color} shadow-sm flex items-start justify-between`}>
@@ -253,13 +282,16 @@ function Navbar() {
         </div>
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
           <a href="#features" className="hover:text-white transition-colors">المميزات</a>
+          <a href="#why" className="hover:text-white transition-colors">لماذا نحن</a>
           <a href="#screenshots" className="hover:text-white transition-colors">النظام</a>
           <a href="#pricing" className="hover:text-white transition-colors">الباقات</a>
         </nav>
         <div className="flex items-center gap-3">
-          <Button variant="ghost" className="hidden sm:inline-flex text-slate-300 hover:text-white hover:bg-white/10">
-            تسجيل الدخول
-          </Button>
+          <a href="https://elite-architect-amlakosuae.replit.app/login">
+            <Button variant="ghost" className="hidden sm:inline-flex text-slate-300 hover:text-white hover:bg-white/10">
+              تسجيل الدخول
+            </Button>
+          </a>
           <Link href="/trial">
             <Button className="bg-indigo-500 hover:bg-indigo-600 text-white border-0 rounded-xl">
               ابدأ مجاناً
@@ -277,7 +309,6 @@ function Hero() {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-900/40 via-slate-950 to-slate-950" />
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/20 rounded-full blur-[128px]" />
       <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[128px]" />
-
       <div className="container relative mx-auto px-4 text-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
@@ -289,7 +320,6 @@ function Hero() {
           </span>
           نظام إدارة عيادات متكامل مصمم للسوق العربي
         </motion.div>
-
         <motion.h1
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
           className="text-5xl md:text-7xl font-black text-white mb-6 leading-tight"
@@ -299,14 +329,12 @@ function Hero() {
             إدارة العيادات
           </span>
         </motion.h1>
-
         <motion.p
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}
           className="text-lg md:text-xl text-slate-300 mb-10 max-w-2xl mx-auto leading-relaxed"
         >
-          إدارة العيادة، المرضى، الفواتير، واتساب، وZapier — في نظام واحد سريع ومصمم للأطباء والإداريين في دول الخليج.
+          إدارة المرضى، المواعيد، الفواتير، واتساب، وZapier — في نظام واحد سريع مصمم للأطباء والإداريين في دول الخليج. وصول سحابي كامل بدون تثبيت.
         </motion.p>
-
         <motion.div
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }}
           className="flex flex-col sm:flex-row items-center justify-center gap-4"
@@ -317,9 +345,11 @@ function Hero() {
               <ArrowLeft className="w-5 h-5 mr-2" />
             </Button>
           </Link>
-          <Button size="lg" variant="outline" className="w-full sm:w-auto h-14 px-8 text-lg bg-white/5 border-white/10 text-white hover:bg-white/10 rounded-xl">
-            شاهد العرض التوضيحي
-          </Button>
+          <a href="https://wa.me/971568952775" target="_blank" rel="noopener noreferrer">
+            <Button size="lg" variant="outline" className="w-full sm:w-auto h-14 px-8 text-lg bg-white/5 border-white/10 text-white hover:bg-white/10 rounded-xl">
+              تواصل مع المبيعات
+            </Button>
+          </a>
         </motion.div>
       </div>
     </section>
@@ -332,14 +362,7 @@ function Stats() {
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {stats.map((s, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className="text-center"
-            >
+            <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }} className="text-center">
               <div className="flex justify-center mb-3">
                 <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center">
                   <s.icon className="w-5 h-5 text-indigo-400" />
@@ -361,42 +384,21 @@ function Screenshots() {
     <section className="py-24 bg-slate-950" id="screenshots">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="text-3xl md:text-5xl font-black text-white mb-4"
-          >
+          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-3xl md:text-5xl font-black text-white mb-4">
             النظام من الداخل
           </motion.h2>
           <p className="text-slate-400 text-lg max-w-xl mx-auto">واجهة سلسة وسريعة مصممة خصيصاً للعيادات العربية</p>
         </div>
-
-        {/* Tab buttons */}
         <div className="flex justify-center flex-wrap gap-2 mb-8">
           {screens.map((s, i) => (
-            <button
-              key={i}
-              onClick={() => setActive(i)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                active === i
-                  ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
-                  : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 border border-white/10'
-              }`}
-            >
+            <button key={i} onClick={() => setActive(i)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${active === i ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 border border-white/10'}`}>
               {s.label}
             </button>
           ))}
         </div>
-
-        {/* Screen preview */}
-        <motion.div
-          key={active}
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="max-w-4xl mx-auto"
-        >
+        <motion.div key={active} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="max-w-4xl mx-auto">
           <div className="rounded-2xl overflow-hidden border border-white/10 shadow-2xl shadow-indigo-900/20">
-            {/* Browser chrome */}
             <div className="h-9 bg-slate-900 border-b border-white/5 flex items-center px-4 gap-2">
               <div className="flex gap-1.5">
                 <div className="w-2.5 h-2.5 rounded-full bg-red-500/40" />
@@ -405,9 +407,7 @@ function Screenshots() {
               </div>
               <div className="mx-auto text-[11px] text-slate-500 font-mono">app.clinic-os.com / {screens[active].labelEn.toLowerCase()}</div>
             </div>
-            <div className="h-[420px] md:h-[500px]">
-              {screens[active].content}
-            </div>
+            <div className="h-[420px] md:h-[500px]">{screens[active].content}</div>
           </div>
         </motion.div>
       </div>
@@ -420,22 +420,15 @@ function Features() {
     <section className="py-24 bg-white" id="features">
       <div className="container mx-auto px-4">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="text-3xl md:text-5xl font-black text-slate-900 mb-4"
-          >
+          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-3xl md:text-5xl font-black text-slate-900 mb-4">
             كل ما تحتاجه في مكان واحد
           </motion.h2>
-          <p className="text-lg text-slate-500">نظام متكامل يغطي كل جانب من جوانب إدارة العيادة</p>
+          <p className="text-lg text-slate-500">نظام متكامل يغطي كل جانب من جوانب إدارة العيادة — من استقبال المريض حتى تحصيل الفاتورة</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((feature, idx) => (
-            <motion.div
-              key={idx}
-              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-              transition={{ delay: idx * 0.05 }}
-              className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-xl hover:border-indigo-100 transition-all duration-300 group"
-            >
+            <motion.div key={idx} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: idx * 0.05 }}
+              className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-xl hover:border-indigo-100 transition-all duration-300 group">
               <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-5 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
                 <feature.icon className="w-6 h-6" />
               </div>
@@ -450,54 +443,64 @@ function Features() {
   );
 }
 
+function WhyUs() {
+  return (
+    <section className="py-24 bg-slate-950" id="why">
+      <div className="container mx-auto px-4">
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-3xl md:text-5xl font-black text-white mb-4">
+            لماذا تختار Clinic OS؟
+          </motion.h2>
+          <p className="text-slate-400 text-lg">نحن لا نبيع برنامجاً — نبني شراكة حقيقية مع عيادتك لتحقيق أعلى المستويات</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          {whyItems.map((item, i) => (
+            <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.07 }}
+              className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/8 hover:border-indigo-500/30 transition-all duration-300">
+              <div className="w-11 h-11 rounded-xl bg-indigo-500/10 flex items-center justify-center mb-4">
+                <item.icon className="w-5 h-5 text-indigo-400" />
+              </div>
+              <h3 className="text-white font-bold text-base mb-2">{item.title}</h3>
+              <p className="text-slate-400 text-sm leading-relaxed">{item.desc}</p>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Pricing() {
   const [annual, setAnnual] = useState(false);
   return (
     <section className="py-24 bg-slate-50" id="pricing">
       <div className="container mx-auto px-4">
         <div className="text-center mb-14">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="text-3xl md:text-5xl font-black text-slate-900 mb-4"
-          >
+          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-3xl md:text-5xl font-black text-slate-900 mb-4">
             أسعار شفافة وبسيطة
           </motion.h2>
           <p className="text-slate-500 text-lg mb-8">ابدأ مجاناً لمدة 14 يوماً — بدون بطاقة ائتمان</p>
-
-          {/* Annual/Monthly toggle */}
           <div className="inline-flex items-center gap-3 bg-white border border-slate-200 rounded-2xl p-1.5 shadow-sm">
-            <button
-              onClick={() => setAnnual(false)}
-              className={`px-5 py-2 rounded-xl text-sm font-semibold transition-all ${!annual ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-            >
+            <button onClick={() => setAnnual(false)}
+              className={`px-5 py-2 rounded-xl text-sm font-semibold transition-all ${!annual ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
               شهري
             </button>
-            <button
-              onClick={() => setAnnual(true)}
-              className={`px-5 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 ${annual ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-            >
+            <button onClick={() => setAnnual(true)}
+              className={`px-5 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 ${annual ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
               سنوي
-              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${annual ? 'bg-white/20 text-white' : 'bg-green-100 text-green-700'}`}>
-                وفّر 15%
-              </span>
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${annual ? 'bg-white/20 text-white' : 'bg-green-100 text-green-700'}`}>وفّر 15%</span>
             </button>
           </div>
         </div>
-
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {plans.map((plan, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className={`relative rounded-3xl overflow-hidden ${plan.highlight ? 'shadow-2xl shadow-indigo-500/20 scale-105' : 'shadow-sm'}`}
-            >
+            <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
+              className={`relative rounded-3xl overflow-hidden ${plan.highlight ? 'shadow-2xl shadow-indigo-500/20 scale-105' : 'shadow-sm'}`}>
               {plan.badge && (
                 <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10">
                   <span className="bg-white text-indigo-600 text-xs font-bold px-3 py-1 rounded-full shadow-sm">{plan.badge}</span>
                 </div>
               )}
-              {/* Header */}
               <div className={`bg-gradient-to-br ${plan.color} p-6 pt-10 text-white`}>
                 <div className="text-lg font-bold mb-1">{plan.name}</div>
                 <div className="text-white/60 text-xs mb-4">{plan.nameEn} · {plan.description}</div>
@@ -505,11 +508,8 @@ function Pricing() {
                   <span className="text-4xl font-black">{annual ? plan.priceAnnual : plan.price}</span>
                   <span className="text-white/60 mb-1 text-sm">د.إ / شهر</span>
                 </div>
-                {annual && (
-                  <div className="text-white/50 text-xs mt-1">يُدفع {(plan.priceAnnual * 12).toLocaleString()} د.إ سنوياً</div>
-                )}
+                {annual && <div className="text-white/50 text-xs mt-1">يُدفع {(plan.priceAnnual * 12).toLocaleString()} د.إ سنوياً</div>}
               </div>
-              {/* Features */}
               <div className="bg-white p-6 flex flex-col gap-5">
                 <ul className="space-y-3">
                   {plan.features.map((f, j) => (
@@ -519,23 +519,21 @@ function Pricing() {
                     </li>
                   ))}
                 </ul>
-                <Link href={plan.cta === 'تواصل معنا' ? 'https://wa.me/971551981564' : '/trial'} className="block" target={plan.cta === 'تواصل معنا' ? '_blank' : undefined}>
-                  <Button
-                    className={`w-full rounded-xl h-11 font-semibold ${
-                      plan.highlight
-                        ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                        : 'bg-slate-100 hover:bg-slate-200 text-slate-800'
-                    }`}
-                  >
-                    {plan.cta}
-                  </Button>
-                </Link>
+                {plan.cta === 'تواصل معنا' ? (
+                  <a href="https://wa.me/971568952775" target="_blank" rel="noopener noreferrer" className="block">
+                    <Button className="w-full rounded-xl h-11 font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800">{plan.cta}</Button>
+                  </a>
+                ) : (
+                  <Link href="/trial" className="block">
+                    <Button className={`w-full rounded-xl h-11 font-semibold ${plan.highlight ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-800'}`}>
+                      {plan.cta}
+                    </Button>
+                  </Link>
+                )}
               </div>
             </motion.div>
           ))}
         </div>
-
-        {/* Comparison note */}
         <p className="text-center text-sm text-slate-400 mt-10">
           <Clock className="inline w-4 h-4 ml-1" />
           جميع الباقات تشمل التحديثات التلقائية، النسخ الاحتياطي اليومي، وبروتوكول HTTPS المشفر
@@ -553,11 +551,9 @@ function CTA() {
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-[80px]" />
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-900/50 rounded-full blur-[80px]" />
           <div className="relative z-10 max-w-2xl mx-auto">
-            <h2 className="text-3xl md:text-5xl font-black text-white mb-4">
-              هل أنت مستعد؟
-            </h2>
+            <h2 className="text-3xl md:text-5xl font-black text-white mb-4">هل أنت مستعد؟</h2>
             <p className="text-lg text-indigo-100 mb-8">
-              انضم لمئات الأطباء الذين يديرون عياداتهم بذكاء مع Clinic OS.
+              انضم لمئات الأطباء الذين يديرون عياداتهم بذكاء مع Clinic OS. إعداد في أقل من 5 دقائق.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <Link href="/trial">
@@ -565,7 +561,7 @@ function CTA() {
                   ابدأ تجربتك المجانية — 14 يوم
                 </Button>
               </Link>
-              <a href="https://wa.me/971551981564" target="_blank" rel="noopener noreferrer">
+              <a href="https://wa.me/971568952775" target="_blank" rel="noopener noreferrer">
                 <Button size="lg" variant="outline" className="h-14 px-8 text-lg border-white/20 text-white hover:bg-white/10 rounded-xl">
                   تواصل مع المبيعات
                 </Button>
@@ -596,9 +592,10 @@ function Footer() {
           </div>
           <div className="flex items-center gap-6 text-sm font-medium flex-wrap justify-center">
             <a href="#features" className="hover:text-white transition-colors">المميزات</a>
+            <a href="#why" className="hover:text-white transition-colors">لماذا نحن</a>
             <a href="#screenshots" className="hover:text-white transition-colors">النظام</a>
             <a href="#pricing" className="hover:text-white transition-colors">الأسعار</a>
-            <a href="https://wa.me/971551981564" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">تواصل معنا</a>
+            <a href="https://wa.me/971568952775" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">تواصل معنا</a>
           </div>
           <div className="text-sm">&copy; {new Date().getFullYear()} Clinic OS. جميع الحقوق محفوظة.</div>
         </div>
@@ -614,8 +611,9 @@ export default function Home() {
       <main>
         <Hero />
         <Stats />
-        <Screenshots />
         <Features />
+        <WhyUs />
+        <Screenshots />
         <Pricing />
         <CTA />
       </main>

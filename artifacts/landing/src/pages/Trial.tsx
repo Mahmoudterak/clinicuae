@@ -47,10 +47,26 @@ export default function TrialPage() {
         }),
       });
     } catch {
-      // proceed to success regardless
+      // proceed regardless
     }
     setLoading(false);
-    setStep('done');
+
+    // Build a pre-filled WhatsApp message with the clinic details
+    const msg = [
+      `مرحباً، أود الاستفسار عن تجربة Clinic OS المجانية.`,
+      ``,
+      `📋 بيانات العيادة:`,
+      `• اسم العيادة: ${form.clinicName}`,
+      `• المسؤول: ${form.ownerName}`,
+      `• الجوال: ${form.phone}`,
+      form.specialty ? `• التخصص: ${form.specialty}` : '',
+      form.email ? `• البريد: ${form.email}` : '',
+    ].filter(Boolean).join('\n');
+
+    window.open(
+      `https://wa.me/971568952775?text=${encodeURIComponent(msg)}`,
+      '_blank',
+    );
   };
 
   const valid =

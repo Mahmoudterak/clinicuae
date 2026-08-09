@@ -15,6 +15,9 @@ import PublicBookingPage from './pages/book/index';
 import ZapierPage from './pages/zapier/index';
 import NotFound from '@/pages/not-found';
 
+import PatientLogin from './pages/patient/login';
+import PatientPortal from './pages/patient/portal';
+
 import LoginPage from './pages/login';
 import Dashboard from './pages/dashboard';
 import DoctorPortal from './pages/doctor-portal';
@@ -99,7 +102,13 @@ function App() {
             <TooltipProvider>
               <SettingsProvider>
                 <AuthProvider>
-                  <ProtectedRoutes />
+                  <Switch>
+                    <Route path="/patient/login" component={PatientLogin} />
+                    <Route path="/patient/portal" component={PatientPortal} />
+                    <Route>
+                      <ProtectedRoutes />
+                    </Route>
+                  </Switch>
                   <Toaster />
                 </AuthProvider>
               </SettingsProvider>

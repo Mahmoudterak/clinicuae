@@ -22,8 +22,10 @@ import {
 import logoUrl from "@/assets/clinic-os-logo.png";
 
 import DoctorAccountsTab from "./DoctorAccountsTab";
+import BranchesTab from "./BranchesTab";
+import StaffTab from "./StaffTab";
 
-type Tab = "clinic" | "users" | "logo" | "doctors";
+type Tab = "clinic" | "users" | "logo" | "doctors" | "branches" | "staff";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
@@ -458,10 +460,12 @@ export default function SettingsPage() {
   }
 
   const tabs: { id: Tab; label: string; labelAr: string; icon: React.ElementType }[] = [
-    { id: "clinic",  label: "Clinic Info",        labelAr: "بيانات العيادة",      icon: Building2 },
-    { id: "users",   label: "User Management",   labelAr: "إدارة المستخدمين",   icon: Users },
-    { id: "doctors", label: "Doctor Accounts",   labelAr: "حسابات الأطباء",     icon: Stethoscope },
-    { id: "logo",    label: "Logo",              labelAr: "الشعار",              icon: ImageIcon },
+    { id: "clinic",   label: "Clinic Info",       labelAr: "بيانات العيادة",     icon: Building2 },
+    { id: "branches", label: "Branches",          labelAr: "الفروع",             icon: MapPin },
+    { id: "users",    label: "Admins",            labelAr: "المديرون",           icon: Users },
+    { id: "doctors",  label: "Doctors",           labelAr: "الأطباء",            icon: Stethoscope },
+    { id: "staff",    label: "Staff",             labelAr: "الموظفون",           icon: Users },
+    { id: "logo",     label: "Logo",              labelAr: "الشعار",             icon: ImageIcon },
   ];
 
   return (
@@ -491,8 +495,10 @@ export default function SettingsPage() {
 
       {/* Tab content */}
       {tab === "clinic"   && <ClinicTab />}
+      {tab === "branches" && <BranchesTab />}
       {tab === "users"    && <UsersTab />}
       {tab === "doctors"  && <DoctorAccountsTab />}
+      {tab === "staff"    && <StaffTab />}
       {tab === "logo"     && <LogoTab />}
     </div>
   );
