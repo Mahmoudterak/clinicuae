@@ -50,28 +50,28 @@ router.get("/appointments", async (req, res): Promise<void> => {
 });
 
 router.post("/appointments", async (req, res): Promise<void> => {
-  const parsed = CreateAppointmentBody.safeParse(req.body);
+  const parsed = UpdateAppointmentBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const cid = req.clinicId!;
   const [row] = await db
-    .insert(appointmentsTable)
-    .values({ ...parsed.data, clinicId: cid })
+    .delete(appointmentsTable)
+    .where(and(eq(appointmentsTable.clinicId, req.clinicId!), eq(appointmentsTable.id, params.data.id)))
     .returning();
-  void fireZapierWebhook("appointment.created", row!, cid);
-  const [withName] = await withNames([row!], cid);
-  res.status(201).json(CreateAppointmentResponse.parse(withName));
+  if (!row) { res.status(404).json({ error: "Appointment not found" }); return; }
+  if (parsed.data.status === "completed") void fireZapierWebhook("appointment.completed", row, cid);
+  const [withName] = await withNames([row], cid);
+  res.json(UpdateAppointmentResponse.parse(withName));
 });
 
-router.patch("/appointments/:id", async (req, res): Promise<void> => {
-  const params = UpdateAppointmentParams.safeParse(req.params);
+router.delete("/appointments/:id", async (req, res): Promise<void> => {
+  const params = DeleteAppointmentParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const parsed = UpdateAppointmentBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const cid = req.clinicId!;
   const [row] = await db
-    .update(appointmentsTable)
-    .set(parsed.data)
-    .where(and(eq(appointmentsTable.clinicId, cid), eq(appointmentsTable.id, params.data.id)))
+    .delete(appointmentsTable)
+    .where(and(eq(appointmentsTable.clinicId, req.clinicId!), eq(appointmentsTable.id, params.data.id)))
     .returning();
   if (!row) { res.status(404).json({ error: "Appointment not found" }); return; }
   if (parsed.data.status === "completed") void fireZapierWebhook("appointment.completed", row, cid);

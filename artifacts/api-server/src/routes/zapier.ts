@@ -147,7 +147,8 @@ export async function fireZapierWebhook(event: string, payload: Record<string, u
 
       // fire-and-forget — payload intentionally omitted to avoid PII in logs
       db.insert(zapierLogsTable)
-        .values({ webhookId: hook.id, event, statusCode, success, retryCount, finalOutcome })
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .values({ webhookId: hook.id, event, statusCode, success, retryCount, finalOutcome } as any)
         .catch(() => {});
       db.update(zapierWebhooksTable)
         .set({ lastFiredAt: new Date() })

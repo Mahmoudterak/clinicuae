@@ -10,6 +10,7 @@ import {
   doctorsTable,
 } from "@workspace/db";
 import { requireClinic } from "../middlewares/adminAuth";
+import { fireZapierWebhook } from "./zapier";
 import {
   ListPatientsQueryParams,
   ListPatientsResponse,
@@ -25,7 +26,6 @@ import {
   GetPatientSummaryResponse,
 } from "@workspace/api-zod";
 import { iso } from "../lib/serialize";
-import { fireZapierWebhook } from "./zapier";
 
 const router: IRouter = Router();
 // ─── All patient routes require a valid clinic-scoped token ───────────────────

@@ -24,6 +24,7 @@ import {
   MessageSquare
 } from "lucide-react";
 import { useSendWaMessage, useListWaMessages } from "@/hooks/use-whatsapp";
+import { resolveLogoDataUrl } from "@/lib/logo-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -254,7 +255,8 @@ export default function InvoicesList() {
     );
   };
 
-  const handlePrintInvoice = (inv: any) => {
+  const handlePrintInvoice = async (inv: any) => {
+    const logoDataUrl = await resolveLogoDataUrl(settings.clinic.logoDataUrl);
     generateInvoicePDF({
       id: inv.id,
       patientName: inv.patientName,
@@ -268,7 +270,7 @@ export default function InvoicesList() {
       clinicAddress: settings.clinic.address || undefined,
       clinicPhone: settings.clinic.phone || undefined,
       clinicEmail: settings.clinic.email || undefined,
-      logoDataUrl: settings.clinic.logoDataUrl,
+      logoDataUrl,
     });
   };
 

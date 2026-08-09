@@ -36,6 +36,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { useSettings } from "@/contexts/settings-context"
 import defaultLogoUrl from "@/assets/clinic-os-logo.png"
 import { Settings } from "lucide-react"
+import { getLogoSrc } from "@/lib/logo-utils"
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation()
@@ -43,7 +44,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { t, lang, setLang, isRtl } = useTranslation()
   const { role, name, logout } = useAuth()
   const { settings } = useSettings()
-  const logoUrl = settings.clinic.logoDataUrl ?? defaultLogoUrl
+  const logoUrl = getLogoSrc(settings.clinic.logoDataUrl, defaultLogoUrl)
   const clinicName = isRtl ? settings.clinic.clinicNameAr : settings.clinic.clinicName
 
   const navigation = [
@@ -80,7 +81,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Mobile Header */}
       <div className="md:hidden flex items-center justify-between p-4 border-b bg-card">
         <div className="flex items-center gap-2">
-          <img src={settings.clinic.logoDataUrl ?? defaultLogoUrl} alt="Clinic OS" className="h-8 w-8 object-contain" />
+          <img src={getLogoSrc(settings.clinic.logoDataUrl, defaultLogoUrl)} alt="Clinic OS" className="h-8 w-8 object-contain" />
           <span className="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-violet-600">{clinicName}</span>
         </div>
         <button 

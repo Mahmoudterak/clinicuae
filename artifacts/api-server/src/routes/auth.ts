@@ -49,16 +49,11 @@ router.post("/auth/login", async (req, res): Promise<void> => {
         .set({ lastLoginAt: new Date() })
         .where(eq(adminUsersTable.id, admin.id));
 
-      const token = jwt.sign(
-        {
-          role: "admin",
-          adminId: admin.id,
-          clinicId: admin.clinicId,
-          adminName: admin.name,
-        },
-        JWT_SECRET,
-        { expiresIn: "24h" },
-      );
+    const token = jwt.sign(
+      { role: "admin", clinicId, adminName: username },
+      JWT_SECRET,
+      { expiresIn: "24h" },
+    );
 
       await logSecurityEvent({
         req,

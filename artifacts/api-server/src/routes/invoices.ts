@@ -49,33 +49,39 @@ router.get("/invoices", async (req, res): Promise<void> => {
 });
 
 router.post("/invoices", async (req, res): Promise<void> => {
-  const parsed = CreateInvoiceBody.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
-  const cid = req.clinicId!;
-  const [row] = await db
-    .insert(invoicesTable)
-    .values({ ...parsed.data, clinicId: cid })
-    .returning();
-  void fireZapierWebhook("invoice.created", row!, cid);
-  const [withName] = await withNames([row!], cid);
-  res.status(201).json(CreateInvoiceResponse.parse(withName));
-});
-
-router.patch("/invoices/:id", async (req, res): Promise<void> => {
-  const params = UpdateInvoiceParams.safeParse(req.params);
-  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const parsed = UpdateInvoiceBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const cid = req.clinicId!;
   const [row] = await db
-    .update(invoicesTable)
-    .set(parsed.data)
-    .where(and(eq(invoicesTable.clinicId, cid), eq(invoicesTable.id, params.data.id)))
+    .delete(invoicesTable)
+    .where(and(eq(invoicesTable.clinicId, req.clinicId!), eq(invoicesTable.id, params.data.id)))
     .returning();
   if (!row) { res.status(404).json({ error: "Invoice not found" }); return; }
   if (parsed.data.status === "paid") void fireZapierWebhook("invoice.paid", row, cid);
   const [withName] = await withNames([row], cid);
   res.json(UpdateInvoiceResponse.parse(withName));
+  if (parsed.data.status === "paid") {
+    fireZapierWebhook("invoice_paid", withName as Record<string, unknown>);
+  }
+});
+
+router.delete("/invoices/:id", async (req, res): Promise<void> => {
+  const params = DeleteInvoiceParams.safeParse(req.params);
+  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
+  const parsed = UpdateInvoiceBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+  const cid = req.clinicId!;
+  const [row] = await db
+    .delete(invoicesTable)
+    .where(and(eq(invoicesTable.clinicId, req.clinicId!), eq(invoicesTable.id, params.data.id)))
+    .returning();
+  if (!row) { res.status(404).json({ error: "Invoice not found" }); return; }
+  if (parsed.data.status === "paid") void fireZapierWebhook("invoice.paid", row, cid);
+  const [withName] = await withNames([row], cid);
+  res.json(UpdateInvoiceResponse.parse(withName));
+  if (parsed.data.status === "paid") {
+    fireZapierWebhook("invoice_paid", withName as Record<string, unknown>);
+  }
 });
 
 router.delete("/invoices/:id", async (req, res): Promise<void> => {

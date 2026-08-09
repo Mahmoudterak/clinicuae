@@ -17,6 +17,7 @@ import { ar as arLocale, enUS } from "date-fns/locale";
 import { Loader2, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { generateReportPDF } from "@/lib/pdf-utils";
+import { resolveLogoDataUrl } from "@/lib/logo-utils";
 
 const COLORS = ['#4F46E5', '#8B5CF6', '#10B981', '#F59E0B', '#3B82F6', '#EF4444'];
 
@@ -85,11 +86,12 @@ export default function Reports() {
   }, {});
   const genderChartData = Object.entries(genderCounts || {}).map(([name, value]) => ({ name, value }));
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
+    const logoDataUrl = await resolveLogoDataUrl(settings.clinic.logoDataUrl);
     generateReportPDF({
       clinicName: settings.clinic.clinicName,
       clinicAddress: settings.clinic.address || undefined,
-      logoDataUrl: settings.clinic.logoDataUrl,
+      logoDataUrl,
       totalRevenue,
       avgRevenue,
       totalPending,

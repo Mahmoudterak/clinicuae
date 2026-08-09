@@ -64,18 +64,10 @@ router.get("/public/booked-slots", async (req, res): Promise<void> => {
 
 // Public: create booking
 router.post("/public/bookings", async (req, res): Promise<void> => {
-  const parsed = UpdateBookingBody.safeParse(req.body);
+  const parsed = CreateBookingBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
-  const [row] = await db.update(onlineBookingsTable).set(parsed.data).where(eq(onlineBookingsTable.id, id)).returning();
-  fireZapierWebhook("new_booking", {
-    id: row!.id,
-    patientName: row!.patientName,
-    patientPhone: row!.patientPhone,
-    preferredDate: row!.preferredDate,
-    preferredTime: row!.preferredTime,
-    status: row!.status,
-  });
+  const [row] = await db.insert(onlineBookingsTable).values(parsed.data).returning();
   res.status(201).json(isoBooking(row!));
   // fire-and-forget: dispatch Zapier event after response is sent
   fireZapierWebhook("new_booking", {

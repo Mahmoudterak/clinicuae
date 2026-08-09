@@ -9,6 +9,42 @@ import * as zod from 'zod/v4';
 
 
 /**
+ * Accepts raw image bytes (JPEG, PNG, GIF, WebP, SVG) up to 2 MB.
+ * The server validates MIME type and size before writing to GCS, ensuring
+ * constraints are enforced at the actual ingestion boundary.
+ * Requires Authorization: Bearer <admin-jwt>.
+ * @summary Upload a clinic logo (server-proxied)
+ */
+export const UploadLogoResponse = zod.object({
+  "objectPath": zod.string().describe('Normalized object path (e.g. `\/objects\/logos\/uuid`). Store this in the database.')
+})
+
+
+/**
+ * Unconditionally public — no authentication or ACL checks.
+ * Searches PUBLIC_OBJECT_SEARCH_PATHS for the given file path.
+ * @summary Serve a public asset from PUBLIC_OBJECT_SEARCH_PATHS
+ */
+export const GetPublicObjectParams = zod.object({
+  "filePath": zod.coerce.string().describe('Relative file path within the public search paths.')
+})
+
+export const GetPublicObjectResponse = zod.unknown()
+
+
+/**
+ * Serves clinic logo objects from the private object dir.
+ * Only the `logos/` prefix is publicly accessible; all other paths return 403.
+ * @summary Serve an object entity from PRIVATE_OBJECT_DIR
+ */
+export const GetStorageObjectParams = zod.object({
+  "objectPath": zod.coerce.string().describe('Object path within the logos namespace (e.g. `logos\/some-uuid`).')
+})
+
+export const GetStorageObjectResponse = zod.unknown()
+
+
+/**
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({

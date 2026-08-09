@@ -24,6 +24,7 @@ import logoUrl from "@/assets/clinic-os-logo.png";
 import DoctorAccountsTab from "./DoctorAccountsTab";
 import BranchesTab from "./BranchesTab";
 import StaffTab from "./StaffTab";
+import { getLogoSrc } from "@/lib/logo-utils";
 
 type Tab = "clinic" | "users" | "logo" | "doctors" | "branches" | "staff";
 
@@ -330,6 +331,7 @@ function LogoTab() {
   const { settings, setLogo } = useSettings();
   const { isRtl } = useTranslation();
   const { toast } = useToast();
+  const { bearerHeader } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -344,19 +346,27 @@ function LogoTab() {
       return;
     }
     setUploading(true);
-    const reader = new FileReader();
-    reader.onload = async e => {
-      try {
-        const dataUrl = e.target?.result as string;
-        await setLogo(dataUrl);
-        toast({ title: isRtl ? "تم رفع الشعار" : "Logo updated", description: isRtl ? "تم تحديث الشعار بنجاح." : "Your logo is now live across the app." });
-      } catch {
-        toast({ title: isRtl ? "خطأ" : "Error", description: isRtl ? "فشل تحديث الشعار." : "Failed to update logo.", variant: "destructive" });
-      } finally {
-        setUploading(false);
+    try {
+      // Upload the raw file bytes directly to the API (server validates MIME/size before writing to GCS)
+      const uploadRes = await fetch("/api/storage/uploads/logo", {
+        method: "POST",
+        headers: { "Content-Type": file.type, ...bearerHeader },
+        body: file,
+      });
+      if (!uploadRes.ok) {
+        const err = await uploadRes.json().catch(() => ({ error: "Upload failed" }));
+        throw new Error(err.error ?? "Failed to upload logo");
       }
-    };
-    reader.readAsDataURL(file);
+      const { objectPath } = await uploadRes.json();
+
+      // Save the object path in settings (replaces old base64 approach)
+      await setLogo(objectPath);
+      toast({ title: isRtl ? "تم رفع الشعار" : "Logo updated", description: isRtl ? "تم تحديث الشعار بنجاح." : "Your logo is now live across the app." });
+    } catch {
+      toast({ title: isRtl ? "خطأ" : "Error", description: isRtl ? "فشل تحديث الشعار." : "Failed to update logo.", variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -366,7 +376,7 @@ function LogoTab() {
     if (file) processFile(file);
   };
 
-  const currentLogo = settings.clinic.logoDataUrl ?? logoUrl;
+  const currentLogo = getLogoSrc(settings.clinic.logoDataUrl, logoUrl);
 
   return (
     <div className="space-y-8 max-w-lg">

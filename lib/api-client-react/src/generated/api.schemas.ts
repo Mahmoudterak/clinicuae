@@ -597,6 +597,15 @@ export interface ValidateAdminResult {
   user?: AdminUser | null;
 }
 
+export interface LogoUploadResponse {
+  /** Normalized object path (e.g. `/objects/logos/uuid`). Store this in the database. */
+  objectPath: string;
+}
+
+export interface ErrorEnvelope {
+  error: string;
+}
+
 export type ListPatientsParams = {
 search?: string;
 };
