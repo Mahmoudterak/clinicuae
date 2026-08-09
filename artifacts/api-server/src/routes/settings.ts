@@ -3,6 +3,9 @@ import { eq } from "drizzle-orm";
 import { db, clinicSettingsTable } from "@workspace/db";
 import { requireClinic } from "../middlewares/adminAuth";
 import { GetSettingsResponse, UpdateSettingsBody, UpdateSettingsResponse } from "@workspace/api-zod";
+import { ObjectStorageService } from "../lib/objectStorage";
+
+const objectStorage = new ObjectStorageService();
 
 const router: IRouter = Router();
 router.use(requireClinic);
@@ -42,6 +45,17 @@ router.put("/settings", async (req, res): Promise<void> => {
   const parsed = UpdateSettingsBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const existing = await getOrCreateSettings(req.clinicId!);
+
+  // If the logo is being changed or cleared, delete the old GCS object
+  if ("logoDataUrl" in parsed.data) {
+    const oldLogo = existing.logoDataUrl;
+    const newLogo = parsed.data.logoDataUrl;
+    const logoChanged = oldLogo !== newLogo;
+    if (logoChanged && oldLogo && oldLogo.startsWith("/objects/")) {
+      await objectStorage.deleteObject(oldLogo);
+    }
+  }
+
   const [row] = await db
     .update(clinicSettingsTable)
     .set({ ...parsed.data, updatedAt: new Date() })

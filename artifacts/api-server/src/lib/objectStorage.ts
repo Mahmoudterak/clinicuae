@@ -211,6 +211,32 @@ export class ObjectStorageService {
     return normalizedPath;
   }
 
+  /**
+   * Delete an object from GCS by its normalized path (e.g. `/objects/logos/<uuid>`).
+   * Silently succeeds if the object does not exist.
+   */
+  async deleteObject(objectPath: string): Promise<void> {
+    if (!objectPath.startsWith('/objects/')) return;
+
+    const parts = objectPath.slice(1).split('/');
+    if (parts.length < 2) return;
+
+    const entityId = parts.slice(1).join('/');
+    let entityDir = this.getPrivateObjectDir();
+    if (!entityDir.endsWith('/')) {
+      entityDir = `${entityDir}/`;
+    }
+    const fullPath = `${entityDir}${entityId}`;
+    const { bucketName, objectName } = parseObjectPath(fullPath);
+    const bucket = objectStorageClient.bucket(bucketName);
+    const file = bucket.file(objectName);
+    try {
+      await file.delete({ ignoreNotFound: true });
+    } catch {
+      // Swallow errors — cleanup is best-effort
+    }
+  }
+
   async canAccessObjectEntity({
     userId,
     objectFile,
