@@ -5,6 +5,7 @@ import { z } from "zod";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import jwt from "jsonwebtoken";
+import { adminAuth } from "../middlewares/adminAuth";
 
 const router: IRouter = Router();
 const scryptAsync = promisify(scrypt);
@@ -38,7 +39,7 @@ export function patientAuth(req: Request, res: Response, next: NextFunction): vo
 
 // ── POST /patient-auth/login ──────────────────────────────────────────────────
 router.post("/patient-auth/login", async (req, res): Promise<void> => {
-  const parsed = z.object({ phone: z.string(), pin: z.string().min(4).max(6) }).safeParse(req.body);
+  const parsed = z.object({ patientId: z.number(), phone: z.string(), pin: z.string().min(4).max(6) }).safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
   const [account] = await db.select().from(patientAccountsTable)
@@ -49,7 +50,7 @@ router.post("/patient-auth/login", async (req, res): Promise<void> => {
     return;
   }
 
-  const [patient] = await db.select().from(patientsTable).where(eq(patientsTable.id, account.patientId));
+  const [patient] = await db.select().from(patientsTable).where(eq(patientsTable.id, parsed.data.patientId));
   if (!patient) { res.status(404).json({ error: "Patient not found" }); return; }
 
   const token = jwt.sign({ role: "patient", patientId: patient.id }, JWT_SECRET, { expiresIn: "7d" });

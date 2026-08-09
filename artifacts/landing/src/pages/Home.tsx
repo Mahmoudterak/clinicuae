@@ -1,10 +1,10 @@
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import {
   Mic, MessageCircle, Pill, BrainCircuit, Calendar, Wallet,
   BarChart3, Package, ArrowLeft, CheckCircle2, Stethoscope, Zap,
   Star, Users, TrendingUp, Shield, Clock, Lock, RefreshCw,
-  Smartphone, Globe, HeartPulse, Building2,
+  Smartphone, Globe, HeartPulse, Building2, X, Play,
 } from 'lucide-react';
 import React, { useState } from 'react';
 import { Link } from 'wouter';
@@ -269,7 +269,143 @@ const screens = [
   },
 ];
 
-// ── components ────────────────────────────────────────────────────────────────
+function DemoRequestModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [form, setForm] = useState({ name: '', clinicName: '', phone: '', preferredTime: '' });
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/api/demo-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) throw new Error('فشل الإرسال، يرجى المحاولة مجدداً');
+      setSubmitted(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'حدث خطأ، يرجى المحاولة مجدداً');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClose = () => {
+    onClose();
+    setTimeout(() => { setSubmitted(false); setError(''); setForm({ name: '', clinicName: '', phone: '', preferredTime: '' }); }, 300);
+  };
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          key="backdrop"
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          onClick={handleClose}
+        >
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <motion.div
+            key="modal"
+            initial={{ opacity: 0, scale: 0.95, y: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 16 }}
+            transition={{ type: 'spring', damping: 26, stiffness: 340 }}
+            className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="bg-gradient-to-br from-indigo-600 to-violet-600 px-8 pt-8 pb-6 text-white">
+              <button onClick={handleClose} className="absolute top-4 left-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+              <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center mb-4">
+                <Play className="w-6 h-6 text-white" />
+              </div>
+              <h2 className="text-2xl font-black mb-1">شاهد العرض التوضيحي</h2>
+              <p className="text-indigo-200 text-sm">أدخل بياناتك وسيتواصل معك فريقنا خلال 24 ساعة لتحديد موعد العرض</p>
+            </div>
+
+            {/* Body */}
+            <div className="px-8 py-6">
+              {submitted ? (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center py-6">
+                  <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle2 className="w-8 h-8 text-green-600" />
+                  </div>
+                  <h3 className="text-xl font-black text-slate-900 mb-2">تم الاستلام!</h3>
+                  <p className="text-slate-500 text-sm leading-relaxed">سيتواصل معك فريقنا خلال 24 ساعة لتحديد موعد العرض التوضيحي المجاني.</p>
+                  <Button onClick={handleClose} className="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-8">
+                    حسناً
+                  </Button>
+                </motion.div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">الاسم الكامل *</label>
+                    <input
+                      required value={form.name}
+                      onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                      placeholder="د. محمد العلي"
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">اسم العيادة *</label>
+                    <input
+                      required value={form.clinicName}
+                      onChange={e => setForm(f => ({ ...f, clinicName: e.target.value }))}
+                      placeholder="عيادة الصحة والعافية"
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">رقم الهاتف *</label>
+                    <input
+                      required value={form.phone}
+                      onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                      placeholder="+971 50 000 0000"
+                      type="tel"
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-sm"
+                      dir="ltr"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">الوقت المفضل للتواصل</label>
+                    <select
+                      value={form.preferredTime}
+                      onChange={e => setForm(f => ({ ...f, preferredTime: e.target.value }))}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-sm bg-white appearance-none"
+                    >
+                      <option value="">اختر الوقت المناسب</option>
+                      <option value="morning">الصباح (9 ص – 12 م)</option>
+                      <option value="afternoon">بعد الظهر (12 م – 4 م)</option>
+                      <option value="evening">المساء (4 م – 8 م)</option>
+                    </select>
+                  </div>
+                  {error && (
+                    <p className="text-sm text-red-600 text-center bg-red-50 rounded-xl py-2 px-3">{error}</p>
+                  )}
+                  <Button
+                    type="submit" disabled={loading}
+                    className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-base mt-2 disabled:opacity-70"
+                  >
+                    {loading ? 'جاري الإرسال...' : 'احجز عرضك المجاني'}
+                  </Button>
+                  <p className="text-center text-xs text-slate-400">سنتواصل معك خلال 24 ساعة — بدون أي التزام</p>
+                </form>
+              )}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
 function Navbar() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/90 backdrop-blur-md border-b border-white/10">
@@ -303,7 +439,7 @@ function Navbar() {
   );
 }
 
-function Hero() {
+function Hero({ onOpenDemo }: { onOpenDemo: () => void }) {
   return (
     <section className="relative pt-40 pb-20 md:pt-52 md:pb-28 overflow-hidden bg-slate-950">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-900/40 via-slate-950 to-slate-950" />
@@ -345,11 +481,14 @@ function Hero() {
               <ArrowLeft className="w-5 h-5 mr-2" />
             </Button>
           </Link>
-          <a href="https://wa.me/971568952775" target="_blank" rel="noopener noreferrer">
-            <Button size="lg" variant="outline" className="w-full sm:w-auto h-14 px-8 text-lg bg-white/5 border-white/10 text-white hover:bg-white/10 rounded-xl">
-              تواصل مع المبيعات
-            </Button>
-          </a>
+          <Button
+            size="lg" variant="outline"
+            onClick={onOpenDemo}
+            className="w-full sm:w-auto h-14 px-8 text-lg bg-white/5 border-white/10 text-white hover:bg-white/10 rounded-xl"
+          >
+            <Play className="w-5 h-5 ml-2" />
+            شاهد العرض التوضيحي
+          </Button>
         </motion.div>
       </div>
     </section>
@@ -470,7 +609,7 @@ function WhyUs() {
   );
 }
 
-function Pricing() {
+function Pricing({ onOpenDemo }: { onOpenDemo: () => void }) {
   const [annual, setAnnual] = useState(false);
   return (
     <section className="py-24 bg-slate-50" id="pricing">
@@ -520,9 +659,9 @@ function Pricing() {
                   ))}
                 </ul>
                 {plan.cta === 'تواصل معنا' ? (
-                  <a href="https://wa.me/971568952775" target="_blank" rel="noopener noreferrer" className="block">
-                    <Button className="w-full rounded-xl h-11 font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800">{plan.cta}</Button>
-                  </a>
+                  <Button onClick={onOpenDemo} className="w-full rounded-xl h-11 font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800">
+                    شاهد العرض التوضيحي
+                  </Button>
                 ) : (
                   <Link href="/trial" className="block">
                     <Button className={`w-full rounded-xl h-11 font-semibold ${plan.highlight ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-800'}`}>
@@ -605,16 +744,18 @@ function Footer() {
 }
 
 export default function Home() {
+  const [demoOpen, setDemoOpen] = useState(false);
   return (
     <div className="min-h-screen bg-slate-50 selection:bg-indigo-100 selection:text-indigo-900">
+      <DemoRequestModal open={demoOpen} onClose={() => setDemoOpen(false)} />
       <Navbar />
       <main>
-        <Hero />
+        <Hero onOpenDemo={() => setDemoOpen(true)} />
         <Stats />
         <Features />
         <WhyUs />
         <Screenshots />
-        <Pricing />
+        <Pricing onOpenDemo={() => setDemoOpen(true)} />
         <CTA />
       </main>
       <Footer />

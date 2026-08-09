@@ -26,6 +26,7 @@ import authRouter from "./auth";
 import patientAuthRouter from "./patientAuth";
 import branchesRouter from "./branches";
 import storageRouter from "./storage";
+import demoRequestsRouter from "./demoRequests";
 
 const router: IRouter = Router();
 
@@ -56,4 +57,7 @@ router.use("/superadmin", superAdminRouter);
 router.use(patientAuthRouter);
 router.use(branchesRouter);
 router.use(storageRouter);
+router.use(demoRequestsRouter);
+
+
 export default router;

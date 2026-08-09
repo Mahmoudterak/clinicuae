@@ -62,7 +62,7 @@ router.post("/patients", async (req, res): Promise<void> => {
     .insert(patientsTable)
     .values({ ...parsed.data, clinicId: req.clinicId })
     .returning();
-  void fireZapierWebhook("patient.created", row!, req.clinicId!);
+  void fireZapierWebhook("patient.created", iso(row!));
   res.status(201).json(CreatePatientResponse.parse(iso(row!)));
 });
 
@@ -160,5 +160,6 @@ router.get("/patients/:id/summary", async (req, res): Promise<void> => {
     }),
   );
 });
+
 
 export default router;

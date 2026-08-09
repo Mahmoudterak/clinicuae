@@ -20,12 +20,7 @@ const JWT_SECRET = process.env.SESSION_SECRET ?? "dev-secret-change-me";
 export const superAdminRouter = Router();
 
 // ── In-memory session store ──────────────────────────────────────────────────
-  const sessions = await db
-    .select()
-    .from(securityEventsTable)
-    .where(and(eq(securityEventsTable.eventType, "login_success"), gte(securityEventsTable.createdAt, since)))
-    .orderBy(desc(securityEventsTable.createdAt))
-    .limit(100);
+const sessions = new Map<string, { userId: number; username: string; name: string; role: SuperAdminRole }>();
 
 function hashPassword(password: string): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -117,7 +112,7 @@ function serializeClinic(c: any) {
 superAdminRouter.post("/auth", async (req, res) => {
   const { username, password } = req.body ?? {};
   if (!username || !password) return res.status(400).json({ error: "Missing credentials" });
-  const [user] = await db.insert(superAdminUsersTable).values({ username, passwordHash, name, role: validRole }).returning();
+  const [user] = await db.select().from(superAdminUsersTable).where(eq(superAdminUsersTable.username, username)).limit(1);
   if (!user) return res.status(401).json({ error: "Invalid credentials" });
   const valid = await verifyPassword(password, user.passwordHash);
   if (!valid) return res.status(401).json({ error: "Invalid credentials" });
@@ -126,7 +121,7 @@ superAdminRouter.post("/auth", async (req, res) => {
   if (!SUPER_ADMIN_ROLES.includes(role)) {
     return res.status(500).json({ error: "Account has an invalid role; contact a Super Admin to fix." });
   }
-  const token = req.headers.authorization?.replace("Bearer ", "");
+  const token = crypto.randomBytes(32).toString("hex");
   sessions.set(token, { userId: user.id, username: user.username, name: user.name, role });
   const fakeReq = { superAdmin: { userId: user.id, username: user.username, name: user.name, role }, ip: req.ip, headers: req.headers };
   await logAudit({ req: fakeReq, action: "login" });
@@ -182,15 +177,14 @@ superAdminRouter.get("/stats", authMiddleware, requireRole("super_admin", "platf
 
 superAdminRouter.get("/clinics", authMiddleware, requireRole("super_admin", "platform_admin", "support_admin"), async (req, res) => {
   const { status, plan, search } = req.query as Record<string, string>;
-  const clinics = await db.select().from(registeredClinicsTable).orderBy(desc(registeredClinicsTable.createdAt));
-      const result = await db.execute(sql.raw(`SELECT COUNT(*) as count FROM ${tableName}`));
-  if (status && status !== "all") result = result.filter(c => c.status === status);
-  if (plan && plan !== "all") result = result.filter(c => c.plan === plan);
+  let clinics = await db.select().from(registeredClinicsTable).orderBy(desc(registeredClinicsTable.createdAt));
+  if (status && status !== "all") clinics = clinics.filter((c: any) => c.status === status);
+  if (plan && plan !== "all") clinics = clinics.filter((c: any) => c.plan === plan);
   if (search) {
     const s = search.toLowerCase();
-    result = result.filter(c => c.name.toLowerCase().includes(s) || (c.ownerName ?? "").toLowerCase().includes(s) || (c.email ?? "").toLowerCase().includes(s));
+    clinics = clinics.filter((c: any) => c.name.toLowerCase().includes(s) || (c.ownerName ?? "").toLowerCase().includes(s) || (c.email ?? "").toLowerCase().includes(s));
   }
-  return res.json(result.map(serializeClinic));
+  return res.json(clinics.map(serializeClinic));
 });
 
 superAdminRouter.get("/clinics/:id", authMiddleware, requireRole("super_admin", "platform_admin", "support_admin"), async (req, res) => {
@@ -206,8 +200,8 @@ superAdminRouter.post("/clinics", authMiddleware, requireRole("super_admin", "pl
   const { name, ownerName, phone, email, specialty, plan, status, notes, country, city } = req.body ?? {};
   if (!name || !ownerName || !phone) return res.status(400).json({ error: "name, ownerName, phone are required" });
   const trialEndAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
-  const [clinic] = await db.select().from(registeredClinicsTable).where(eq(registeredClinicsTable.id, id));
-  await logAudit({ req, action: "clinic.create", resourceType: "clinic", resourceId: clinic.id, resourceLabel: clinic.name, newValue: { name, plan, status } });
+  const [clinic] = await db.insert(registeredClinicsTable).values({ name, ownerName, phone, email, specialty, plan: plan ?? "trial", status: status ?? "trial", notes, trialEndAt, trialStartAt: new Date() }).returning();
+  await logAudit({ req, action: "clinic.create", resourceType: "clinic", resourceId: clinic!.id, resourceLabel: clinic!.name, newValue: { name, plan, status } });
   return res.status(201).json(serializeClinic(clinic));
 });
 
@@ -216,23 +210,20 @@ superAdminRouter.post("/clinics/register", async (req, res) => {
   const { clinicName, ownerName, phone, email, specialty } = req.body ?? {};
   if (!clinicName || !ownerName || !phone) return res.status(400).json({ error: "clinicName, ownerName, phone are required" });
   const trialEndAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
-  const [clinic] = await db.select().from(registeredClinicsTable).where(eq(registeredClinicsTable.id, id));
-  if (!clinic) return res.status(404).json({ error: "Not found" });
-  await db.update(registeredClinicsTable).set({ status: "cancelled", updatedAt: new Date(), notes: `[DELETED ${new Date().toISOString()}] ${clinic.notes ?? ""}` }).where(eq(registeredClinicsTable.id, id));
-  await logAudit({ req, action: "clinic.delete", resourceType: "clinic", resourceId: id, resourceLabel: clinic.name });
-  return res.status(204).end();
+  const [clinic] = await db.insert(registeredClinicsTable).values({ name: clinicName, ownerName, phone, email, specialty, trialEndAt, trialStartAt: new Date() }).returning();
+  return res.status(201).json(serializeClinic(clinic));
 });
 
-// POST /clinics/:id/impersonate — super_admin & platform_admin only
-superAdminRouter.post("/clinics/:id/impersonate", authMiddleware, requireRole("super_admin", "platform_admin"), async (req, res) => {
+// PATCH /clinics/:id — update clinic details — super_admin & platform_admin only
+superAdminRouter.patch("/clinics/:id", authMiddleware, requireRole("super_admin", "platform_admin"), async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
-  const [before] = await db.select().from(superAdminUsersTable).where(eq(superAdminUsersTable.id, id));
+  const [before] = await db.select().from(registeredClinicsTable).where(eq(registeredClinicsTable.id, id));
   if (!before) return res.status(404).json({ error: "Not found" });
-  const allowed = ["name", "ownerName", "phone", "email", "specialty", "plan", "status", "notes", "country", "city"] as const;
-  const updates: Record<string, string> = req.body.settings ?? {};
+  const allowed = ["name", "ownerName", "phone", "email", "specialty", "plan", "status", "notes"] as const;
+  const updates: Record<string, unknown> = {};
   for (const key of allowed) { if (req.body[key] !== undefined) updates[key] = req.body[key]; }
-  const [updated] = await db.update(featureFlagsTable).set({ enabled: req.body.enabled, updatedAt: new Date(), updatedBy: (req as any).superAdmin?.username }).where(eq(featureFlagsTable.id, id)).returning();
+  const [updated] = await db.update(registeredClinicsTable).set({ ...updates, updatedAt: new Date() }).where(eq(registeredClinicsTable.id, id)).returning();
   const action = req.body.status && req.body.status !== before.status
     ? `clinic.${req.body.status === "suspended" ? "suspend" : "update"}`
     : req.body.plan && req.body.plan !== before.plan ? "plan.change" : "clinic.update";
@@ -279,7 +270,6 @@ superAdminRouter.get("/users", authMiddleware, requireRole("super_admin"), async
     createdAt: superAdminUsersTable.createdAt,
   }).from(superAdminUsersTable);
 
-  const { username, password, name, role } = req.body ?? {};
   return res.json(users.map(u => ({ ...u, createdAt: u.createdAt.toISOString() })));
 });
 
@@ -303,13 +293,13 @@ superAdminRouter.patch("/users/:id", authMiddleware, requireRole("super_admin"),
   }
   const [before] = await db.select().from(superAdminUsersTable).where(eq(superAdminUsersTable.id, id));
   if (!before) return res.status(404).json({ error: "Not found" });
-  const [updated] = await db.update(featureFlagsTable).set({ enabled: req.body.enabled, updatedAt: new Date(), updatedBy: (req as any).superAdmin?.username }).where(eq(featureFlagsTable.id, id)).returning();
+  const [updated] = await db.update(superAdminUsersTable).set({ role: role as SuperAdminRole }).where(eq(superAdminUsersTable.id, id)).returning();
   // Invalidate all existing sessions for this user so the new role takes effect immediately
   for (const [token, session] of sessions.entries()) {
     if (session.userId === id) sessions.delete(token);
   }
   await logAudit({ req, action: "user.role_change", resourceType: "user", resourceId: id, resourceLabel: before.username, previousValue: { role: before.role }, newValue: { role } });
-  return res.json({ id: updated.id, username: updated.username, name: updated.name, role: updated.role, createdAt: updated.createdAt.toISOString() });
+  return res.json({ id: updated!.id, username: updated!.username, name: updated!.name, role: updated!.role, createdAt: updated!.createdAt.toISOString() });
 });
 
 // ═══════════════════════════════════════════════════════════════════
@@ -334,18 +324,8 @@ superAdminRouter.post("/plans", authMiddleware, requireRole("super_admin", "bill
   });
   const parsed = PlanSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
-  const [plan] = await db.update(subscriptionPlansTable).set({ ...req.body, updatedAt: new Date() }).where(eq(subscriptionPlansTable.id, id)).returning();
-  if (!plan) return res.status(404).json({ error: "Not found" });
-  await logAudit({ req, action: "plan.update", resourceType: "plan", resourceId: id, resourceLabel: plan.name, newValue: req.body });
-  return res.json(plan);
-});
-
-superAdminRouter.delete("/plans/:id", authMiddleware, requireRole("super_admin", "billing_admin"), async (req, res) => {
-  const id = Number(req.params.id);
-  if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
-  const [plan] = await db.update(subscriptionPlansTable).set({ ...req.body, updatedAt: new Date() }).where(eq(subscriptionPlansTable.id, id)).returning();
-  if (!plan) return res.status(404).json({ error: "Not found" });
-  await logAudit({ req, action: "plan.update", resourceType: "plan", resourceId: id, resourceLabel: plan.name, newValue: req.body });
+  const [plan] = await db.insert(subscriptionPlansTable).values(parsed.data as any).returning();
+  await logAudit({ req, action: "plan.create", resourceType: "plan", resourceId: plan!.id, resourceLabel: plan!.name, newValue: parsed.data });
   return res.json(plan);
 });
 

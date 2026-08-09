@@ -50,7 +50,7 @@ router.post("/auth/login", async (req, res): Promise<void> => {
         .where(eq(adminUsersTable.id, admin.id));
 
     const token = jwt.sign(
-      { role: "admin", clinicId, adminName: username },
+      { role: "admin", clinicId: admin.clinicId, adminName: username },
       JWT_SECRET,
       { expiresIn: "24h" },
     );

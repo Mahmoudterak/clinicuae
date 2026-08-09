@@ -49,6 +49,25 @@ export async function runStartupMigration(): Promise<void> {
     ALTER TABLE zapier_logs ADD COLUMN IF NOT EXISTS final_outcome text
   `);
 
+  // Demo requests — landing page lead capture
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS demo_requests (
+      id             serial PRIMARY KEY,
+      name           text NOT NULL,
+      clinic_name    text NOT NULL,
+      phone          text NOT NULL,
+      preferred_time text,
+      status         text NOT NULL DEFAULT 'new',
+      created_at     timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS demo_requests_status_idx ON demo_requests (status)
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS demo_requests_created_idx ON demo_requests (created_at)
+  `);
+
   // Migrate base64 logos to GCS object storage (one-time, idempotent)
   await migrateBase64LogosToStorage();
 }
