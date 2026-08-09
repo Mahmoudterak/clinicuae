@@ -647,7 +647,14 @@ function Pricing({ onOpenDemo }: { onOpenDemo: () => void }) {
                   <span className="text-4xl font-black">{annual ? plan.priceAnnual : plan.price}</span>
                   <span className="text-white/60 mb-1 text-sm">د.إ / شهر</span>
                 </div>
-                {annual && <div className="text-white/50 text-xs mt-1">يُدفع {(plan.priceAnnual * 12).toLocaleString()} د.إ سنوياً</div>}
+                {annual && (
+                  <div className="mt-2 flex flex-col gap-1">
+                    <div className="text-white/50 text-xs">يُدفع {(plan.priceAnnual * 12).toLocaleString()} د.إ سنوياً</div>
+                    <div className="inline-flex items-center gap-1 self-start bg-emerald-400/20 border border-emerald-400/30 rounded-full px-2.5 py-0.5">
+                      <span className="text-emerald-300 text-xs font-bold">توفر {((plan.price - plan.priceAnnual) * 12).toLocaleString()} د.إ سنوياً</span>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="bg-white p-6 flex flex-col gap-5">
                 <ul className="space-y-3">

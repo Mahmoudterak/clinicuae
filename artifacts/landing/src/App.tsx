@@ -4,6 +4,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import Home from '@/pages/Home';
 import Trial from '@/pages/Trial';
+import Status from '@/pages/Status';
 import { Route, Switch, Router as WouterRouter } from 'wouter';
 import { useEffect } from 'react';
 
@@ -14,6 +15,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/trial" component={Trial} />
+      <Route path="/status" component={Status} />
       <Route component={NotFound} />
     </Switch>
   );
