@@ -159,4 +159,5 @@ overrides:
   "@esbuild-kit/esm-loader": "npm:tsx@^4.21.0"
   esbuild: "0.27.3"
   # fix GHSA-5p4m-2wfm-xmqj: js-yaml ReDoS in versions <4.3.1
-  js-yaml: ">=4.3.1"
+  # pinned to ^4 because v5 drops the ESM default export that orval requires
+  js-yaml: "^4.3.1"

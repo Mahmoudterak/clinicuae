@@ -1,12 +1,11 @@
 #!/bin/bash
 set -e
 
-# Install dependencies (allow lockfile updates from merges)
+# Install / update dependencies
 pnpm install
 
-# Run DB migrations
-pnpm --filter @workspace/db run push
+# Push DB schema changes (non-interactive, force)
+pnpm --filter @workspace/db run push-force
 
-# Regenerate API client from OpenAPI spec
-cd lib/api-spec && pnpm run codegen
-cd /home/runner/workspace
+# Regenerate API client & Zod types from OpenAPI spec
+pnpm --filter @workspace/api-spec run codegen
