@@ -6,8 +6,9 @@ import {
   featureFlagsTable, clinicFeatureFlagsTable,
   platformSettingsTable,
   patientsTable, doctorsTable, appointmentsTable,
+  securityEventsTable,
 } from "@workspace/db";
-import { eq, desc, sql, count } from "drizzle-orm";
+import { eq, and, gte, desc, sql, count, type SQL } from "drizzle-orm";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
@@ -464,6 +465,99 @@ superAdminRouter.get("/developer-info", authMiddleware, async (_req, res) => {
     recentErrors: [],
     recentApiLogs: recentApiLogs.map(l => ({ ...l, createdAt: l.createdAt.toISOString() })),
   });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// SECURITY CENTER
+// ═══════════════════════════════════════════════════════════════════
+
+superAdminRouter.get("/security/events", authMiddleware, async (req, res) => {
+  const limit = Math.min(Number(req.query.limit ?? 100), 500);
+  const offset = Number(req.query.offset ?? 0);
+  const clinicId = req.query.clinicId ? Number(req.query.clinicId) : undefined;
+  const eventType = req.query.eventType as string | undefined;
+
+  const filters: SQL[] = [];
+  if (clinicId) filters.push(eq(securityEventsTable.clinicId, clinicId));
+  if (eventType) filters.push(eq(securityEventsTable.eventType, eventType));
+
+  const events = await db
+    .select()
+    .from(securityEventsTable)
+    .where(filters.length ? and(...filters) : undefined)
+    .orderBy(desc(securityEventsTable.createdAt))
+    .limit(limit)
+    .offset(offset);
+
+  const [{ total }] = await db
+    .select({ total: sql<number>`count(*)::int` })
+    .from(securityEventsTable)
+    .where(filters.length ? and(...filters) : undefined);
+
+  return res.json({
+    events: events.map(e => ({ ...e, createdAt: e.createdAt.toISOString() })),
+    total,
+    limit,
+    offset,
+  });
+});
+
+superAdminRouter.get("/security/stats", authMiddleware, async (_req, res) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const [
+    [{ total: totalEvents }],
+    [{ total: failedToday }],
+    [{ total: successToday }],
+    [{ total: suspiciousTotal }],
+    topIps,
+    recentFailures,
+  ] = await Promise.all([
+    db.select({ total: sql<number>`count(*)::int` }).from(securityEventsTable),
+    db.select({ total: sql<number>`count(*)::int` }).from(securityEventsTable)
+      .where(and(eq(securityEventsTable.eventType, "login_failure"), gte(securityEventsTable.createdAt, today))),
+    db.select({ total: sql<number>`count(*)::int` }).from(securityEventsTable)
+      .where(and(eq(securityEventsTable.eventType, "login_success"), gte(securityEventsTable.createdAt, today))),
+    db.select({ total: sql<number>`count(*)::int` }).from(securityEventsTable)
+      .where(eq(securityEventsTable.eventType, "suspicious_ip")),
+    db.select({
+      ip: securityEventsTable.ipAddress,
+      count: sql<number>`count(*)::int`,
+    })
+      .from(securityEventsTable)
+      .where(eq(securityEventsTable.success, false))
+      .groupBy(securityEventsTable.ipAddress)
+      .orderBy(desc(sql`count(*)`))
+      .limit(10),
+    db.select()
+      .from(securityEventsTable)
+      .where(eq(securityEventsTable.eventType, "login_failure"))
+      .orderBy(desc(securityEventsTable.createdAt))
+      .limit(20),
+  ]);
+
+  return res.json({
+    totalEvents,
+    failedLoginsToday: failedToday,
+    successfulLoginsToday: successToday,
+    suspiciousActivityTotal: suspiciousTotal,
+    topFailingIps: topIps.map(r => ({ ip: r.ip ?? "unknown", count: r.count })),
+    recentFailures: recentFailures.map(e => ({ ...e, createdAt: e.createdAt.toISOString() })),
+  });
+});
+
+superAdminRouter.get("/security/active-sessions", authMiddleware, async (_req, res) => {
+  // Active sessions = successful logins in the last 24h with no subsequent logout
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const sessions = await db
+    .select()
+    .from(securityEventsTable)
+    .where(and(eq(securityEventsTable.eventType, "login_success"), gte(securityEventsTable.createdAt, since)))
+    .orderBy(desc(securityEventsTable.createdAt))
+    .limit(100);
+
+  return res.json(sessions.map(s => ({ ...s, createdAt: s.createdAt.toISOString() })));
 });
 
 // Export hash utility for seeding

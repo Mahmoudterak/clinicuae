@@ -3,6 +3,7 @@ import { departmentsTable } from "./departments";
 
 export const staffTable = pgTable("staff", {
   id: serial("id").primaryKey(),
+  clinicId: integer("clinic_id"),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   role: text("role").notNull(),

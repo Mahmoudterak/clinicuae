@@ -1,1 +1,2 @@
 - [Orval zod v4 import fix](orval-zod-v4.md) — codegen must rewrite generated zod import to zod/v4; entity routes must ISO-serialize createdAt before Zod parse.
+- [Tenant Isolation Architecture](tenant-isolation.md) — clinic_id on all data tables, requireClinic middleware on all routes; auth.ts does DB lookup → clinicId in JWT.

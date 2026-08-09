@@ -14,6 +14,8 @@ import Developer from '@/pages/developer';
 import Users from '@/pages/users';
 import Communications from '@/pages/communications';
 import Backups from '@/pages/backups';
+import SecurityPage from '@/pages/security';
+import SandboxPage from '@/pages/sandbox';
 import { useAuth } from '@/hooks/use-auth';
 
 const queryClient = new QueryClient({
@@ -53,6 +55,8 @@ function Router() {
       <Route path="/developer">{() => <Protected component={Developer} />}</Route>
       <Route path="/communications">{() => <Protected component={Communications} />}</Route>
       <Route path="/backups">{() => <Protected component={Backups} />}</Route>
+      <Route path="/security">{() => <Protected component={SecurityPage} />}</Route>
+      <Route path="/sandbox">{() => <Protected component={SandboxPage} />}</Route>
       <Route>
         <AdminLayout>
           <div className="flex h-[50vh] flex-col items-center justify-center text-center space-y-4">

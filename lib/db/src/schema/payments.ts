@@ -4,6 +4,7 @@ import { patientsTable } from "./patients";
 
 export const paymentsTable = pgTable("payments", {
   id: serial("id").primaryKey(),
+  clinicId: integer("clinic_id"),
   invoiceId: integer("invoice_id").references(() => invoicesTable.id, { onDelete: "cascade" }),
   patientId: integer("patient_id").notNull().references(() => patientsTable.id, { onDelete: "cascade" }),
   amount: doublePrecision("amount").notNull(),

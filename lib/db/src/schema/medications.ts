@@ -2,6 +2,7 @@ import { pgTable, text, serial, integer, timestamp, doublePrecision } from "driz
 
 export const medicationsTable = pgTable("medications", {
   id: serial("id").primaryKey(),
+  clinicId: integer("clinic_id"),
   name: text("name").notNull(),
   genericName: text("generic_name"),
   category: text("category").notNull().default("general"),

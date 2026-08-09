@@ -3,6 +3,7 @@ import { patientsTable } from "./patients";
 
 export const insuranceTable = pgTable("insurance", {
   id: serial("id").primaryKey(),
+  clinicId: integer("clinic_id"),
   patientId: integer("patient_id").notNull().references(() => patientsTable.id, { onDelete: "cascade" }),
   provider: text("provider").notNull(),
   policyNumber: text("policy_number").notNull(),

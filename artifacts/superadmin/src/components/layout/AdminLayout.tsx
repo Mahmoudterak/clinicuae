@@ -5,6 +5,7 @@ import {
   LayoutDashboard, Building2, LogOut, Menu, CreditCard,
   Shield, Flag, Activity, Settings, Code2, X,
   Users, Mail, HardDrive, ChevronDown, ChevronRight,
+  FlaskConical,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "../ui/button"
@@ -47,10 +48,17 @@ const navSections: NavSection[] = [
     ],
   },
   {
+    label: "الأمان",
+    items: [
+      { href: "/security", label: "مركز الأمان", icon: Shield },
+    ],
+  },
+  {
     label: "النظام",
     items: [
       { href: "/system-health", label: "حالة النظام", icon: Activity },
       { href: "/developer", label: "Developer Center", icon: Code2 },
+      { href: "/sandbox", label: "Developer Sandbox", icon: FlaskConical },
     ],
   },
 ]

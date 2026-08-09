@@ -1,7 +1,8 @@
-import { pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp, integer } from "drizzle-orm/pg-core";
 
 export const clinicSettingsTable = pgTable("clinic_settings", {
   id: serial("id").primaryKey(),
+  clinicId: integer("clinic_id"),
   clinicName: text("clinic_name").notNull().default("Clinic OS"),
   clinicNameAr: text("clinic_name_ar").notNull().default("كلينيك OS"),
   address: text("address").notNull().default(""),

@@ -4,6 +4,7 @@ import { doctorsTable } from "./doctors";
 
 export const labRequestsTable = pgTable("lab_requests", {
   id: serial("id").primaryKey(),
+  clinicId: integer("clinic_id"),
   patientId: integer("patient_id").notNull().references(() => patientsTable.id, { onDelete: "cascade" }),
   doctorId: integer("doctor_id").notNull().references(() => doctorsTable.id, { onDelete: "cascade" }),
   testName: text("test_name").notNull(),

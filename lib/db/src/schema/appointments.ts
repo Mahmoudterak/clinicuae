@@ -8,6 +8,7 @@ export const appointmentsTable = pgTable(
   "appointments",
   {
     id: serial("id").primaryKey(),
+    clinicId: integer("clinic_id"),
     patientId: integer("patient_id")
       .notNull()
       .references(() => patientsTable.id, { onDelete: "cascade" }),

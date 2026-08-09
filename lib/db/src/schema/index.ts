@@ -26,3 +26,4 @@ export * from "./platformAuditLogs";
 export * from "./subscriptionPlans";
 export * from "./featureFlags";
 export * from "./platformSettings";
+export * from "./securityEvents";
