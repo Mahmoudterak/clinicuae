@@ -181,25 +181,6 @@ router.post("/zapier/webhooks", adminAuth, async (req, res): Promise<void> => {
 router.delete("/zapier/webhooks/:id", adminAuth, async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
-  const parsed = UpdateWebhookBody.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
-  const [row] = await db.update(zapierWebhooksTable).set(parsed.data).where(eq(zapierWebhooksTable.id, id)).returning();
-  if (!row) { res.status(404).json({ error: "Not found" }); return; }
-  res.json(isoWebhook(row));
-});
-
-// ── delete webhook ────────────────────────────────────────────────────────────
-router.delete("/zapier/webhooks/:id", adminAuth, async (req, res): Promise<void> => {
-  const id = Number(req.params.id);
-  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
-  await db.delete(zapierWebhooksTable).where(eq(zapierWebhooksTable.id, id));
-  res.sendStatus(204);
-});
-
-// ── test-fire webhook ─────────────────────────────────────────────────────────
-router.post("/zapier/webhooks/:id/test", adminAuth, async (req, res): Promise<void> => {
-  const id = Number(req.params.id);
-  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
   await db.delete(zapierWebhooksTable).where(eq(zapierWebhooksTable.id, id));
   res.sendStatus(204);
 });

@@ -9,6 +9,8 @@ import { sql } from "drizzle-orm";
 import { ObjectStorageService } from "./objectStorage";
 import bcrypt from "bcryptjs";
 
+// ── Logo migration status (in-memory, reset on each server start) ─────────────
+
 export async function runStartupMigration(): Promise<void> {
   // patients.status — added to support active/inactive filtering
   await db.execute(sql`
@@ -40,6 +42,11 @@ export async function runStartupMigration(): Promise<void> {
       success     boolean NOT NULL DEFAULT false,
       created_at  timestamptz NOT NULL DEFAULT now()
     )
+  `);
+
+  // clinic_settings.clinic_id — added to support multi-tenant settings isolation
+  await db.execute(sql`
+    ALTER TABLE clinic_settings ADD COLUMN IF NOT EXISTS clinic_id integer
   `);
 
   // Retry tracking columns for zapier_logs (idempotent adds)
@@ -116,8 +123,12 @@ export async function runStartupMigration(): Promise<void> {
 
 /**
  * Finds all clinic_settings rows where logo_data_url starts with "data:",
- * uploads each blob to object storage, and replaces the column value with
- * the object path. Safe to run repeatedly — migrated rows won't start with "data:".
+ * uploads each blob to GCS, and replaces the column value with the object path.
+ * Safe to run repeatedly — rows already migrated won't start with "data:".
+ *
+ * Individual failures are recorded in getLogoMigrationStatus() so the Super Admin
+ * can see exactly which clinic_settings rows need a manual fix. A warning is
+ * printed to stderr after the loop so the failure is never silently swallowed.
  */
 async function migrateBase64LogosToStorage(): Promise<void> {
   const rows = await db.execute<{ id: number; logo_data_url: string }>(sql`
@@ -126,7 +137,20 @@ async function migrateBase64LogosToStorage(): Promise<void> {
     WHERE logo_data_url LIKE 'data:%'
   `);
 
-  if (rows.rows.length === 0) return;
+  _logoMigrationResult = {
+    ranAt: new Date().toISOString(),
+    found: rows.rows.length,
+    migrated: 0,
+    failures: [],
+    hasRun: true,
+  };
+
+  if (rows.rows.length === 0) {
+    console.log("[startup-migration] No base64 logos found — nothing to migrate.");
+    return;
+  }
+
+  console.log(`[startup-migration] Found ${rows.rows.length} base64 logo(s) to migrate.`);
 
   const storageService = new ObjectStorageService();
 
@@ -136,9 +160,11 @@ async function migrateBase64LogosToStorage(): Promise<void> {
 
       // Parse "data:<mime>;base64,<data>"
       const commaIndex = dataUrl.indexOf(',');
-      if (commaIndex === -1) continue;
+      if (commaIndex === -1) {
+        throw new Error("Malformed data URL — no comma separator found");
+      }
 
-      const header = dataUrl.slice(0, commaIndex);
+      const header = dataUrl.slice(0, commaIndex); // e.g. "data:image/png;base64"
       const base64Data = dataUrl.slice(commaIndex + 1);
 
       const mimeMatch = header.match(/^data:([^;]+)/);
@@ -153,10 +179,50 @@ async function migrateBase64LogosToStorage(): Promise<void> {
         WHERE id = ${row.id}
       `);
 
+      _logoMigrationResult.migrated += 1;
       console.log(`[startup-migration] Migrated logo for clinic_settings id=${row.id} → ${objectPath}`);
-    } catch (err) {
-      // Log but don't fail the whole migration — a single bad row shouldn't block startup
-      console.error(`[startup-migration] Failed to migrate logo for clinic_settings id=${row.id}:`, err);
+    } catch (err: any) {
+      const errorMessage = err?.message ?? String(err);
+      _logoMigrationResult.failures.push({ clinicSettingsId: row.id, error: errorMessage });
+      // Log immediately so the failure appears in server logs at the exact point it happens
+      console.error(`[startup-migration] FAILED to migrate logo for clinic_settings id=${row.id}: ${errorMessage}`);
     }
   }
+
+  // Surface failures prominently so they are never silently ignored
+  if (_logoMigrationResult.failures.length > 0) {
+    console.error(
+      `[startup-migration] WARNING: ${_logoMigrationResult.failures.length} logo(s) could not be migrated. ` +
+      `These clinic_settings rows still contain base64 data and need manual attention: ` +
+      _logoMigrationResult.failures.map(f => `id=${f.clinicSettingsId} (${f.error})`).join(", ")
+    );
+  } else {
+    console.log(`[startup-migration] All ${_logoMigrationResult.migrated} logo(s) migrated successfully.`);
+  }
+}
+
+export interface LogoMigrationResult {
+  /** ISO timestamp when the migration ran */
+  ranAt: string | null;
+  /** Number of base64 rows found at startup */
+  found: number;
+  /** Number successfully uploaded and replaced */
+  migrated: number;
+  /** Details of rows that failed — never silently swallowed */
+  failures: Array<{ clinicSettingsId: number; error: string }>;
+  /** Whether the migration has run at least once this server lifetime */
+  hasRun: boolean;
+}
+
+let _logoMigrationResult: LogoMigrationResult = {
+  ranAt: null,
+  found: 0,
+  migrated: 0,
+  failures: [],
+  hasRun: false,
+};
+
+/** Returns the result of the last logo migration run (reset on server restart). */
+export function getLogoMigrationStatus(): LogoMigrationResult {
+  return { ..._logoMigrationResult, failures: [..._logoMigrationResult.failures] };
 }

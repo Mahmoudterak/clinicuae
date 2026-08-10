@@ -36,12 +36,13 @@ const router: IRouter = Router();
  * Everything else is protected by the adminAuth guard below.
  */
 const PUBLIC_EXACT: Record<string, string[]> = {
-  "/health":                  ["GET"],
+  "/healthz":                 ["GET"],
   "/auth/login":              ["POST"],
   "/admin-users/validate":    ["POST"],
   "/patient-auth/login":      ["POST"],
   "/patient/me":              ["GET"],   // protected separately by patientAuth middleware
   "/doctor-auth/login":       ["POST"],
+  "/demo-requests":           ["POST"],
 };
 
 function selectiveAdminAuth(req: Request, res: Response, next: NextFunction): void {

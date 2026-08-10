@@ -66,6 +66,7 @@ router.post("/patient-auth/login", async (req, res): Promise<void> => {
     return;
   }
 
+  // Patient identity is derived server-side from the account row — never from client-supplied ID
   const [patient] = await db.select().from(patientsTable).where(eq(patientsTable.id, account.patientId));
   if (!patient) { res.status(404).json({ error: "Patient not found" }); return; }
 

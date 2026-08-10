@@ -67,18 +67,11 @@ router.post("/public/bookings", async (req, res): Promise<void> => {
   const parsed = CreateBookingBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
-  const [row] = await db.insert(onlineBookingsTable).values(parsed.data).returning();
+  const [row] = await db.insert(onlineBookingsTable).values({ ...parsed.data, status: "pending" }).returning();
   if (!row) { res.status(500).json({ error: "Failed to create booking" }); return; }
+  // fire-and-forget webhook after responding
+  fireZapierWebhook("booking.created", { id: row.id, ...parsed.data }).catch(() => {});
   res.status(201).json(isoBooking(row));
-  // fire-and-forget after response is sent
-  void fireZapierWebhook("new_booking", {
-    id: row.id,
-    patientName: row.patientName,
-    patientPhone: row.patientPhone,
-    preferredDate: row.preferredDate,
-    preferredTime: row.preferredTime ?? null,
-    status: row.status,
-  });
 });
 
 // Admin: list all bookings

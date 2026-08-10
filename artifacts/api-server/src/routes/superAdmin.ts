@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
+import { getLogoMigrationStatus } from "../lib/startup-migration";
 import {
   registeredClinicsTable, superAdminUsersTable,
   platformAuditLogsTable, subscriptionPlansTable,
@@ -21,6 +22,8 @@ export const superAdminRouter = Router();
 
 // ── In-memory session store ──────────────────────────────────────────────────
 const sessions = new Map<string, { userId: number; username: string; name: string; role: SuperAdminRole }>();
+
+
 
 function hashPassword(password: string): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -120,7 +123,7 @@ superAdminRouter.post("/auth", async (req, res) => {
   if (!SUPER_ADMIN_ROLES.includes(role)) {
     return res.status(500).json({ error: "Account has an invalid role; contact a Super Admin to fix." });
   }
-  const token = crypto.randomUUID();
+  const token = crypto.randomBytes(32).toString("hex");
   sessions.set(token, { userId: user.id, username: user.username, name: user.name, role });
   const fakeReq = { superAdmin: { userId: user.id, username: user.username, name: user.name, role }, ip: req.ip, headers: req.headers };
   await logAudit({ req: fakeReq, action: "login" });
@@ -199,31 +202,36 @@ superAdminRouter.post("/clinics", authMiddleware, requireRole("super_admin", "pl
   const { name, ownerName, phone, email, specialty, plan, status, notes } = req.body ?? {};
   if (!name || !ownerName || !phone) return res.status(400).json({ error: "name, ownerName, phone are required" });
   const trialEndAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
-  const [clinic] = await db.insert(registeredClinicsTable).values({ name, ownerName, phone, email, specialty, plan: plan ?? "trial", status: status ?? "trial", notes, trialEndAt }).returning();
+  const [clinic] = await db.insert(registeredClinicsTable).values({
+    name, ownerName, phone, email: email ?? null, specialty: specialty ?? null,
+    plan: plan ?? "trial", status: status ?? "trial", notes: notes ?? null, trialEndAt,
+  }).returning();
   await logAudit({ req, action: "clinic.create", resourceType: "clinic", resourceId: clinic!.id, resourceLabel: clinic!.name, newValue: { name, plan, status } });
   return res.status(201).json(serializeClinic(clinic!));
 });
 
-// POST /clinics/register — PUBLIC
+// POST /clinics/register — PUBLIC self-registration
 superAdminRouter.post("/clinics/register", async (req, res) => {
   const { clinicName, ownerName, phone, email, specialty } = req.body ?? {};
   if (!clinicName || !ownerName || !phone) return res.status(400).json({ error: "clinicName, ownerName, phone are required" });
   const trialEndAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
-  const [clinic] = await db.insert(registeredClinicsTable).values({ name: clinicName, ownerName, phone, email, specialty, plan: "trial", status: "trial", trialEndAt }).returning();
-  await logAudit({ req, action: "clinic.register", resourceType: "clinic", resourceId: clinic!.id, resourceLabel: clinic!.name });
+  const [clinic] = await db.insert(registeredClinicsTable).values({
+    name: clinicName, ownerName, phone, email: email ?? null, specialty: specialty ?? null,
+    plan: "trial", status: "trial", trialEndAt,
+  }).returning();
   return res.status(201).json(serializeClinic(clinic!));
 });
 
-// PUT /clinics/:id — super_admin & platform_admin only
-superAdminRouter.put("/clinics/:id", authMiddleware, requireRole("super_admin", "platform_admin"), async (req, res) => {
+// PATCH /clinics/:id — update clinic details, plan, or status
+superAdminRouter.patch("/clinics/:id", authMiddleware, requireRole("super_admin", "platform_admin"), async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   const [before] = await db.select().from(registeredClinicsTable).where(eq(registeredClinicsTable.id, id));
   if (!before) return res.status(404).json({ error: "Not found" });
   const allowed = ["name", "ownerName", "phone", "email", "specialty", "plan", "status", "notes"] as const;
-  const updates: Record<string, unknown> = {};
+  const updates: Partial<Record<typeof allowed[number], string>> = {};
   for (const key of allowed) { if (req.body[key] !== undefined) updates[key] = req.body[key]; }
-  const [updated] = await db.update(registeredClinicsTable).set({ ...updates, updatedAt: new Date() } as any).where(eq(registeredClinicsTable.id, id)).returning();
+  const [updated] = await db.update(registeredClinicsTable).set({ ...updates, updatedAt: new Date() }).where(eq(registeredClinicsTable.id, id)).returning();
   const action = req.body.status && req.body.status !== before.status
     ? `clinic.${req.body.status === "suspended" ? "suspend" : "update"}`
     : req.body.plan && req.body.plan !== before.plan ? "plan.change" : "clinic.update";
@@ -231,7 +239,6 @@ superAdminRouter.put("/clinics/:id", authMiddleware, requireRole("super_admin", 
   return res.json(serializeClinic(updated!));
 });
 
-// POST /clinics/:id/impersonate — super_admin & platform_admin only
 // Soft delete — super_admin & platform_admin only
 superAdminRouter.delete("/clinics/:id", authMiddleware, requireRole("super_admin", "platform_admin"), async (req, res) => {
   const id = Number(req.params.id);
@@ -438,40 +445,37 @@ superAdminRouter.get("/system-health", authMiddleware, requireRole("super_admin"
 });
 
 // ═══════════════════════════════════════════════════════════════════
-// DEVELOPER INFO — super_admin & developer
+// DIAGNOSTICS — super_admin, platform_admin, developer
 // ═══════════════════════════════════════════════════════════════════
 
-superAdminRouter.get("/developer-info", authMiddleware, requireRole("super_admin", "developer"), async (_req, res) => {
-  const tableNames = [
-    "registered_clinics", "super_admin_users", "patients", "doctors", "appointments",
-    "invoices", "medical_records", "prescriptions", "staff", "departments",
-    "zapier_webhooks", "zapier_logs", "branches", "patient_accounts",
-    "platform_audit_logs", "subscription_plans", "feature_flags", "platform_settings",
-  ];
-  const tables: Array<{ name: string; rowCount: number }> = [];
-  for (const tableName of tableNames) {
-    try {
-      const result = await db.execute(sql.raw(`SELECT COUNT(*) as count FROM ${tableName}`));
-      tables.push({ name: tableName, rowCount: Number((result.rows[0] as any)?.count ?? 0) });
-    } catch {
-      tables.push({ name: tableName, rowCount: 0 });
-    }
-  }
-  const mem = process.memoryUsage();
-  const recentApiLogs = await db.select({ action: platformAuditLogsTable.action, actorUsername: platformAuditLogsTable.actorUsername, ip: platformAuditLogsTable.ip, createdAt: platformAuditLogsTable.createdAt })
-    .from(platformAuditLogsTable).orderBy(desc(platformAuditLogsTable.createdAt)).limit(20);
+/**
+ * GET /superadmin/diagnostics/logo-migration
+ *
+ * Returns both the in-memory result of the startup migration and a live
+ * database query so the caller can confirm zero base64 logos remain.
+ * Any still-base64 rows are listed individually so the team knows exactly
+ * which clinic_settings records need a manual fix.
+ */
+superAdminRouter.get("/diagnostics/logo-migration", authMiddleware, requireRole("super_admin", "platform_admin", "developer"), async (_req, res) => {
+  // Live DB check — source of truth regardless of what startup did
+  const liveResult = await db.execute<{ id: number; clinic_id: number | null }>(sql`
+    SELECT id, clinic_id
+    FROM clinic_settings
+    WHERE logo_data_url LIKE 'data:%'
+  `);
+
+  const remaining = liveResult.rows;
+  const status = getLogoMigrationStatus();
+
   return res.json({
-    nodeVersion: process.version,
-    platform: process.platform,
-    uptimeSec: Math.floor(process.uptime()),
-    memoryMb: {
-      rss: Math.round(mem.rss / 1024 / 1024),
-      heapUsed: Math.round(mem.heapUsed / 1024 / 1024),
-      heapTotal: Math.round(mem.heapTotal / 1024 / 1024),
-    },
-    tables,
-    recentErrors: [],
-    recentApiLogs: recentApiLogs.map(l => ({ ...l, createdAt: l.createdAt.toISOString() })),
+    migrationHasRun: status.hasRun,
+    migrationRanAt: status.ranAt,
+    foundAtStartup: status.found,
+    migratedAtStartup: status.migrated,
+    startupFailures: status.failures,
+    remainingBase64Count: remaining.length,
+    remainingBase64Rows: remaining.map(r => ({ clinicSettingsId: r.id, clinicId: r.clinic_id })),
+    clean: status.hasRun && remaining.length === 0 && status.failures.length === 0,
   });
 });
 
@@ -564,6 +568,7 @@ superAdminRouter.get("/security/active-sessions", authMiddleware, async (_req, r
     .where(and(eq(securityEventsTable.eventType, "login_success"), gte(securityEventsTable.createdAt, since)))
     .orderBy(desc(securityEventsTable.createdAt))
     .limit(100);
+
   return res.json(recentSessions.map(s => ({ ...s, createdAt: s.createdAt.toISOString() })));
 });
 

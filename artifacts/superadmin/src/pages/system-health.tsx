@@ -3,7 +3,7 @@ import { fetchApi } from '@/lib/api-client'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { RefreshCw, CheckCircle2, AlertTriangle, XCircle, Activity, Database, Shield, Wifi, Clock } from 'lucide-react'
+import { RefreshCw, CheckCircle2, AlertTriangle, XCircle, Activity, Database, Shield, Wifi, Clock, ImageIcon } from 'lucide-react'
 
 interface ServiceHealth {
   name: string
@@ -27,6 +27,17 @@ interface SystemHealthResponse {
   uptimeSec: number
 }
 
+interface LogoMigrationResponse {
+  migrationHasRun: boolean
+  migrationRanAt: string | null
+  foundAtStartup: number
+  migratedAtStartup: number
+  startupFailures: Array<{ clinicSettingsId: number; error: string }>
+  remainingBase64Count: number
+  remainingBase64Rows: Array<{ clinicSettingsId: number; clinicId: number | null }>
+  clean: boolean
+}
+
 const STATUS_CONFIG = {
   healthy: { label: 'سليم', color: 'bg-green-100 text-green-800 border-green-200', icon: CheckCircle2, iconColor: 'text-green-500', cardBorder: 'border-green-200' },
   warning: { label: 'تحذير', color: 'bg-yellow-100 text-yellow-800 border-yellow-200', icon: AlertTriangle, iconColor: 'text-yellow-500', cardBorder: 'border-yellow-200' },
@@ -41,6 +52,134 @@ function formatUptime(secs: number) {
   if (d > 0) return `${d}ي ${h}س ${m}د`
   if (h > 0) return `${h}س ${m}د`
   return `${m}د`
+}
+
+function LogoMigrationCard() {
+  const { data, isLoading, refetch, isFetching } = useQuery<LogoMigrationResponse>({
+    queryKey: ['sa-logo-migration'],
+    queryFn: () => fetchApi('/diagnostics/logo-migration'),
+    refetchInterval: 60_000,
+  })
+
+  const hasFailures = (data?.startupFailures?.length ?? 0) > 0
+  const hasRemaining = (data?.remainingBase64Count ?? 0) > 0
+  const notRun = data && !data.migrationHasRun
+
+  const status: 'healthy' | 'warning' | 'critical' | 'unknown' = isLoading
+    ? 'unknown'
+    : !data
+    ? 'unknown'
+    : notRun
+    ? 'warning'
+    : hasRemaining || hasFailures
+    ? 'critical'
+    : 'healthy'
+
+  const cfg = STATUS_CONFIG[status]
+  const Icon = cfg.icon
+
+  return (
+    <Card className={`border-2 ${cfg.cardBorder}`}>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <ImageIcon className="w-4 h-4 text-primary" />
+            ترحيل شعارات العيادات (Base64 → Storage)
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            <Badge className={`text-xs ${cfg.color}`}>
+              <Icon className="w-3 h-3 ml-1" />
+              {cfg.label}
+            </Badge>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => refetch()} disabled={isFetching}>
+              <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0 space-y-3">
+        {isLoading ? (
+          <div className="h-16 bg-muted animate-pulse rounded-lg" />
+        ) : !data ? (
+          <p className="text-sm text-muted-foreground">تعذّر تحميل بيانات الترحيل</p>
+        ) : (
+          <>
+            {/* Summary row */}
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="bg-muted/50 rounded-lg py-2">
+                <div className="text-lg font-bold">{data.foundAtStartup}</div>
+                <div className="text-xs text-muted-foreground">وُجد عند البدء</div>
+              </div>
+              <div className="bg-muted/50 rounded-lg py-2">
+                <div className="text-lg font-bold text-green-600">{data.migratedAtStartup}</div>
+                <div className="text-xs text-muted-foreground">تم ترحيله</div>
+              </div>
+              <div className={`rounded-lg py-2 ${hasRemaining ? 'bg-red-50' : 'bg-muted/50'}`}>
+                <div className={`text-lg font-bold ${hasRemaining ? 'text-red-600' : ''}`}>{data.remainingBase64Count}</div>
+                <div className="text-xs text-muted-foreground">متبقٍّ (Base64)</div>
+              </div>
+            </div>
+
+            {/* Migration ran timestamp */}
+            {data.migrationRanAt && (
+              <p className="text-xs text-muted-foreground">
+                آخر تشغيل: {new Date(data.migrationRanAt).toLocaleString('ar-EG', { timeZone: 'Asia/Dubai', hour12: false })}
+              </p>
+            )}
+
+            {/* Not-run warning */}
+            {notRun && (
+              <div className="flex items-start gap-2 bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
+                <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                لم يُنفَّذ الترحيل بعد في هذه الدورة — أعد تشغيل الخادم أو افحص السجلات
+              </div>
+            )}
+
+            {/* Startup failures */}
+            {hasFailures && (
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-red-700">فشل الترحيل لهذه الصفوف — تحتاج إصلاحاً يدوياً:</p>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {data.startupFailures.map(f => (
+                    <div key={f.clinicSettingsId} className="flex items-start gap-2 bg-red-50 border border-red-200 rounded p-2 text-xs text-red-800">
+                      <XCircle className="w-3.5 h-3.5 mt-0.5 shrink-0 text-red-500" />
+                      <span>
+                        <span className="font-mono font-semibold">clinic_settings id={f.clinicSettingsId}</span>
+                        {' — '}{f.error}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Remaining base64 rows (live DB check) */}
+            {hasRemaining && !hasFailures && (
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-red-700">صفوف لا تزال تحتوي على Base64 في قاعدة البيانات:</p>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {data.remainingBase64Rows.map(r => (
+                    <div key={r.clinicSettingsId} className="flex items-center gap-2 bg-red-50 border border-red-200 rounded p-2 text-xs text-red-800">
+                      <XCircle className="w-3.5 h-3.5 shrink-0 text-red-500" />
+                      <span className="font-mono">clinic_settings id={r.clinicSettingsId}{r.clinicId != null ? ` (clinic_id=${r.clinicId})` : ''}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* All clear */}
+            {data.clean && (
+              <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-800">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                لا توجد شعارات Base64 متبقية — قاعدة البيانات نظيفة
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  )
 }
 
 export default function SystemHealth() {
@@ -159,6 +298,15 @@ export default function SystemHealth() {
           })}
         </div>
       )}
+
+      {/* Logo Migration Diagnostic */}
+      <div>
+        <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+          <ImageIcon className="w-5 h-5 text-muted-foreground" />
+          تشخيصات الترحيل
+        </h2>
+        <LogoMigrationCard />
+      </div>
     </div>
   )
 }
