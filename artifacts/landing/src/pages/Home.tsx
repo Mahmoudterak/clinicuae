@@ -57,61 +57,74 @@ const whyItems = [
 
 const plans = [
   {
-    name: 'البداية',
-    nameEn: 'Starter',
-    price: 299,
-    priceAnnual: 249,
+    name: 'الأساسية',
+    nameEn: 'Basic',
+    priceAnnual: 1999,
     color: 'from-slate-700 to-slate-900',
     highlight: false,
     description: 'مثالية للعيادة ذات الطبيب الواحد',
     features: [
       'طبيب واحد',
-      'إدارة المرضى والمواعيد',
+      'إدارة المرضى والملفات الطبية',
+      'جدولة المواعيد وتذكيرات تلقائية',
       'الفواتير والمدفوعات',
-      'الحجز الإلكتروني',
-      'تقارير أساسية',
-      'دعم فني عبر البريد',
+      'الوصفات الطبية الإلكترونية',
+      'بوابة الحجز الإلكتروني للمرضى',
+      'إدارة نتائج المختبر والأشعة',
+      'تقارير أساسية للعيادة',
+      'شعار وهوية العيادة',
+      'دعم فني عبر البريد الإلكتروني',
+      'نسخ احتياطي يومي تلقائي',
+      'بروتوكول HTTPS مشفر',
     ],
     cta: 'ابدأ مجاناً',
   },
   {
     name: 'الاحترافية',
-    nameEn: 'Pro',
-    price: 699,
-    priceAnnual: 579,
+    nameEn: 'Professional',
+    priceAnnual: 3499,
     color: 'from-indigo-600 to-violet-600',
     highlight: true,
     badge: 'الأكثر شيوعاً',
     description: 'للعيادات المتنامية التي تريد أتمتة كاملة',
     features: [
-      'حتى 5 أطباء',
-      'جميع ميزات الباقة الأساسية',
-      'تكامل واتساب الأعمال',
-      'تكامل Zapier',
-      'إدارة المخزون',
-      'تصدير PDF',
-      'تقارير متقدمة',
-      'دعم ذو أولوية',
+      'حتى 10 أطباء',
+      'جميع مميزات الباقة الأساسية',
+      'تكامل واتساب الأعمال (إرسال جماعي)',
+      'قوالب رسائل واتساب مخصصة',
+      'تكامل Zapier لربط التطبيقات',
+      'إدارة المخزون والصيدلية',
+      'إدارة الموظفين والأدوار',
+      'إدارة الفروع (حتى 3 فروع)',
+      'تصدير التقارير بصيغة PDF وExcel',
+      'تقارير متقدمة وإحصاءات',
+      'لوحة تحكم إدارية لكل طبيب',
+      'دعم فني ذو أولوية عبر واتساب',
+      'تحديثات تلقائية فورية',
     ],
     cta: 'ابدأ مجاناً',
   },
   {
     name: 'المركز الطبي',
     nameEn: 'Medical Center',
-    price: 1799,
-    priceAnnual: 1499,
+    priceAnnual: 5999,
     color: 'from-violet-700 to-purple-900',
     highlight: false,
-    description: 'للمراكز الطبية والعيادات المتعددة',
+    description: 'للمراكز الطبية والعيادات المتعددة الفروع',
     features: [
-      'أطباء غير محدودين',
-      'جميع ميزات الاحترافية',
-      'فروع وعيادات متعددة',
-      'تخصيص كامل للنظام',
+      'أطباء وموظفون غير محدودين',
+      'جميع مميزات الباقة الاحترافية',
+      'فروع وعيادات غير محدودة',
+      'صلاحيات وأدوار مخصصة لكل مستخدم',
+      'بوابة حجز إلكتروني لكل فرع',
+      'تكامل مع أنظمة التأمين الصحي',
+      'تكامل مع الأنظمة الخارجية عبر API',
+      'تقارير مخصصة ومتقدمة',
+      'لوحة تحكم موحدة لجميع الفروع',
       'مدير حساب مخصص',
-      'دعم على مدار الساعة',
-      'تكامل مع أنظمة خارجية',
-      'تقارير مخصصة',
+      'دعم فني على مدار الساعة 7 أيام',
+      'تدريب وإعداد مجاني للفريق',
+      'اتفاقية مستوى خدمة (SLA) مضمونة',
     ],
     cta: 'تواصل معنا',
   },
@@ -610,7 +623,6 @@ function WhyUs() {
 }
 
 function Pricing({ onOpenDemo }: { onOpenDemo: () => void }) {
-  const [annual, setAnnual] = useState(false);
   return (
     <section className="py-24 bg-slate-50" id="pricing">
       <div className="container mx-auto px-4">
@@ -618,17 +630,10 @@ function Pricing({ onOpenDemo }: { onOpenDemo: () => void }) {
           <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-3xl md:text-5xl font-black text-slate-900 mb-4">
             أسعار شفافة وبسيطة
           </motion.h2>
-          <p className="text-slate-500 text-lg mb-8">ابدأ مجاناً لمدة 14 يوماً — بدون بطاقة ائتمان</p>
-          <div className="inline-flex items-center gap-3 bg-white border border-slate-200 rounded-2xl p-1.5 shadow-sm">
-            <button onClick={() => setAnnual(false)}
-              className={`px-5 py-2 rounded-xl text-sm font-semibold transition-all ${!annual ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-              شهري
-            </button>
-            <button onClick={() => setAnnual(true)}
-              className={`px-5 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 ${annual ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-              سنوي
-              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${annual ? 'bg-white/20 text-white' : 'bg-green-100 text-green-700'}`}>وفّر 15%</span>
-            </button>
+          <p className="text-slate-500 text-lg mb-3">ابدأ مجاناً لمدة 14 يوماً — بدون بطاقة ائتمان</p>
+          <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-2.5">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span className="text-emerald-700 text-sm font-semibold">اشتراك سنوي — وفّر مقارنةً بالدفع الشهري</span>
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -643,18 +648,13 @@ function Pricing({ onOpenDemo }: { onOpenDemo: () => void }) {
               <div className={`bg-gradient-to-br ${plan.color} p-6 pt-10 text-white`}>
                 <div className="text-lg font-bold mb-1">{plan.name}</div>
                 <div className="text-white/60 text-xs mb-4">{plan.nameEn} · {plan.description}</div>
-                <div className="flex items-end gap-1">
-                  <span className="text-4xl font-black">{annual ? plan.priceAnnual : plan.price}</span>
-                  <span className="text-white/60 mb-1 text-sm">د.إ / شهر</span>
+                <div className="flex items-end gap-1.5">
+                  <span className="text-4xl font-black">{plan.priceAnnual.toLocaleString()}</span>
+                  <span className="text-white/70 mb-1.5 text-sm font-medium">د.إ / سنة</span>
                 </div>
-                {annual && (
-                  <div className="mt-2 flex flex-col gap-1">
-                    <div className="text-white/50 text-xs">يُدفع {(plan.priceAnnual * 12).toLocaleString()} د.إ سنوياً</div>
-                    <div className="inline-flex items-center gap-1 self-start bg-emerald-400/20 border border-emerald-400/30 rounded-full px-2.5 py-0.5">
-                      <span className="text-emerald-300 text-xs font-bold">توفر {((plan.price - plan.priceAnnual) * 12).toLocaleString()} د.إ سنوياً</span>
-                    </div>
-                  </div>
-                )}
+                <div className="mt-2 text-white/50 text-xs">
+                  ما يعادل {Math.round(plan.priceAnnual / 12).toLocaleString()} د.إ شهرياً
+                </div>
               </div>
               <div className="bg-white p-6 flex flex-col gap-5">
                 <ul className="space-y-3">
@@ -667,7 +667,7 @@ function Pricing({ onOpenDemo }: { onOpenDemo: () => void }) {
                 </ul>
                 {plan.cta === 'تواصل معنا' ? (
                   <Button onClick={onOpenDemo} className="w-full rounded-xl h-11 font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800">
-                    شاهد العرض التوضيحي
+                    تواصل معنا
                   </Button>
                 ) : (
                   <Link href="/trial" className="block">
