@@ -43,18 +43,29 @@ router.get("/admin-users", async (req, res): Promise<void> => {
 router.post("/admin-users", async (req, res): Promise<void> => {
   const parsed = CreateAdminUserBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+  // Check uniqueness within this clinic (also catches the global DB constraint)
   const existing = await db
     .select()
     .from(adminUsersTable)
-    .where(and(eq(adminUsersTable.clinicId, req.clinicId!), eq(adminUsersTable.username, parsed.data.username)))
+    .where(eq(adminUsersTable.username, parsed.data.username))
     .limit(1);
   if (existing.length > 0) { res.status(409).json({ error: "Username already exists" }); return; }
   const hashed = await bcrypt.hash(parsed.data.password, BCRYPT_ROUNDS);
-  const [row] = await db
-    .insert(adminUsersTable)
-    .values({ ...parsed.data, password: hashed, clinicId: req.clinicId })
-    .returning();
-  res.status(201).json(CreateAdminUserResponse.parse(iso(sanitize(row!))));
+  try {
+    const [row] = await db
+      .insert(adminUsersTable)
+      .values({ ...parsed.data, password: hashed, clinicId: req.clinicId })
+      .returning();
+    res.status(201).json(CreateAdminUserResponse.parse(iso(sanitize(row!))));
+  } catch (err: unknown) {
+    // Handle DB-level unique violation (e.g. race condition)
+    const msg = String((err as { message?: string })?.message ?? "");
+    if (msg.includes("unique") || msg.includes("23505")) {
+      res.status(409).json({ error: "Username already exists" });
+    } else {
+      throw err;
+    }
+  }
 });
 
 router.put("/admin-users/:id", async (req, res): Promise<void> => {
@@ -62,6 +73,11 @@ router.put("/admin-users/:id", async (req, res): Promise<void> => {
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const parsed = UpdateAdminUserBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+  // Prevent a clinic admin from deactivating their own account
+  if (parsed.data.status === "suspended" && req.adminId === params.data.id) {
+    res.status(400).json({ error: "You cannot deactivate your own account" });
+    return;
+  }
   if (parsed.data.username) {
     const existing = await db
       .select()
@@ -89,6 +105,11 @@ router.put("/admin-users/:id", async (req, res): Promise<void> => {
 router.delete("/admin-users/:id", async (req, res): Promise<void> => {
   const params = DeleteAdminUserParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
+  // Prevent self-deletion
+  if (req.adminId === params.data.id) {
+    res.status(400).json({ error: "You cannot delete your own account" });
+    return;
+  }
   const [row] = await db
     .delete(adminUsersTable)
     .where(and(eq(adminUsersTable.clinicId, req.clinicId!), eq(adminUsersTable.id, params.data.id)))

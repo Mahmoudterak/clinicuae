@@ -48,9 +48,16 @@ router.post("/doctor-auth/login", async (req, res): Promise<void> => {
   if (!ok) { res.status(401).json({ error: "اسم المستخدم أو كلمة المرور غير صحيحة" }); return; }
 
   const [doctor] = await db
-    .select()
+    .select({
+      id: doctorsTable.id,
+      clinicId: doctorsTable.clinicId,
+      firstName: doctorsTable.firstName,
+      lastName: doctorsTable.lastName,
+      specialty: doctorsTable.specialty,
+    })
     .from(doctorsTable)
-    .where(eq(doctorsTable.id, account.doctorId));
+    .where(eq(doctorsTable.id, account.doctorId))
+    .limit(1);
 
   if (!doctor) { res.status(404).json({ error: "بيانات الطبيب غير موجودة" }); return; }
 
@@ -105,6 +112,17 @@ adminRouter.post("/admin/doctor-accounts", async (req, res): Promise<void> => {
   const { doctorId, username, password } = parsed.data;
   const cid = req.clinicId!;
 
+  // Validate doctor belongs to this clinic
+  const [doctor] = await db
+    .select({ id: doctorsTable.id, clinicId: doctorsTable.clinicId })
+    .from(doctorsTable)
+    .where(eq(doctorsTable.id, doctorId))
+    .limit(1);
+  if (!doctor || doctor.clinicId !== cid) {
+    res.status(404).json({ error: "الطبيب غير موجود في هذه العيادة" });
+    return;
+  }
+
   const existing = await db
     .select()
     .from(doctorAccountsTable)
@@ -114,7 +132,7 @@ adminRouter.post("/admin/doctor-accounts", async (req, res): Promise<void> => {
   const passwordHash = await hashPassword(password);
   const [row] = await db
     .insert(doctorAccountsTable)
-    .values({ clinicId: cid, doctorId, username, passwordHash })
+    .values({ doctorId, username, passwordHash, clinicId: cid })
     .returning();
   res.status(201).json({
     id: row!.id,

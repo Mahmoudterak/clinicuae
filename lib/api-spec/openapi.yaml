@@ -1754,11 +1754,12 @@ components:
 
     AdminUser:
       type: object
-      required: [id, username, name, createdAt]
+      required: [id, username, name, status, createdAt]
       properties:
         id: { type: integer }
         username: { type: string }
         name: { type: string }
+        status: { type: string }
         createdAt: { type: string }
 
     AdminUserInput:
@@ -1768,6 +1769,7 @@ components:
         username: { type: string }
         password: { type: string }
         name: { type: string }
+        status: { type: string }
 
     AdminUserUpdate:
       type: object
@@ -1775,6 +1777,7 @@ components:
         username: { type: string }
         password: { type: string }
         name: { type: string }
+        status: { type: string }
 
     ValidateAdminCredentials:
       type: object

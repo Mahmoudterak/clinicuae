@@ -76,11 +76,6 @@ export const ListPatientsResponseItem = zod.object({
 export const ListPatientsResponse = zod.array(ListPatientsResponseItem)
 
 
-
-
-
-
-
 export const CreatePatientBody = zod.object({
   "firstName": zod.string().min(1),
   "lastName": zod.string().min(1),
@@ -133,9 +128,6 @@ export const GetPatientResponse = zod.object({
 export const UpdatePatientParams = zod.object({
   "id": zod.coerce.number().int()
 })
-
-
-
 
 
 export const UpdatePatientBody = zod.object({
@@ -267,11 +259,6 @@ export const ListDoctorsResponseItem = zod.object({
 export const ListDoctorsResponse = zod.array(ListDoctorsResponseItem)
 
 
-
-
-
-
-
 export const CreateDoctorBody = zod.object({
   "firstName": zod.string().min(1),
   "lastName": zod.string().min(1),
@@ -318,9 +305,6 @@ export const GetDoctorResponse = zod.object({
 export const UpdateDoctorParams = zod.object({
   "id": zod.coerce.number().int()
 })
-
-
-
 
 
 export const UpdateDoctorBody = zod.object({
@@ -377,9 +361,6 @@ export const ListAppointmentsResponseItem = zod.object({
   "createdAt": zod.string()
 })
 export const ListAppointmentsResponse = zod.array(ListAppointmentsResponseItem)
-
-
-
 
 
 export const CreateAppointmentBody = zod.object({
@@ -469,9 +450,6 @@ export const ListMedicalRecordsResponseItem = zod.object({
 export const ListMedicalRecordsResponse = zod.array(ListMedicalRecordsResponseItem)
 
 
-
-
-
 export const CreateMedicalRecordBody = zod.object({
   "patientId": zod.int(),
   "doctorId": zod.int(),
@@ -556,11 +534,6 @@ export const ListPrescriptionsResponseItem = zod.object({
 export const ListPrescriptionsResponse = zod.array(ListPrescriptionsResponseItem)
 
 
-
-
-
-
-
 export const CreatePrescriptionBody = zod.object({
   "patientId": zod.int(),
   "doctorId": zod.int(),
@@ -612,9 +585,6 @@ export const ListInvoicesResponseItem = zod.object({
   "createdAt": zod.string()
 })
 export const ListInvoicesResponse = zod.array(ListInvoicesResponseItem)
-
-
-
 
 
 export const CreateInvoiceBody = zod.object({
@@ -925,6 +895,7 @@ export const ListAdminUsersResponseItem = zod.object({
   "id": zod.int(),
   "username": zod.string(),
   "name": zod.string(),
+  "status": zod.string(),
   "createdAt": zod.string()
 })
 export const ListAdminUsersResponse = zod.array(ListAdminUsersResponseItem)
@@ -936,13 +907,15 @@ export const ListAdminUsersResponse = zod.array(ListAdminUsersResponseItem)
 export const CreateAdminUserBody = zod.object({
   "username": zod.string(),
   "password": zod.string(),
-  "name": zod.string()
+  "name": zod.string(),
+  "status": zod.string().optional()
 })
 
 export const CreateAdminUserResponse = zod.object({
   "id": zod.int(),
   "username": zod.string(),
   "name": zod.string(),
+  "status": zod.string(),
   "createdAt": zod.string()
 })
 
@@ -957,13 +930,15 @@ export const UpdateAdminUserParams = zod.object({
 export const UpdateAdminUserBody = zod.object({
   "username": zod.string().optional(),
   "password": zod.string().optional(),
-  "name": zod.string().optional()
+  "name": zod.string().optional(),
+  "status": zod.enum(["active", "suspended"]).optional()
 })
 
 export const UpdateAdminUserResponse = zod.object({
   "id": zod.int(),
   "username": zod.string(),
   "name": zod.string(),
+  "status": zod.string(),
   "createdAt": zod.string()
 })
 
@@ -992,6 +967,7 @@ export const ValidateAdminResponse = zod.object({
   "id": zod.int(),
   "username": zod.string(),
   "name": zod.string(),
+  "status": zod.string(),
   "createdAt": zod.string()
 }).nullish()
 })
@@ -1610,5 +1586,3 @@ export const DeleteStaffMemberParams = zod.object({
 })
 
 export const DeleteStaffMemberResponse = zod.void()
-
-

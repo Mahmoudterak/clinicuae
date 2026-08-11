@@ -14,28 +14,44 @@ const ADMIN_USER = process.env.ADMIN_USERNAME ?? "admin";
 const adminPass = process.env.ADMIN_PASSWORD;
 
 /**
- * Find or create a default clinic for single-tenant/dev mode.
- * Returns the clinic ID to embed in the JWT.
+ * Resolve the clinic for the env-var admin in single-tenant / dev mode.
+ *
+ * Multi-tenant guard: if multiple clinics exist and CLINIC_ID is not
+ * explicitly set, we refuse rather than silently attaching to an arbitrary
+ * tenant.  This prevents the legacy env-var credential from accidentally
+ * gaining access to the wrong clinic in a production multi-tenant database.
+ *
+ * Returns the clinic ID to embed in the JWT, or null if the env-var admin
+ * cannot be safely scoped to a single clinic.
  */
-async function getOrCreateDefaultClinicId(): Promise<number> {
-  // 1. Check env override
+async function resolveEnvAdminClinicId(): Promise<number | null> {
+  // 1. Explicit override always wins
   const envId = process.env.CLINIC_ID ? parseInt(process.env.CLINIC_ID, 10) : null;
   if (envId && !isNaN(envId)) return envId;
 
-  // 2. Use first registered clinic
-  const [existing] = await db
+  // 2. Count registered clinics
+  const clinics = await db
     .select({ id: registeredClinicsTable.id })
     .from(registeredClinicsTable)
     .orderBy(asc(registeredClinicsTable.id))
-    .limit(1);
-  if (existing) return existing.id;
+    .limit(2); // only need to know if 0, 1, or many
 
-  // 3. Create a default clinic if none exist
-  const [created] = await db
-    .insert(registeredClinicsTable)
-    .values({ name: "Default Clinic", subdomain: "default", plan: "basic", status: "active" })
-    .returning({ id: registeredClinicsTable.id });
-  return created!.id;
+  if (clinics.length === 0) {
+    // Fresh database — create the default clinic
+    const [created] = await db
+      .insert(registeredClinicsTable)
+      .values({ name: "Default Clinic", ownerName: "System Admin", phone: "0000000000", plan: "trial", status: "active" })
+      .returning({ id: registeredClinicsTable.id });
+    return created!.id;
+  }
+
+  if (clinics.length === 1) {
+    // Single-tenant mode — safe to use the only clinic
+    return clinics[0]!.id;
+  }
+
+  // Multiple clinics and no explicit CLINIC_ID — refuse to guess
+  return null;
 }
 
 /** Detect whether a stored value is already a bcrypt hash */
@@ -93,7 +109,7 @@ router.post("/auth/login", async (req, res): Promise<void> => {
         .where(eq(adminUsersTable.id, admin.id));
 
       const token = jwt.sign(
-        { role: "admin", userId: admin.id, clinicId: admin.clinicId, adminName: username },
+        { role: "admin", clinicId: admin.clinicId, adminId: admin.id, adminName: username },
         JWT_SECRET,
         { expiresIn: "24h" },
       );
@@ -132,8 +148,21 @@ router.post("/auth/login", async (req, res): Promise<void> => {
       : password === adminPass;
 
     if (envPasswordMatch) {
-      // Always resolve to a real clinicId so requireClinic works
-      const clinicId = await getOrCreateDefaultClinicId();
+      // Resolve to a real clinicId — returns null when multiple clinics exist
+      // without an explicit CLINIC_ID to avoid attaching to an arbitrary tenant
+      const clinicId = await resolveEnvAdminClinicId();
+      if (clinicId === null) {
+        await logSecurityEvent({
+          req,
+          eventType: "login_failure",
+          description: `Env-var admin "${username}" login rejected — multiple clinics exist and CLINIC_ID is not set`,
+          success: false,
+        });
+        res.status(403).json({
+          error: "Multi-tenant mode detected — set CLINIC_ID to use env-var admin credentials",
+        });
+        return;
+      }
 
       // Seed this env-var admin into DB so future logins use the DB path
       try {

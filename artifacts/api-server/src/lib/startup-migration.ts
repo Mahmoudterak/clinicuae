@@ -69,6 +69,36 @@ export async function runStartupMigration(): Promise<void> {
     ALTER TABLE zapier_logs ADD COLUMN IF NOT EXISTS final_outcome text
   `);
 
+  // doctor_accounts.clinic_id — added to support per-clinic doctor account scoping
+  await db.execute(sql`
+    ALTER TABLE doctor_accounts ADD COLUMN IF NOT EXISTS clinic_id integer
+      REFERENCES registered_clinics(id) ON DELETE CASCADE
+  `);
+  // Backfill clinic_id from the linked doctor's clinic for all existing rows.
+  // Rows whose doctor has no clinic (legacy/orphaned) remain NULL and are
+  // surfaced via the warning below.
+  await db.execute(sql`
+    UPDATE doctor_accounts da
+    SET    clinic_id = d.clinic_id
+    FROM   doctors d
+    WHERE  da.doctor_id = d.id
+    AND    da.clinic_id IS NULL
+    AND    d.clinic_id IS NOT NULL
+  `);
+  // Warn about any orphaned doctor_accounts that could not be backfilled
+  const orphaned = await db.execute<{ count: string }>(sql`
+    SELECT COUNT(*)::text AS count
+    FROM   doctor_accounts
+    WHERE  clinic_id IS NULL
+  `);
+  const orphanCount = parseInt(orphaned.rows[0]?.count ?? "0", 10);
+  if (orphanCount > 0) {
+    console.warn(
+      `[startup-migration] WARNING: ${orphanCount} doctor_account row(s) have no clinic_id after backfill. ` +
+      `These belong to doctors without a clinic assignment and will not appear in any clinic's admin UI.`
+    );
+  }
+
   // Demo requests — landing page lead capture
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS demo_requests (

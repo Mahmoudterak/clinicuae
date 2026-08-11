@@ -182,11 +182,17 @@ adminRouter.post("/bookings/:id/convert", async (req, res): Promise<void> => {
         lastName,
         phone: booking.patientPhone,
         email: booking.patientEmail ?? undefined,
-        dateOfBirth: null,
-        gender: (booking.patientGender as "male" | "female" | null) ?? null,
+        dateOfBirth: undefined,
+        gender: booking.patientGender ?? "unknown",
       })
       .returning({ id: patientsTable.id });
     patientId = newPatient!.id;
+  }
+
+  // Require a doctor to be selected before converting to an appointment
+  if (!booking.doctorId) {
+    res.status(422).json({ error: "Cannot convert: booking has no doctor assigned" });
+    return;
   }
 
   // Create appointment
@@ -195,12 +201,12 @@ adminRouter.post("/bookings/:id/convert", async (req, res): Promise<void> => {
     .values({
       clinicId: cid,
       patientId,
-      doctorId: booking.doctorId ?? undefined,
+      doctorId: booking.doctorId,
       date: booking.preferredDate,
       time: booking.preferredTime,
       status: "scheduled",
-      notes: [booking.reason, booking.notes].filter(Boolean).join("\n") || undefined,
-      type: "consultation",
+      reason: booking.reason,
+      notes: booking.notes ?? undefined,
     })
     .returning();
 
