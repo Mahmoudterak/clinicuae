@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import jwt from "jsonwebtoken";
-import { eq } from "drizzle-orm";
-import { db, adminUsersTable } from "@workspace/db";
+import { eq, asc } from "drizzle-orm";
+import { db, adminUsersTable, registeredClinicsTable } from "@workspace/db";
 import { logSecurityEvent } from "../lib/securityLogger";
 import bcrypt from "bcryptjs";
 
@@ -11,6 +11,31 @@ const JWT_SECRET = process.env.SESSION_SECRET ?? "dev-secret-change-me";
 const BCRYPT_ROUNDS = 10;
 const ADMIN_USER = process.env.ADMIN_USERNAME ?? "admin";
 const adminPass = process.env.ADMIN_PASSWORD;
+
+/**
+ * Find or create a default clinic for single-tenant/dev mode.
+ * Returns the clinic ID to embed in the JWT.
+ */
+async function getOrCreateDefaultClinicId(): Promise<number> {
+  // 1. Check env override
+  const envId = process.env.CLINIC_ID ? parseInt(process.env.CLINIC_ID, 10) : null;
+  if (envId && !isNaN(envId)) return envId;
+
+  // 2. Use first registered clinic
+  const [existing] = await db
+    .select({ id: registeredClinicsTable.id })
+    .from(registeredClinicsTable)
+    .orderBy(asc(registeredClinicsTable.id))
+    .limit(1);
+  if (existing) return existing.id;
+
+  // 3. Create a default clinic if none exist
+  const [created] = await db
+    .insert(registeredClinicsTable)
+    .values({ name: "Default Clinic", subdomain: "default", plan: "basic", status: "active" })
+    .returning({ id: registeredClinicsTable.id });
+  return created!.id;
+}
 
 /** Detect whether a stored value is already a bcrypt hash */
 function isBcryptHash(value: string): boolean {
@@ -106,7 +131,29 @@ router.post("/auth/login", async (req, res): Promise<void> => {
       : password === adminPass;
 
     if (envPasswordMatch) {
-      const clinicId = process.env.CLINIC_ID ? parseInt(process.env.CLINIC_ID, 10) : undefined;
+      // Always resolve to a real clinicId so requireClinic works
+      const clinicId = await getOrCreateDefaultClinicId();
+
+      // Seed this env-var admin into DB so future logins use the DB path
+      try {
+        const [existing] = await db
+          .select({ id: adminUsersTable.id })
+          .from(adminUsersTable)
+          .where(eq(adminUsersTable.username, username))
+          .limit(1);
+        if (!existing) {
+          const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+          await db.insert(adminUsersTable).values({
+            username,
+            password: passwordHash,
+            name: "System Admin",
+            clinicId,
+            role: "admin",
+            status: "active",
+          });
+        }
+      } catch { /* non-fatal */ }
+
       const token = jwt.sign(
         { role: "admin", clinicId, adminName: username },
         JWT_SECRET,
@@ -117,11 +164,11 @@ router.post("/auth/login", async (req, res): Promise<void> => {
         req,
         eventType: "login_success",
         description: `Env-var admin "${username}" logged in`,
-        clinicId: clinicId ?? null,
+        clinicId,
         success: true,
       });
 
-      res.json({ token, role: "admin", name: "System Admin", clinicId: clinicId ?? null });
+      res.json({ token, role: "admin", name: "System Admin", clinicId });
       return;
     }
   }

@@ -2,11 +2,13 @@ import { pgTable, text, serial, integer, timestamp, date, index } from "drizzle-
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { doctorsTable } from "./doctors";
+import { registeredClinicsTable } from "./registeredClinics";
 
 export const onlineBookingsTable = pgTable(
   "online_bookings",
   {
     id: serial("id").primaryKey(),
+    clinicId: integer("clinic_id").references(() => registeredClinicsTable.id, { onDelete: "cascade" }),
     patientName: text("patient_name").notNull(),
     patientPhone: text("patient_phone").notNull(),
     patientEmail: text("patient_email"),
@@ -25,6 +27,7 @@ export const onlineBookingsTable = pgTable(
     index("bookings_date_idx").on(t.preferredDate),
     index("bookings_status_idx").on(t.status),
     index("bookings_doctor_idx").on(t.doctorId),
+    index("bookings_clinic_idx").on(t.clinicId),
   ]
 );
 

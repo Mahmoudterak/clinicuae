@@ -1,29 +1,38 @@
 import { useState } from "react";
 import { useTranslation } from "@/i18n/context";
-import { useListBookings, useUpdateBooking, useDeleteBooking, type OnlineBooking } from "@/hooks/use-bookings";
+import { useAuth } from "@/contexts/auth-context";
+import {
+  useListBookings, useUpdateBooking, useDeleteBooking, useConvertBooking,
+  type OnlineBooking,
+} from "@/hooks/use-bookings";
 import { useToast } from "@/hooks/use-toast";
 import {
   CalendarCheck, Clock, Phone, Mail, User, Stethoscope,
   CheckCircle2, XCircle, Loader2, Trash2, MessageSquare,
-  ChevronRight, Filter
+  ChevronRight, Filter, Link2, Copy, CalendarPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { format, parseISO } from "date-fns";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const STATUS_MAP: Record<string, { label: string; labelAr: string; color: string; dot: string }> = {
-  pending:   { label: "Pending",   labelAr: "قيد الانتظار", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400",     dot: "bg-amber-500" },
-  confirmed: { label: "Confirmed", labelAr: "مؤكد",         color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400", dot: "bg-emerald-500" },
-  rejected:  { label: "Rejected",  labelAr: "مرفوض",        color: "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400",               dot: "bg-red-500" },
-  completed: { label: "Completed", labelAr: "مكتمل",        color: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400",          dot: "bg-slate-400" },
+  pending:   { label: "Pending",   labelAr: "قيد الانتظار", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400",       dot: "bg-amber-500"  },
+  confirmed: { label: "Confirmed", labelAr: "مؤكد",         color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400", dot: "bg-emerald-500"},
+  rejected:  { label: "Rejected",  labelAr: "مرفوض",        color: "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400",                 dot: "bg-red-500"   },
+  completed: { label: "Completed", labelAr: "مكتمل",        color: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400",            dot: "bg-slate-400" },
 };
 
 function BookingCard({ booking, onAction }: { booking: OnlineBooking; onAction: (b: OnlineBooking) => void }) {
   const { isRtl } = useTranslation();
   const st = STATUS_MAP[booking.status] ?? STATUS_MAP.pending;
-
   return (
     <div className="bg-card border rounded-2xl p-5 hover:shadow-sm transition-shadow">
       <div className="flex items-start gap-4">
@@ -48,7 +57,6 @@ function BookingCard({ booking, onAction }: { booking: OnlineBooking; onAction: 
           <ChevronRight className={`h-4 w-4 ${isRtl ? "rotate-180" : ""}`} />
         </Button>
       </div>
-
       <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
         <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-2.5">
           <CalendarCheck className="h-4 w-4 text-indigo-500 shrink-0" />
@@ -65,7 +73,6 @@ function BookingCard({ booking, onAction }: { booking: OnlineBooking; onAction: 
           </div>
         )}
       </div>
-
       <p className="mt-3 text-sm text-muted-foreground line-clamp-2">{booking.reason}</p>
     </div>
   );
@@ -75,9 +82,11 @@ function BookingDetail({ booking, onClose }: { booking: OnlineBooking; onClose: 
   const { isRtl } = useTranslation();
   const { toast } = useToast();
   const update = useUpdateBooking();
+  const convert = useConvertBooking();
+  const del = useDeleteBooking();
   const [notes, setNotes] = useState(booking.adminNotes ?? "");
   const [deleteConfirm, setDeleteConfirm] = useState(false);
-  const del = useDeleteBooking();
+  const [convertConfirm, setConvertConfirm] = useState(false);
 
   const act = async (status: string) => {
     try {
@@ -87,17 +96,29 @@ function BookingDetail({ booking, onClose }: { booking: OnlineBooking; onClose: 
     } catch { toast({ title: isRtl ? "خطأ" : "Error", variant: "destructive" }); }
   };
 
+  const handleConvert = async () => {
+    try {
+      await convert.mutateAsync(booking.id);
+      toast({ title: isRtl ? "تم إنشاء الموعد والمريض" : "Appointment & patient created", description: isRtl ? "يمكنك الآن العثور على المريض في قائمة المرضى" : "Patient added to your patients list" });
+      setConvertConfirm(false);
+      onClose();
+    } catch (e: any) {
+      toast({ title: isRtl ? "خطأ" : "Error", description: e.message, variant: "destructive" });
+    }
+  };
+
   const st = STATUS_MAP[booking.status] ?? STATUS_MAP.pending;
 
   return (
     <>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg" dir={isRtl ? "rtl" : "ltr"}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CalendarCheck className="h-5 w-5 text-primary" />
             {isRtl ? "تفاصيل الحجز" : "Booking Details"}
           </DialogTitle>
         </DialogHeader>
+
         <div className="space-y-4 py-2">
           <div className="flex items-center gap-3">
             <div className="h-12 w-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center font-bold text-indigo-700">
@@ -111,17 +132,17 @@ function BookingDetail({ booking, onClose }: { booking: OnlineBooking; onClose: 
 
           <div className="grid grid-cols-2 gap-3 text-sm">
             {[
-              { icon: Phone, label: isRtl ? "الهاتف" : "Phone", value: booking.patientPhone },
-              { icon: Mail, label: isRtl ? "البريد" : "Email", value: booking.patientEmail || "—" },
-              { icon: User, label: isRtl ? "العمر" : "Age", value: booking.patientAge ? `${booking.patientAge} ${isRtl ? "سنة" : "yrs"}` : "—" },
-              { icon: User, label: isRtl ? "الجنس" : "Gender", value: booking.patientGender || "—" },
+              { icon: Phone,       label: isRtl ? "الهاتف" : "Phone",   value: booking.patientPhone, dir: "ltr" as const },
+              { icon: Mail,        label: isRtl ? "البريد" : "Email",   value: booking.patientEmail || "—" },
+              { icon: User,        label: isRtl ? "العمر" : "Age",      value: booking.patientAge ? `${booking.patientAge} ${isRtl ? "سنة" : "yrs"}` : "—" },
+              { icon: User,        label: isRtl ? "الجنس" : "Gender",   value: booking.patientGender === "male" ? (isRtl ? "ذكر" : "Male") : booking.patientGender === "female" ? (isRtl ? "أنثى" : "Female") : "—" },
               { icon: CalendarCheck, label: isRtl ? "التاريخ" : "Date", value: booking.preferredDate },
-              { icon: Clock, label: isRtl ? "الوقت" : "Time", value: booking.preferredTime },
-              { icon: Stethoscope, label: isRtl ? "الطبيب" : "Doctor", value: booking.doctorName || "—" },
-            ].map(({ icon: Icon, label, value }) => (
+              { icon: Clock,       label: isRtl ? "الوقت" : "Time",     value: booking.preferredTime },
+              { icon: Stethoscope, label: isRtl ? "الطبيب" : "Doctor",  value: booking.doctorName || (isRtl ? "غير محدد" : "Not specified") },
+            ].map(({ icon: Icon, label, value, dir }) => (
               <div key={label} className="bg-muted/40 rounded-xl p-3">
                 <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><Icon className="h-3 w-3" />{label}</p>
-                <p className="font-medium" dir={label === "Phone" || label === "الهاتف" ? "ltr" : undefined}>{value}</p>
+                <p className="font-medium" dir={dir}>{value}</p>
               </div>
             ))}
           </div>
@@ -131,21 +152,42 @@ function BookingDetail({ booking, onClose }: { booking: OnlineBooking; onClose: 
             <p className="text-sm">{booking.reason}</p>
           </div>
 
+          {booking.notes && (
+            <div className="bg-muted/40 rounded-xl p-3">
+              <p className="text-xs text-muted-foreground mb-1">{isRtl ? "ملاحظات المريض" : "Patient Notes"}</p>
+              <p className="text-sm">{booking.notes}</p>
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <p className="text-sm font-medium">{isRtl ? "ملاحظات الإدارة" : "Admin Notes"}</p>
-            <Textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder={isRtl ? "ملاحظات داخلية..." : "Internal notes..."} className="resize-none text-sm" />
+            <Textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
+              placeholder={isRtl ? "ملاحظات داخلية..." : "Internal notes..."} className="resize-none text-sm" />
           </div>
         </div>
-        <DialogFooter className="gap-2 flex-wrap sm:flex-nowrap">
+
+        <DialogFooter className="gap-2 flex-wrap sm:flex-nowrap" dir={isRtl ? "rtl" : "ltr"}>
           <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/5" onClick={() => setDeleteConfirm(true)}>
             <Trash2 className="h-4 w-4" />
           </Button>
+
+          {/* Convert to appointment — available for pending and confirmed */}
+          {(booking.status === "pending" || booking.status === "confirmed") && (
+            <Button variant="outline" size="sm" className="gap-1.5 text-teal-700 border-teal-200 hover:bg-teal-50 dark:text-teal-400 dark:border-teal-800 dark:hover:bg-teal-950"
+              onClick={() => setConvertConfirm(true)} disabled={convert.isPending}>
+              {convert.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CalendarPlus className="h-4 w-4" />}
+              {isRtl ? "تحويل لموعد" : "To Appointment"}
+            </Button>
+          )}
+
           {booking.status === "pending" && (
             <>
-              <Button variant="outline" className="flex-1 gap-2 border-red-200 text-red-700 hover:bg-red-50" onClick={() => act("rejected")} disabled={update.isPending}>
+              <Button variant="outline" className="flex-1 gap-2 border-red-200 text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-400"
+                onClick={() => act("rejected")} disabled={update.isPending}>
                 <XCircle className="h-4 w-4" />{isRtl ? "رفض" : "Reject"}
               </Button>
-              <Button className="flex-1 gap-2 bg-emerald-600 hover:bg-emerald-700" onClick={() => act("confirmed")} disabled={update.isPending}>
+              <Button className="flex-1 gap-2 bg-emerald-600 hover:bg-emerald-700"
+                onClick={() => act("confirmed")} disabled={update.isPending}>
                 {update.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
                 {isRtl ? "تأكيد" : "Confirm"}
               </Button>
@@ -164,16 +206,41 @@ function BookingDetail({ booking, onClose }: { booking: OnlineBooking; onClose: 
         </DialogFooter>
       </DialogContent>
 
+      {/* Delete confirm */}
       <AlertDialog open={deleteConfirm} onOpenChange={setDeleteConfirm}>
-        <AlertDialogContent>
+        <AlertDialogContent dir={isRtl ? "rtl" : "ltr"}>
           <AlertDialogHeader>
             <AlertDialogTitle>{isRtl ? "حذف الحجز؟" : "Delete Booking?"}</AlertDialogTitle>
-            <AlertDialogDescription>{isRtl ? "لا يمكن التراجع." : "This cannot be undone."}</AlertDialogDescription>
+            <AlertDialogDescription>{isRtl ? "لا يمكن التراجع عن هذا الإجراء." : "This action cannot be undone."}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{isRtl ? "إلغاء" : "Cancel"}</AlertDialogCancel>
-            <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={async () => { await del.mutateAsync(booking.id); setDeleteConfirm(false); onClose(); }}>
+            <AlertDialogAction className="bg-destructive hover:bg-destructive/90"
+              onClick={async () => { await del.mutateAsync(booking.id); setDeleteConfirm(false); onClose(); }}>
               {isRtl ? "حذف" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Convert confirm */}
+      <AlertDialog open={convertConfirm} onOpenChange={setConvertConfirm}>
+        <AlertDialogContent dir={isRtl ? "rtl" : "ltr"}>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <CalendarPlus className="h-5 w-5 text-teal-600" />
+              {isRtl ? "تحويل الحجز إلى موعد؟" : "Convert to Appointment?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {isRtl
+                ? `سيتم إنشاء موعد جديد لـ "${booking.patientName}" في ${booking.preferredDate} الساعة ${booking.preferredTime}. إذا لم يكن المريض موجوداً، سيتم إنشاء ملفه تلقائياً.`
+                : `A new appointment will be created for "${booking.patientName}" on ${booking.preferredDate} at ${booking.preferredTime}. If the patient doesn't exist, their profile will be created automatically.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{isRtl ? "إلغاء" : "Cancel"}</AlertDialogCancel>
+            <AlertDialogAction className="bg-teal-600 hover:bg-teal-700" onClick={handleConvert}>
+              {isRtl ? "تأكيد التحويل" : "Confirm"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -184,42 +251,69 @@ function BookingDetail({ booking, onClose }: { booking: OnlineBooking; onClose: 
 
 export default function BookingsPage() {
   const { isRtl } = useTranslation();
+  const { auth } = useAuth();
+  const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState("all");
   const [selected, setSelected] = useState<OnlineBooking | null>(null);
   const { data: bookings, isLoading } = useListBookings(statusFilter === "all" ? undefined : statusFilter);
 
   const counts = {
-    all: bookings?.length ?? 0,
-    pending: bookings?.filter(b => b.status === "pending").length ?? 0,
+    all:       bookings?.length ?? 0,
+    pending:   bookings?.filter(b => b.status === "pending").length ?? 0,
     confirmed: bookings?.filter(b => b.status === "confirmed").length ?? 0,
-    rejected: bookings?.filter(b => b.status === "rejected").length ?? 0,
+    rejected:  bookings?.filter(b => b.status === "rejected").length ?? 0,
     completed: bookings?.filter(b => b.status === "completed").length ?? 0,
   };
 
   const FILTERS = [
-    { key: "all",       label: "All",       labelAr: "الكل" },
-    { key: "pending",   label: "Pending",   labelAr: "انتظار" },
-    { key: "confirmed", label: "Confirmed", labelAr: "مؤكدة" },
-    { key: "rejected",  label: "Rejected",  labelAr: "مرفوضة" },
-    { key: "completed", label: "Completed", labelAr: "مكتملة" },
+    { key: "all",       label: "All",       labelAr: "الكل"     },
+    { key: "pending",   label: "Pending",   labelAr: "انتظار"   },
+    { key: "confirmed", label: "Confirmed", labelAr: "مؤكدة"    },
+    { key: "rejected",  label: "Rejected",  labelAr: "مرفوضة"  },
+    { key: "completed", label: "Completed", labelAr: "مكتملة"  },
   ];
+
+  const bookingLink = (() => {
+    const clinicId = auth?.clinicId;
+    const base = `${window.location.origin}${BASE}`;
+    return clinicId ? `${base}/book?clinic=${clinicId}` : `${base}/book`;
+  })();
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(bookingLink);
+      toast({ title: isRtl ? "تم نسخ الرابط" : "Link copied", description: bookingLink });
+    } catch {
+      toast({ title: isRtl ? "تعذر النسخ" : "Copy failed", variant: "destructive" });
+    }
+  };
 
   return (
     <div className="space-y-8 pb-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">{isRtl ? "الحجوزات الإلكترونية" : "Online Bookings"}</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          {isRtl ? "إدارة الحجوزات القادمة من صفحة الحجز الإلكتروني." : "Manage bookings from the public booking page."}
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">{isRtl ? "الحجوزات الإلكترونية" : "Online Bookings"}</h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            {isRtl ? "إدارة الحجوزات القادمة من صفحة الحجز الإلكتروني." : "Manage bookings from the public booking page."}
+          </p>
+        </div>
+        {/* Shareable booking link */}
+        <div className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900 rounded-xl px-4 py-2.5 text-sm max-w-sm">
+          <Link2 className="h-4 w-4 text-indigo-500 shrink-0" />
+          <span className="text-indigo-700 dark:text-indigo-300 font-mono truncate flex-1 text-xs">{bookingLink}</span>
+          <button onClick={copyLink} className="text-indigo-500 hover:text-indigo-700 shrink-0 transition-colors">
+            <Copy className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
-      {/* KPI strip */}
+      {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: isRtl ? "انتظار" : "Pending",   value: counts.pending,   color: "from-amber-400 to-orange-500" },
-          { label: isRtl ? "مؤكدة" : "Confirmed",  value: counts.confirmed, color: "from-emerald-500 to-green-600" },
-          { label: isRtl ? "مكتملة" : "Completed", value: counts.completed, color: "from-indigo-500 to-violet-600" },
-          { label: isRtl ? "مرفوضة" : "Rejected",  value: counts.rejected,  color: "from-red-500 to-rose-600" },
+          { label: isRtl ? "انتظار" : "Pending",   value: counts.pending,   color: "from-amber-400 to-orange-500"   },
+          { label: isRtl ? "مؤكدة" : "Confirmed",  value: counts.confirmed, color: "from-emerald-500 to-green-600"  },
+          { label: isRtl ? "مكتملة" : "Completed", value: counts.completed, color: "from-indigo-500 to-violet-600"  },
+          { label: isRtl ? "مرفوضة" : "Rejected",  value: counts.rejected,  color: "from-red-500 to-rose-600"       },
         ].map((s, i) => (
           <div key={i} className={`bg-gradient-to-br ${s.color} rounded-2xl p-5 text-white shadow-sm`}>
             <p className="text-3xl font-bold">{s.value}</p>
@@ -247,7 +341,11 @@ export default function BookingsPage() {
         <div className="text-center py-20 text-muted-foreground">
           <CalendarCheck className="h-12 w-12 mx-auto mb-3 opacity-20" />
           <p className="font-medium">{isRtl ? "لا توجد حجوزات" : "No bookings yet"}</p>
-          <p className="text-sm mt-1">{isRtl ? "ستظهر الحجوزات القادمة من صفحة الحجز هنا." : "Bookings from the public page will appear here."}</p>
+          <p className="text-sm mt-1">{isRtl ? "شارك رابط الحجز مع مرضاك ليظهر هنا." : "Share your booking link with patients."}</p>
+          <Button variant="outline" className="mt-4 gap-2" onClick={copyLink}>
+            <Copy className="h-4 w-4" />
+            {isRtl ? "نسخ رابط الحجز" : "Copy Booking Link"}
+          </Button>
         </div>
       ) : (
         <div className="space-y-3">

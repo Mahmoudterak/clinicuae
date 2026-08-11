@@ -4,10 +4,22 @@
  * API server self-provisions required schema on every fresh database — no
  * separate migration step needed.
  */
-import { db, adminUsersTable } from "@workspace/db";
+import { db, adminUsersTable, superAdminUsersTable, whatsappTemplatesTable } from "@workspace/db";
 import { sql } from "drizzle-orm";
 import { ObjectStorageService } from "./objectStorage";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
+
+// ── scrypt helpers (same algorithm as superAdmin.ts) ──────────────────────────
+function scryptHash(password: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const salt = crypto.randomBytes(16).toString("hex");
+    crypto.scrypt(password, salt, 64, (err, key) => {
+      if (err) reject(err);
+      else resolve(`${salt}:${key.toString("hex")}`);
+    });
+  });
+}
 
 // ── Logo migration status (in-memory, reset on each server start) ─────────────
 
@@ -119,6 +131,108 @@ export async function runStartupMigration(): Promise<void> {
       console.info("[startup] Default admin account created.");
     }
   }
+
+  // ── Super Admin bootstrap ────────────────────────────────────────────────────
+  // Seeds a default super_admin account if the table is empty.
+  // Uses SUPER_ADMIN_USERNAME / SUPER_ADMIN_PASSWORD env vars when set,
+  // otherwise falls back to sensible defaults and logs them clearly.
+  await seedSuperAdmin();
+
+  // ── WhatsApp template seeds ──────────────────────────────────────────────────
+  await seedWhatsAppTemplates();
+}
+
+const DEFAULT_SA_USERNAME = "superadmin";
+const DEFAULT_SA_PASSWORD = "Clinic@OS2024";
+
+async function seedSuperAdmin(): Promise<void> {
+  const existing = await db.select({ id: superAdminUsersTable.id }).from(superAdminUsersTable).limit(1);
+  if (existing.length > 0) return; // already seeded
+
+  const username = process.env.SUPER_ADMIN_USERNAME ?? DEFAULT_SA_USERNAME;
+  const password = process.env.SUPER_ADMIN_PASSWORD ?? DEFAULT_SA_PASSWORD;
+  const hash = await scryptHash(password);
+
+  await db.insert(superAdminUsersTable).values({
+    username,
+    passwordHash: hash,
+    name: "Super Admin",
+    role: "super_admin",
+  });
+
+  console.info("╔══════════════════════════════════════════════════════╗");
+  console.info("║          SUPER ADMIN ACCOUNT CREATED                 ║");
+  console.info(`║  Username : ${username.padEnd(40)}║`);
+  console.info(`║  Password : ${password.padEnd(40)}║`);
+  console.info("║  ⚠ Change these credentials after first login!       ║");
+  console.info("╚══════════════════════════════════════════════════════╝");
+}
+
+// Default medical WhatsApp templates (Arabic + English, bilingual)
+const DEFAULT_WA_TEMPLATES = [
+  {
+    name:      "Appointment Reminder",
+    nameAr:    "تذكير بالموعد",
+    type:      "reminder",
+    variables: ["name", "date", "time"],
+    active:    "true",
+    body:
+      "Hello {{name}} 👋\n\nThis is a friendly reminder for your appointment on *{{date}}* at *{{time}}*.\n\nPlease arrive 10 minutes early. If you need to reschedule, contact us as soon as possible.\n\nWe look forward to seeing you!",
+    bodyAr:
+      "مرحباً {{name}} 👋\n\nنذكرك بموعدك يوم *{{date}}* الساعة *{{time}}*.\n\nيرجى الحضور قبل 10 دقائق. إذا أردت تغيير الموعد، تواصل معنا في أقرب وقت.\n\nنتطلع لرؤيتك! 😊",
+  },
+  {
+    name:      "Appointment Confirmed",
+    nameAr:    "تأكيد الموعد",
+    type:      "reminder",
+    variables: ["name", "date", "time", "doctor"],
+    active:    "true",
+    body:
+      "Dear {{name}},\n\nYour appointment has been *confirmed* ✅\n\n📅 Date : {{date}}\n🕐 Time : {{time}}\n👨‍⚕️ Doctor: {{doctor}}\n\nSee you soon!",
+    bodyAr:
+      "عزيزي {{name}}،\n\nتم *تأكيد* موعدك ✅\n\n📅 التاريخ: {{date}}\n🕐 الوقت : {{time}}\n👨‍⚕️ الطبيب : {{doctor}}\n\nنراك قريباً!",
+  },
+  {
+    name:      "Post-Visit Follow-up",
+    nameAr:    "متابعة بعد الزيارة",
+    type:      "followup",
+    variables: ["name"],
+    active:    "true",
+    body:
+      "Hello {{name}},\n\nWe hope you're feeling better after your visit today 🌟\n\nIf you have any questions about your treatment or medication, feel free to contact us anytime.\n\nTake care!",
+    bodyAr:
+      "مرحباً {{name}}،\n\nنتمنى أن تكون بصحة جيدة بعد زيارتك اليوم 🌟\n\nإذا كان لديك أي استفسار عن العلاج أو الأدوية، لا تتردد في التواصل معنا في أي وقت.\n\nدُم بصحة وعافية!",
+  },
+  {
+    name:      "Prescription Ready",
+    nameAr:    "الوصفة الطبية جاهزة",
+    type:      "followup",
+    variables: ["name"],
+    active:    "true",
+    body:
+      "Hello {{name}} 💊\n\nYour prescription is ready for pickup.\n\nPlease visit the pharmacy at your convenience. Remember to take your medication as directed by your doctor.",
+    bodyAr:
+      "مرحباً {{name}} 💊\n\nوصفتك الطبية جاهزة للاستلام.\n\nيمكنك التوجه إلى الصيدلية في أي وقت. تذكر تناول دوائك حسب تعليمات الطبيب.",
+  },
+  {
+    name:      "Special Offer",
+    nameAr:    "عرض خاص",
+    type:      "offer",
+    variables: ["name", "offer"],
+    active:    "true",
+    body:
+      "🎉 Dear {{name}},\n\nWe have a *special offer* just for you!\n\n{{offer}}\n\nDon't miss out — limited time only. Contact us to book your appointment.",
+    bodyAr:
+      "🎉 عزيزي {{name}}،\n\nلدينا *عرض خاص* لك!\n\n{{offer}}\n\nلا تفوّت الفرصة — العرض لفترة محدودة. تواصل معنا لحجز موعدك.",
+  },
+];
+
+async function seedWhatsAppTemplates(): Promise<void> {
+  const existing = await db.select({ id: whatsappTemplatesTable.id }).from(whatsappTemplatesTable).limit(1);
+  if (existing.length > 0) return; // already seeded
+
+  await db.insert(whatsappTemplatesTable).values(DEFAULT_WA_TEMPLATES);
+  console.info(`[startup] Seeded ${DEFAULT_WA_TEMPLATES.length} default WhatsApp templates.`);
 }
 
 /**

@@ -5,7 +5,23 @@ import { fetchApi } from "@/lib/api-client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Building2, Loader2 } from "lucide-react"
+import { Building2, Loader2, Info, Copy, Check } from "lucide-react"
+
+const DEFAULT_CREDS = { username: 'superadmin', password: 'Clinic@OS2024' }
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = React.useState(false)
+  const copy = () => {
+    navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
+  return (
+    <button onClick={copy} className="text-blue-400 hover:text-blue-200 transition-colors">
+      {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+    </button>
+  )
+}
 
 export default function Login() {
   const { login, isAuthenticated } = useAuth()
@@ -52,6 +68,11 @@ export default function Login() {
     }
   }
 
+  const fillDefaults = () => {
+    setUsername(DEFAULT_CREDS.username)
+    setPassword(DEFAULT_CREDS.password)
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-sidebar">
       <div className="w-full max-w-md p-4">
@@ -61,6 +82,33 @@ export default function Login() {
           </div>
           <h1 className="text-3xl font-bold text-white tracking-tight">Clinic OS</h1>
           <p className="text-sidebar-foreground/60 mt-2 text-lg">لوحة تحكم المنصة</p>
+        </div>
+
+        {/* Default credentials hint */}
+        <div className="mb-4 rounded-xl border border-blue-500/30 bg-blue-900/20 p-4 text-sm text-blue-200">
+          <div className="flex items-start gap-2.5">
+            <Info className="w-4 h-4 mt-0.5 shrink-0 text-blue-400" />
+            <div className="flex-1 space-y-2">
+              <p className="font-semibold text-blue-100">بيانات الدخول الافتراضية</p>
+              <div className="space-y-1 font-mono text-xs">
+                <div className="flex items-center justify-between bg-black/20 rounded-lg px-3 py-1.5">
+                  <span><span className="text-blue-400">user:</span> {DEFAULT_CREDS.username}</span>
+                  <CopyButton text={DEFAULT_CREDS.username} />
+                </div>
+                <div className="flex items-center justify-between bg-black/20 rounded-lg px-3 py-1.5">
+                  <span><span className="text-blue-400">pass:</span> {DEFAULT_CREDS.password}</span>
+                  <CopyButton text={DEFAULT_CREDS.password} />
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={fillDefaults}
+                className="text-xs text-blue-300 underline underline-offset-2 hover:text-blue-100 transition-colors"
+              >
+                ملء تلقائي ←
+              </button>
+            </div>
+          </div>
         </div>
 
         <Card className="border-sidebar-border bg-card shadow-2xl">

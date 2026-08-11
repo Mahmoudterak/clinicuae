@@ -1,8 +1,8 @@
 import { useState, useMemo } from "react";
 import { usePublicDoctors, useBookedSlots, useCreatePublicBooking } from "@/hooks/use-bookings";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { format, addDays, isBefore, startOfToday, parseISO } from "date-fns";
-import { Calendar, Clock, User, Phone, Mail, ChevronRight, ChevronLeft, CheckCircle2, Stethoscope, ArrowLeft, Loader2 } from "lucide-react";
+import { format, addDays, parseISO, startOfToday } from "date-fns";
+import { Calendar, Clock, User, Phone, Mail, ChevronRight, ArrowLeft, CheckCircle2, Stethoscope, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,7 +18,6 @@ const TIME_SLOTS = [
   "16:00","16:30","17:00","17:30",
 ];
 
-// Generate next 30 days excluding Fridays (day 5)
 function getAvailableDates() {
   const dates: string[] = [];
   let d = addDays(startOfToday(), 1);
@@ -32,7 +31,14 @@ function getAvailableDates() {
 type Step = "doctor" | "datetime" | "info" | "confirm" | "done";
 
 function BookingFlow() {
-  const { data: doctors, isLoading: loadingDocs } = usePublicDoctors();
+  // Read clinicId from URL query param: /book?clinic=1
+  const clinicId = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    const v = params.get("clinic");
+    return v ? Number(v) : null;
+  }, []);
+
+  const { data: doctors, isLoading: loadingDocs } = usePublicDoctors(clinicId);
   const createBooking = useCreatePublicBooking();
 
   const [step, setStep] = useState<Step>("doctor");
@@ -45,7 +51,7 @@ function BookingFlow() {
 
   const selectedDoctor = doctors?.find(d => d.id === doctorId);
   const availableDates = useMemo(() => getAvailableDates(), []);
-  const { data: bookedSlots } = useBookedSlots(doctorId, date);
+  const { data: bookedSlots } = useBookedSlots(doctorId, date, clinicId);
 
   const setF = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm(p => ({ ...p, [k]: e.target.value }));
@@ -53,6 +59,7 @@ function BookingFlow() {
   const handleSubmit = async () => {
     try {
       await createBooking.mutateAsync({
+        clinicId,
         patientName: form.name,
         patientPhone: form.phone,
         patientEmail: form.email || undefined,
@@ -65,34 +72,31 @@ function BookingFlow() {
         notes: form.notes || undefined,
       });
       setStep("done");
-    } catch { /* handled below */ }
+    } catch { /* show error */ }
   };
 
   const T = {
-    title:         isRtl ? "احجز موعدك" : "Book Your Appointment",
-    subtitle:      isRtl ? "اختر الطبيب والموعد المناسب لك" : "Choose your doctor and preferred time",
-    selectDoctor:  isRtl ? "اختر الطبيب" : "Select Doctor",
-    selectDate:    isRtl ? "اختر التاريخ والوقت" : "Choose Date & Time",
-    yourInfo:      isRtl ? "بياناتك" : "Your Information",
-    confirm:       isRtl ? "تأكيد الحجز" : "Confirm Booking",
-    done:          isRtl ? "تم الحجز! ✓" : "Booking Confirmed! ✓",
-    doneMsg:       isRtl ? "تم استلام طلب حجزك. سنتواصل معك لتأكيد الموعد." : "Your booking request has been received. We'll contact you to confirm.",
-    next:          isRtl ? "التالي" : "Next",
-    back:          isRtl ? "رجوع" : "Back",
-    submit:        isRtl ? "تأكيد الحجز" : "Confirm Booking",
-    name:          isRtl ? "الاسم الكامل" : "Full Name",
-    phone:         isRtl ? "رقم الهاتف" : "Phone Number",
-    email:         isRtl ? "البريد الإلكتروني (اختياري)" : "Email (optional)",
-    age:           isRtl ? "العمر" : "Age",
-    gender:        isRtl ? "الجنس" : "Gender",
-    reason:        isRtl ? "سبب الزيارة" : "Reason for Visit",
-    notes:         isRtl ? "ملاحظات إضافية (اختياري)" : "Additional Notes (optional)",
-    male:          isRtl ? "ذكر" : "Male",
-    female:        isRtl ? "أنثى" : "Female",
-    specialty:     isRtl ? "التخصص" : "Specialty",
-    available:     isRtl ? "متاح" : "Available",
-    booked:        isRtl ? "محجوز" : "Booked",
-    newBooking:    isRtl ? "حجز جديد" : "New Booking",
+    title:        isRtl ? "احجز موعدك" : "Book Your Appointment",
+    subtitle:     isRtl ? "اختر الطبيب والموعد المناسب لك" : "Choose your doctor and preferred time",
+    selectDoctor: isRtl ? "اختر الطبيب" : "Select Doctor",
+    selectDate:   isRtl ? "اختر التاريخ والوقت" : "Choose Date & Time",
+    yourInfo:     isRtl ? "بياناتك" : "Your Information",
+    confirm:      isRtl ? "تأكيد الحجز" : "Confirm Booking",
+    done:         isRtl ? "تم الحجز! ✓" : "Booking Confirmed! ✓",
+    doneMsg:      isRtl ? "تم استلام طلب حجزك. سنتواصل معك لتأكيد الموعد." : "Your booking request has been received. We'll contact you to confirm.",
+    next:         isRtl ? "التالي" : "Next",
+    back:         isRtl ? "رجوع" : "Back",
+    submit:       isRtl ? "إرسال الحجز" : "Submit Booking",
+    name:         isRtl ? "الاسم الكامل" : "Full Name",
+    phone:        isRtl ? "رقم الهاتف" : "Phone Number",
+    email:        isRtl ? "البريد الإلكتروني (اختياري)" : "Email (optional)",
+    age:          isRtl ? "العمر" : "Age",
+    gender:       isRtl ? "الجنس" : "Gender",
+    reason:       isRtl ? "سبب الزيارة" : "Reason for Visit",
+    notes:        isRtl ? "ملاحظات إضافية (اختياري)" : "Additional Notes (optional)",
+    male:         isRtl ? "ذكر" : "Male",
+    female:       isRtl ? "أنثى" : "Female",
+    newBooking:   isRtl ? "حجز جديد" : "New Booking",
   };
 
   const steps: { id: Step; label: string }[] = [
@@ -104,7 +108,7 @@ function BookingFlow() {
   const stepIndex = steps.findIndex(s => s.id === step);
 
   return (
-    <div dir={isRtl ? "rtl" : "ltr"} className={`min-h-screen bg-gradient-to-br from-indigo-50 via-white to-violet-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex flex-col`}>
+    <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-violet-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex flex-col">
       {/* Header */}
       <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -118,7 +122,7 @@ function BookingFlow() {
         </div>
         <button onClick={() => setLang(l => l === "ar" ? "en" : "ar")}
           className="text-sm font-bold px-3 py-1.5 rounded-full border hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-          {isRtl ? "EN" : "ع"}
+          {isRtl ? "EN" : "عربي"}
         </button>
       </header>
 
@@ -129,8 +133,7 @@ function BookingFlow() {
               <h1 className="text-2xl font-bold">{T.title}</h1>
               <p className="text-muted-foreground text-sm mt-1">{T.subtitle}</p>
             </div>
-
-            {/* Progress bar */}
+            {/* Progress */}
             <div className="flex items-center gap-2">
               {steps.map((s, i) => (
                 <div key={s.id} className="flex items-center flex-1 gap-2">
@@ -149,20 +152,20 @@ function BookingFlow() {
           </>
         )}
 
-        {/* ── Step: Doctor ── */}
+        {/* Step 1: Doctor */}
         {step === "doctor" && (
           <div className="space-y-4">
             <h2 className="text-lg font-semibold">{T.selectDoctor}</h2>
             {loadingDocs ? (
               <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-20 bg-muted rounded-2xl animate-pulse" />)}</div>
-            ) : doctors?.length === 0 ? (
+            ) : !doctors?.length ? (
               <div className="text-center py-12 text-muted-foreground">
                 <Stethoscope className="h-10 w-10 mx-auto mb-3 opacity-20" />
                 <p>{isRtl ? "لا يوجد أطباء متاحون حالياً." : "No doctors available right now."}</p>
               </div>
             ) : (
               <div className="space-y-3">
-                {doctors?.map(d => (
+                {doctors.map(d => (
                   <button key={d.id} onClick={() => { setDoctorId(d.id); setStep("datetime"); }}
                     className={`w-full text-start bg-card border rounded-2xl p-5 hover:border-primary hover:shadow-md transition-all group ${doctorId === d.id ? "border-primary ring-2 ring-primary/20" : ""}`}>
                     <div className="flex items-center gap-4">
@@ -182,7 +185,7 @@ function BookingFlow() {
           </div>
         )}
 
-        {/* ── Step: Date & Time ── */}
+        {/* Step 2: Date & Time */}
         {step === "datetime" && (
           <div className="space-y-5">
             <h2 className="text-lg font-semibold">{T.selectDate}</h2>
@@ -197,7 +200,6 @@ function BookingFlow() {
                 </div>
               </div>
             )}
-
             <div>
               <Label className="mb-2 block">{isRtl ? "اختر التاريخ" : "Select Date"}</Label>
               <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
@@ -214,7 +216,6 @@ function BookingFlow() {
                 })}
               </div>
             </div>
-
             {date && (
               <div>
                 <Label className="mb-2 block">{isRtl ? "اختر الوقت" : "Select Time"}</Label>
@@ -235,7 +236,6 @@ function BookingFlow() {
                 </div>
               </div>
             )}
-
             <div className="flex gap-3 pt-2">
               <Button variant="outline" className="flex-1 gap-2" onClick={() => setStep("doctor")}>
                 <ArrowLeft className={`h-4 w-4 ${isRtl ? "rotate-180" : ""}`} />{T.back}
@@ -245,7 +245,7 @@ function BookingFlow() {
           </div>
         )}
 
-        {/* ── Step: Patient Info ── */}
+        {/* Step 3: Patient Info */}
         {step === "info" && (
           <div className="space-y-4">
             <h2 className="text-lg font-semibold">{T.yourInfo}</h2>
@@ -278,7 +278,8 @@ function BookingFlow() {
               </div>
               <div className="sm:col-span-2 space-y-1.5">
                 <Label>{T.reason} *</Label>
-                <Textarea value={form.reason} onChange={setF("reason")} rows={3} placeholder={isRtl ? "اكتب سبب زيارتك..." : "Describe your reason for visit..."} className="resize-none" />
+                <Textarea value={form.reason} onChange={setF("reason")} rows={3}
+                  placeholder={isRtl ? "اكتب سبب زيارتك..." : "Describe your reason for visit..."} className="resize-none" />
               </div>
               <div className="sm:col-span-2 space-y-1.5">
                 <Label>{T.notes}</Label>
@@ -294,13 +295,13 @@ function BookingFlow() {
           </div>
         )}
 
-        {/* ── Step: Confirm ── */}
+        {/* Step 4: Confirm */}
         {step === "confirm" && (
           <div className="space-y-5">
             <h2 className="text-lg font-semibold">{T.confirm}</h2>
             <div className="bg-card border rounded-2xl divide-y overflow-hidden">
               {[
-                { icon: Stethoscope, label: isRtl ? "الطبيب" : "Doctor", value: selectedDoctor ? `${isRtl ? "د. " : "Dr. "}${selectedDoctor.firstName} ${selectedDoctor.lastName} — ${selectedDoctor.specialty}` : "—" },
+                { icon: Stethoscope, label: isRtl ? "الطبيب" : "Doctor", value: selectedDoctor ? `${isRtl ? "د. " : "Dr. "}${selectedDoctor.firstName} ${selectedDoctor.lastName} — ${selectedDoctor.specialty}` : (isRtl ? "أي طبيب متاح" : "Any available doctor") },
                 { icon: Calendar,    label: isRtl ? "التاريخ" : "Date",   value: date },
                 { icon: Clock,       label: isRtl ? "الوقت" : "Time",     value: time },
                 { icon: User,        label: isRtl ? "الاسم" : "Name",     value: form.name },
@@ -327,10 +328,15 @@ function BookingFlow() {
                 {T.submit}
               </Button>
             </div>
+            {createBooking.isError && (
+              <p className="text-sm text-destructive text-center">
+                {isRtl ? "حدث خطأ. يرجى المحاولة مرة أخرى." : "An error occurred. Please try again."}
+              </p>
+            )}
           </div>
         )}
 
-        {/* ── Done ── */}
+        {/* Done */}
         {step === "done" && (
           <div className="text-center py-12 space-y-6">
             <div className="h-24 w-24 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mx-auto">
@@ -343,12 +349,18 @@ function BookingFlow() {
             <div className="bg-card border rounded-2xl p-5 max-w-sm mx-auto text-start">
               <p className="text-sm text-muted-foreground mb-3">{isRtl ? "ملخص الحجز" : "Booking Summary"}</p>
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">{isRtl ? "الطبيب" : "Doctor"}</span><span className="font-medium">{isRtl ? "د. " : "Dr. "}{selectedDoctor?.firstName} {selectedDoctor?.lastName}</span></div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{isRtl ? "الطبيب" : "Doctor"}</span>
+                  <span className="font-medium">{selectedDoctor ? `${isRtl ? "د. " : "Dr. "}${selectedDoctor.firstName} ${selectedDoctor.lastName}` : "—"}</span>
+                </div>
                 <div className="flex justify-between"><span className="text-muted-foreground">{isRtl ? "التاريخ" : "Date"}</span><span className="font-medium">{date}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">{isRtl ? "الوقت" : "Time"}</span><span className="font-medium">{time}</span></div>
               </div>
             </div>
-            <Button onClick={() => { setStep("doctor"); setDoctorId(null); setDate(""); setTime(""); setForm({ name: "", phone: "", email: "", age: "", gender: "", reason: "", notes: "" }); }} className="gap-2">
+            <Button onClick={() => {
+              setStep("doctor"); setDoctorId(null); setDate(""); setTime("");
+              setForm({ name: "", phone: "", email: "", age: "", gender: "", reason: "", notes: "" });
+            }} className="gap-2">
               {T.newBooking}
             </Button>
           </div>
