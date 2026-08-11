@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Building2, Users, ImageIcon, Eye, EyeOff, Plus, Trash2,
   ShieldCheck, Save, Upload, X, Key, Globe, Phone, Mail,
-  MapPin, Clock, Lock, Pencil, Loader2, Stethoscope, KeyRound
+  MapPin, Clock, Lock, Pencil, Loader2, Stethoscope, KeyRound, MessageCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,9 +24,10 @@ import logoUrl from "@/assets/clinic-os-logo.png";
 import DoctorAccountsTab from "./DoctorAccountsTab";
 import BranchesTab from "./BranchesTab";
 import StaffTab from "./StaffTab";
+import WhatsAppTab from "./WhatsAppTab";
 import { getLogoSrc } from "@/lib/logo-utils";
 
-type Tab = "clinic" | "users" | "logo" | "doctors" | "branches" | "staff" | "security";
+type Tab = "clinic" | "users" | "logo" | "doctors" | "branches" | "staff" | "security" | "whatsapp";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
@@ -598,6 +599,7 @@ export default function SettingsPage() {
     { id: "staff",     label: "Staff",             labelAr: "الموظفون",           icon: Users },
     { id: "logo",      label: "Logo",              labelAr: "الشعار",             icon: ImageIcon },
     { id: "security",  label: "Security",          labelAr: "الأمان",             icon: KeyRound },
+    { id: "whatsapp",  label: "WhatsApp",          labelAr: "واتساب",             icon: MessageCircle },
   ];
 
   return (
@@ -633,6 +635,7 @@ export default function SettingsPage() {
       {tab === "staff"     && <StaffTab />}
       {tab === "logo"      && <LogoTab />}
       {tab === "security"  && <SecurityTab />}
+      {tab === "whatsapp"  && <WhatsAppTab />}
     </div>
   );
 }

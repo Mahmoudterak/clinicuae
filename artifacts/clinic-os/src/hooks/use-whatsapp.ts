@@ -3,8 +3,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 async function apiFetch(path: string, opts?: RequestInit) {
+  const token = localStorage.getItem("clinic-os-token");
   const res = await fetch(`${BASE}/api${path}`, {
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     ...opts,
   });
   if (!res.ok) throw new Error(await res.text());
@@ -38,6 +42,15 @@ export interface WaMessage {
   sentAt: string | null;
   createdAt: string;
   simulated?: boolean;
+}
+
+// ── Status ─────────────────────────────────────────────────────────────────
+export function useWaStatus() {
+  return useQuery<{ connected: boolean }>({
+    queryKey: ["wa-status"],
+    queryFn: () => apiFetch("/whatsapp/status"),
+    staleTime: 0,
+  });
 }
 
 // ── Templates ──────────────────────────────────────────────────────────────

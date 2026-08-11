@@ -1,10 +1,24 @@
 import { Router, type IRouter } from "express";
 import { eq, desc } from "drizzle-orm";
-import { db, whatsappTemplatesTable, whatsappMessagesTable, patientsTable } from "@workspace/db";
+import { db, whatsappTemplatesTable, whatsappMessagesTable, patientsTable, clinicSettingsTable } from "@workspace/db";
 import { z } from "zod";
 import { iso } from "../lib/serialize";
+import { requireClinic } from "../middlewares/adminAuth";
 
 const router: IRouter = Router();
+router.use(requireClinic);
+
+/** Get WhatsApp credentials for a clinic from DB, fall back to env vars. */
+async function getWaCredentials(clinicId: number): Promise<{ phoneId: string | null; token: string | null }> {
+  const [settings] = await db
+    .select({ whatsappPhoneId: clinicSettingsTable.whatsappPhoneId, whatsappAccessToken: clinicSettingsTable.whatsappAccessToken })
+    .from(clinicSettingsTable)
+    .where(eq(clinicSettingsTable.clinicId, clinicId))
+    .limit(1);
+  const phoneId = settings?.whatsappPhoneId ?? process.env.WHATSAPP_PHONE_ID ?? null;
+  const token   = settings?.whatsappAccessToken ?? process.env.WHATSAPP_ACCESS_TOKEN ?? null;
+  return { phoneId, token };
+}
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 function isoMsg(row: typeof whatsappMessagesTable.$inferSelect) {
@@ -19,9 +33,9 @@ function isoTpl(row: typeof whatsappTemplatesTable.$inferSelect) {
   return { ...row, createdAt: row.createdAt.toISOString() };
 }
 
-async function sendViaWhatsApp(phone: string, body: string): Promise<{ id?: string; error?: string; simulated?: boolean }> {
-  const phoneId = process.env.WHATSAPP_PHONE_ID;
-  const token   = process.env.WHATSAPP_ACCESS_TOKEN;
+async function sendViaWhatsApp(phone: string, body: string, creds?: { phoneId: string | null; token: string | null }): Promise<{ id?: string; error?: string; simulated?: boolean }> {
+  const phoneId = creds?.phoneId ?? process.env.WHATSAPP_PHONE_ID;
+  const token   = creds?.token   ?? process.env.WHATSAPP_ACCESS_TOKEN;
   if (!phoneId || !token) {
     return { simulated: true };
   }
@@ -98,12 +112,18 @@ router.get("/whatsapp/messages", async (_req, res): Promise<void> => {
   res.json(rows.map(isoMsg));
 });
 
+router.get("/whatsapp/status", async (req, res): Promise<void> => {
+  const creds = await getWaCredentials(req.clinicId!);
+  res.json({ connected: !!(creds.phoneId && creds.token) });
+});
+
 router.post("/whatsapp/messages/send", async (req, res): Promise<void> => {
   const parsed = SendBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
   const { patientId, patientPhone, patientName, templateId, body } = parsed.data;
-  const result = await sendViaWhatsApp(patientPhone, body);
+  const creds = await getWaCredentials(req.clinicId!);
+  const result = await sendViaWhatsApp(patientPhone, body, creds);
 
   const status = result.simulated ? "simulated" : result.error ? "failed" : "sent";
   const [row] = await db.insert(whatsappMessagesTable).values({
@@ -129,13 +149,14 @@ router.post("/whatsapp/messages/bulk", async (req, res): Promise<void> => {
   const [tpl] = await db.select().from(whatsappTemplatesTable).where(eq(whatsappTemplatesTable.id, parsed.data.templateId));
   if (!tpl) { res.status(404).json({ error: "Template not found" }); return; }
 
+  const creds = await getWaCredentials(req.clinicId!);
   const patients = await db.select().from(patientsTable).where(eq(patientsTable.status, "active"));
   const msgBody = parsed.data.lang === "ar" ? tpl.bodyAr : tpl.body;
 
   let sent = 0, failed = 0;
   for (const p of patients) {
     if (!p.phone) continue;
-    const result = await sendViaWhatsApp(p.phone, msgBody);
+    const result = await sendViaWhatsApp(p.phone, msgBody, creds);
     const status = result.simulated ? "simulated" : result.error ? "failed" : "sent";
     await db.insert(whatsappMessagesTable).values({
       patientId: p.id,

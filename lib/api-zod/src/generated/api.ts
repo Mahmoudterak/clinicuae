@@ -879,7 +879,9 @@ export const GetSettingsResponse = zod.object({
   "website": zod.string(),
   "currency": zod.string(),
   "timezone": zod.string(),
-  "logoDataUrl": zod.string().nullish()
+  "logoDataUrl": zod.string().nullish(),
+  "whatsappPhoneId": zod.string().nullish(),
+  "whatsappAccessToken": zod.string().nullish()
 })
 
 
@@ -895,7 +897,9 @@ export const UpdateSettingsBody = zod.object({
   "website": zod.string().optional(),
   "currency": zod.string().optional(),
   "timezone": zod.string().optional(),
-  "logoDataUrl": zod.string().nullish()
+  "logoDataUrl": zod.string().nullish(),
+  "whatsappPhoneId": zod.string().nullish(),
+  "whatsappAccessToken": zod.string().nullish()
 })
 
 export const UpdateSettingsResponse = zod.object({
@@ -908,7 +912,9 @@ export const UpdateSettingsResponse = zod.object({
   "website": zod.string(),
   "currency": zod.string(),
   "timezone": zod.string(),
-  "logoDataUrl": zod.string().nullish()
+  "logoDataUrl": zod.string().nullish(),
+  "whatsappPhoneId": zod.string().nullish(),
+  "whatsappAccessToken": zod.string().nullish()
 })
 
 

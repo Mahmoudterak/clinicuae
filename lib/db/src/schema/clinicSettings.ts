@@ -12,6 +12,8 @@ export const clinicSettingsTable = pgTable("clinic_settings", {
   currency: text("currency").notNull().default("AED"),
   timezone: text("timezone").notNull().default("Asia/Dubai"),
   logoDataUrl: text("logo_data_url"),
+  whatsappPhoneId: text("whatsapp_phone_id"),
+  whatsappAccessToken: text("whatsapp_access_token"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

@@ -4,6 +4,7 @@ import { useListDoctors, useListPatients } from "@workspace/api-client-react";
 import {
   useListWaTemplates, useListWaMessages, useSendWaMessage, useBulkSend,
   useCreateWaTemplate, useUpdateWaTemplate, useDeleteWaTemplate,
+  useWaStatus,
   type WaTemplate,
 } from "@/hooks/use-whatsapp";
 import { useToast } from "@/hooks/use-toast";
@@ -386,7 +387,8 @@ export default function WhatsAppPage() {
   const { isRtl } = useTranslation();
   const [tab, setTab] = useState<Tab>("send");
   const { data: messages } = useListWaMessages();
-  const hasCredentials = false; // will be true when env vars are set
+  const { data: waStatus } = useWaStatus();
+  const hasCredentials = waStatus?.connected ?? false;
 
   const tabs: { id: Tab; label: string; labelAr: string; icon: typeof Send }[] = [
     { id: "send",      label: "Send Message",  labelAr: "إرسال رسالة", icon: Send },
