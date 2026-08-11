@@ -31,6 +31,11 @@ import { adminAuth } from "../middlewares/adminAuth";
 
 const router: IRouter = Router();
 
+// ── Super-admin routes FIRST — they carry their own auth guard and must
+//    never be intercepted by the clinic-level requireClinic middleware that
+//    every other router applies globally via router.use(requireClinic).
+router.use("/superadmin", superAdminRouter);
+
 /**
  * Routes that do NOT require admin authentication.
  * Everything else is protected by the adminAuth guard below.
@@ -51,9 +56,6 @@ function selectiveAdminAuth(req: Request, res: Response, next: NextFunction): vo
   // Allow all /public/* routes (online booking portal)
   if (path.startsWith("/public/")) { next(); return; }
 
-  // Allow all /superadmin/* routes (super-admin has its own auth guard)
-  if (path.startsWith("/superadmin")) { next(); return; }
-
   // Allow explicitly listed public endpoints
   const allowed = PUBLIC_EXACT[path];
   if (allowed && allowed.includes(req.method)) { next(); return; }
@@ -62,7 +64,7 @@ function selectiveAdminAuth(req: Request, res: Response, next: NextFunction): vo
   adminAuth(req, res, next);
 }
 
-// Apply selective auth before all routes
+// Apply selective auth before all clinic routes
 router.use(selectiveAdminAuth);
 
 router.use(authRouter);
@@ -88,7 +90,6 @@ router.use(zapierRouter);
 router.use(settingsRouter);
 router.use(adminUsersRouter);
 router.use(doctorAuthRouter);
-router.use("/superadmin", superAdminRouter);
 router.use(patientAuthRouter);
 router.use(branchesRouter);
 router.use(storageRouter);

@@ -26,6 +26,7 @@ channel = "stable-25_05"
 
 [userenv.shared]
 ADMIN_USERNAME = "admin"
+superadmin = "Clinic@OS2024"
 
 [[ports]]
 localPort = 8080
