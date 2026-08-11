@@ -571,6 +571,7 @@ export interface AdminUser {
   id: number;
   username: string;
   name: string;
+  status: string;
   createdAt: string;
 }
 
@@ -578,12 +579,14 @@ export interface AdminUserInput {
   username: string;
   password: string;
   name: string;
+  status?: string;
 }
 
 export interface AdminUserUpdate {
   username?: string;
   password?: string;
   name?: string;
+  status?: string;
 }
 
 export interface ValidateAdminCredentials {

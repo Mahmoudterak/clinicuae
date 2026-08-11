@@ -10,4 +10,5 @@ export interface AdminUserInput {
   username: string;
   password: string;
   name: string;
+  status?: string;
 }

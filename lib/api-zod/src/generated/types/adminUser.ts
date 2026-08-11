@@ -10,5 +10,6 @@ export interface AdminUser {
   id: number;
   username: string;
   name: string;
+  status: string;
   createdAt: string;
 }

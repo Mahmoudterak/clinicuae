@@ -10,4 +10,5 @@ export interface AdminUserUpdate {
   username?: string;
   password?: string;
   name?: string;
+  status?: string;
 }
