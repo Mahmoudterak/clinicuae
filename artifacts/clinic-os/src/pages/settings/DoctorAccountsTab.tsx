@@ -23,6 +23,23 @@ import {
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
+async function apiFetch(path: string, opts?: RequestInit) {
+  const token = localStorage.getItem("clinic-os-token");
+  const res = await fetch(`${BASE}${path}`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    ...opts,
+  });
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    throw new Error((e as { error?: string }).error ?? `HTTP ${res.status}`);
+  }
+  if (res.status === 204) return null;
+  return res.json();
+}
+
 interface DoctorAccount {
   id: number;
   doctorId: number;
@@ -36,11 +53,7 @@ interface DoctorAccount {
 function useDoctorAccounts() {
   return useQuery<DoctorAccount[]>({
     queryKey: ["doctor-accounts"],
-    queryFn: async () => {
-      const r = await fetch(`${BASE}/api/admin/doctor-accounts`);
-      if (!r.ok) throw new Error("Failed");
-      return r.json();
-    },
+    queryFn: () => apiFetch(`/api/admin/doctor-accounts`),
   });
 }
 
@@ -67,13 +80,10 @@ export default function DoctorAccountsTab() {
 
   const createMutation = useMutation({
     mutationFn: async (data: { doctorId: number; username: string; password: string }) => {
-      const r = await fetch(`${BASE}/api/admin/doctor-accounts`, {
+      return apiFetch(`/api/admin/doctor-accounts`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error ?? "Failed"); }
-      return r.json();
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["doctor-accounts"] });
@@ -86,12 +96,10 @@ export default function DoctorAccountsTab() {
 
   const resetMutation = useMutation({
     mutationFn: async ({ id, password }: { id: number; password: string }) => {
-      const r = await fetch(`${BASE}/api/admin/doctor-accounts/${id}`, {
+      return apiFetch(`/api/admin/doctor-accounts/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password }),
       });
-      if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error ?? "Failed"); }
     },
     onSuccess: () => {
       setResetTarget(null);
@@ -103,8 +111,7 @@ export default function DoctorAccountsTab() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const r = await fetch(`${BASE}/api/admin/doctor-accounts/${id}`, { method: "DELETE" });
-      if (!r.ok) throw new Error("Failed");
+      return apiFetch(`/api/admin/doctor-accounts/${id}`, { method: "DELETE" });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["doctor-accounts"] });
