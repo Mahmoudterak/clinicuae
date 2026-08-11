@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Building2, Users, ImageIcon, Eye, EyeOff, Plus, Trash2,
   ShieldCheck, Save, Upload, X, Key, Globe, Phone, Mail,
-  MapPin, Clock, Lock, Pencil, Loader2, Stethoscope
+  MapPin, Clock, Lock, Pencil, Loader2, Stethoscope, KeyRound
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +26,7 @@ import BranchesTab from "./BranchesTab";
 import StaffTab from "./StaffTab";
 import { getLogoSrc } from "@/lib/logo-utils";
 
-type Tab = "clinic" | "users" | "logo" | "doctors" | "branches" | "staff";
+type Tab = "clinic" | "users" | "logo" | "doctors" | "branches" | "staff" | "security";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
@@ -459,6 +459,121 @@ function LogoTab() {
   );
 }
 
+// ─── Security Tab (Change Password) ──────────────────────────────────────────
+function SecurityTab() {
+  const { isRtl } = useTranslation();
+  const { token } = useAuth();
+  const { toast } = useToast();
+  const [form, setForm] = useState({ currentPassword: '', newPassword: '', confirm: '' });
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const apiBase = (import.meta.env.BASE_URL ?? '/').replace(/\/$/, '');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (form.newPassword !== form.confirm) {
+      toast({ title: isRtl ? "خطأ" : "Error", description: isRtl ? "كلمة المرور الجديدة لا تتطابق" : "Passwords do not match", variant: "destructive" });
+      return;
+    }
+    if (form.newPassword.length < 6) {
+      toast({ title: isRtl ? "خطأ" : "Error", description: isRtl ? "كلمة المرور يجب أن تكون 6 أحرف على الأقل" : "Password must be at least 6 characters", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch(`${apiBase}/api/auth/change-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ currentPassword: form.currentPassword, newPassword: form.newPassword }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? (isRtl ? "فشل تغيير كلمة المرور" : "Failed to change password"));
+      }
+      toast({ title: isRtl ? "تم التغيير" : "Password changed", description: isRtl ? "تم تغيير كلمة المرور بنجاح" : "Your password has been updated." });
+      setForm({ currentPassword: '', newPassword: '', confirm: '' });
+    } catch (err: any) {
+      toast({ title: isRtl ? "خطأ" : "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-8">
+      <section>
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest mb-4">
+          {isRtl ? "تغيير كلمة المرور" : "Change Password"}
+        </h3>
+        <div className="bg-card border rounded-2xl p-6 max-w-lg">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <FieldRow label={isRtl ? "كلمة المرور الحالية" : "Current Password"}>
+              <div className="relative">
+                <Input
+                  required
+                  dir="ltr"
+                  type={showCurrent ? "text" : "password"}
+                  value={form.currentPassword}
+                  onChange={e => setForm(p => ({ ...p, currentPassword: e.target.value }))}
+                  className="ps-9"
+                  placeholder="••••••••"
+                />
+                <Lock className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <button type="button" onClick={() => setShowCurrent(p => !p)}
+                  className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </FieldRow>
+            <FieldRow label={isRtl ? "كلمة المرور الجديدة" : "New Password"}>
+              <div className="relative">
+                <Input
+                  required
+                  dir="ltr"
+                  type={showNew ? "text" : "password"}
+                  minLength={6}
+                  value={form.newPassword}
+                  onChange={e => setForm(p => ({ ...p, newPassword: e.target.value }))}
+                  className="ps-9"
+                  placeholder="••••••••"
+                />
+                <KeyRound className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <button type="button" onClick={() => setShowNew(p => !p)}
+                  className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </FieldRow>
+            <FieldRow label={isRtl ? "تأكيد كلمة المرور" : "Confirm Password"}>
+              <div className="relative">
+                <Input
+                  required
+                  dir="ltr"
+                  type="password"
+                  minLength={6}
+                  value={form.confirm}
+                  onChange={e => setForm(p => ({ ...p, confirm: e.target.value }))}
+                  className="ps-9"
+                  placeholder="••••••••"
+                />
+                <KeyRound className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              </div>
+            </FieldRow>
+            <div className="flex justify-end pt-2">
+              <Button type="submit" disabled={saving} className="gap-2">
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                {isRtl ? "تغيير كلمة المرور" : "Update Password"}
+              </Button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 // ─── Main Settings Page ───────────────────────────────────────────────────────
 export default function SettingsPage() {
   const { role } = useAuth();
@@ -476,12 +591,13 @@ export default function SettingsPage() {
   }
 
   const tabs: { id: Tab; label: string; labelAr: string; icon: React.ElementType }[] = [
-    { id: "clinic",   label: "Clinic Info",       labelAr: "بيانات العيادة",     icon: Building2 },
-    { id: "branches", label: "Branches",          labelAr: "الفروع",             icon: MapPin },
-    { id: "users",    label: "Admins",            labelAr: "المديرون",           icon: Users },
-    { id: "doctors",  label: "Doctors",           labelAr: "الأطباء",            icon: Stethoscope },
-    { id: "staff",    label: "Staff",             labelAr: "الموظفون",           icon: Users },
-    { id: "logo",     label: "Logo",              labelAr: "الشعار",             icon: ImageIcon },
+    { id: "clinic",    label: "Clinic Info",       labelAr: "بيانات العيادة",     icon: Building2 },
+    { id: "branches",  label: "Branches",          labelAr: "الفروع",             icon: MapPin },
+    { id: "users",     label: "Admins",            labelAr: "المديرون",           icon: Users },
+    { id: "doctors",   label: "Doctors",           labelAr: "الأطباء",            icon: Stethoscope },
+    { id: "staff",     label: "Staff",             labelAr: "الموظفون",           icon: Users },
+    { id: "logo",      label: "Logo",              labelAr: "الشعار",             icon: ImageIcon },
+    { id: "security",  label: "Security",          labelAr: "الأمان",             icon: KeyRound },
   ];
 
   return (
@@ -510,12 +626,13 @@ export default function SettingsPage() {
       </div>
 
       {/* Tab content */}
-      {tab === "clinic"   && <ClinicTab />}
-      {tab === "branches" && <BranchesTab />}
-      {tab === "users"    && <UsersTab />}
-      {tab === "doctors"  && <DoctorAccountsTab />}
-      {tab === "staff"    && <StaffTab />}
-      {tab === "logo"     && <LogoTab />}
+      {tab === "clinic"    && <ClinicTab />}
+      {tab === "branches"  && <BranchesTab />}
+      {tab === "users"     && <UsersTab />}
+      {tab === "doctors"   && <DoctorAccountsTab />}
+      {tab === "staff"     && <StaffTab />}
+      {tab === "logo"      && <LogoTab />}
+      {tab === "security"  && <SecurityTab />}
     </div>
   );
 }

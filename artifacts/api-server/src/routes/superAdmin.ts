@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { getLogoMigrationStatus } from "../lib/startup-migration";
 import {
   registeredClinicsTable, superAdminUsersTable,
+  adminUsersTable,
   platformAuditLogsTable, subscriptionPlansTable,
   featureFlagsTable, clinicFeatureFlagsTable,
   platformSettingsTable,
@@ -14,6 +15,7 @@ import {
 import { eq, and, gte, desc, sql, count, type SQL } from "drizzle-orm";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 import { z } from "zod";
 
 const JWT_SECRET = process.env.SESSION_SECRET ?? "dev-secret-change-me";
@@ -250,6 +252,89 @@ superAdminRouter.delete("/clinics/:id", authMiddleware, requireRole("super_admin
   return res.status(204).end();
 });
 
+// ═══════════════════════════════════════════════════════════════════
+// CLINIC CREDENTIALS (admin_users for a clinic)
+// ═══════════════════════════════════════════════════════════════════
+
+// GET /clinics/:id/credentials — list admin users (no passwords)
+superAdminRouter.get("/clinics/:id/credentials", authMiddleware, requireRole("super_admin", "platform_admin"), async (req, res) => {
+  const clinicId = Number(req.params.id);
+  if (isNaN(clinicId)) return res.status(400).json({ error: "Invalid id" });
+  const users = await db.select({
+    id: adminUsersTable.id,
+    username: adminUsersTable.username,
+    name: adminUsersTable.name,
+    role: adminUsersTable.role,
+    status: adminUsersTable.status,
+    createdAt: adminUsersTable.createdAt,
+    lastLoginAt: adminUsersTable.lastLoginAt,
+  }).from(adminUsersTable).where(eq(adminUsersTable.clinicId, clinicId)).orderBy(adminUsersTable.createdAt);
+  return res.json(users.map(u => ({
+    ...u,
+    createdAt: u.createdAt instanceof Date ? u.createdAt.toISOString() : u.createdAt,
+    lastLoginAt: u.lastLoginAt instanceof Date ? u.lastLoginAt.toISOString() : (u.lastLoginAt ?? null),
+  })));
+});
+
+// POST /clinics/:id/credentials — create an admin user for a clinic
+superAdminRouter.post("/clinics/:id/credentials", authMiddleware, requireRole("super_admin", "platform_admin"), async (req, res) => {
+  const clinicId = Number(req.params.id);
+  if (isNaN(clinicId)) return res.status(400).json({ error: "Invalid id" });
+  const { username, password, name } = req.body ?? {};
+  if (!username || !password || !name) return res.status(400).json({ error: "username, password, and name are required" });
+  if (password.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
+
+  const [clinic] = await db.select({ id: registeredClinicsTable.id, name: registeredClinicsTable.name }).from(registeredClinicsTable).where(eq(registeredClinicsTable.id, clinicId));
+  if (!clinic) return res.status(404).json({ error: "Clinic not found" });
+
+  const [existing] = await db.select({ id: adminUsersTable.id }).from(adminUsersTable).where(eq(adminUsersTable.username, username));
+  if (existing) return res.status(409).json({ error: "Username already exists" });
+
+  const hash = await bcrypt.hash(password, 10);
+  const [user] = await db.insert(adminUsersTable).values({
+    clinicId, username, password: hash, name, role: "admin", status: "active",
+  }).returning();
+
+  await logAudit({ req, action: "clinic.credentials.create", resourceType: "clinic", resourceId: clinicId, resourceLabel: clinic.name, newValue: { username, name } });
+  return res.status(201).json({
+    id: user!.id, username: user!.username, name: user!.name,
+    role: user!.role, status: user!.status,
+    createdAt: user!.createdAt instanceof Date ? user!.createdAt.toISOString() : user!.createdAt,
+    lastLoginAt: null,
+  });
+});
+
+// PATCH /clinics/:id/credentials/:userId/reset-password — reset password
+superAdminRouter.patch("/clinics/:id/credentials/:userId/reset-password", authMiddleware, requireRole("super_admin", "platform_admin"), async (req, res) => {
+  const clinicId = Number(req.params.id);
+  const userId   = Number(req.params.userId);
+  if (isNaN(clinicId) || isNaN(userId)) return res.status(400).json({ error: "Invalid id" });
+  const { password } = req.body ?? {};
+  if (!password || password.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
+
+  const [user] = await db.select().from(adminUsersTable).where(and(eq(adminUsersTable.id, userId), eq(adminUsersTable.clinicId, clinicId)));
+  if (!user) return res.status(404).json({ error: "User not found" });
+
+  const hash = await bcrypt.hash(password, 10);
+  await db.update(adminUsersTable).set({ password: hash }).where(eq(adminUsersTable.id, userId));
+  await logAudit({ req, action: "clinic.credentials.reset_password", resourceType: "clinic", resourceId: clinicId, resourceLabel: user.username });
+  return res.json({ success: true });
+});
+
+// DELETE /clinics/:id/credentials/:userId — remove admin user
+superAdminRouter.delete("/clinics/:id/credentials/:userId", authMiddleware, requireRole("super_admin"), async (req, res) => {
+  const clinicId = Number(req.params.id);
+  const userId   = Number(req.params.userId);
+  if (isNaN(clinicId) || isNaN(userId)) return res.status(400).json({ error: "Invalid id" });
+
+  const [user] = await db.select().from(adminUsersTable).where(and(eq(adminUsersTable.id, userId), eq(adminUsersTable.clinicId, clinicId)));
+  if (!user) return res.status(404).json({ error: "User not found" });
+
+  await db.delete(adminUsersTable).where(eq(adminUsersTable.id, userId));
+  await logAudit({ req, action: "clinic.credentials.delete", resourceType: "clinic", resourceId: clinicId, resourceLabel: user.username });
+  return res.status(204).end();
+});
+
 // POST /clinics/:id/impersonate — super_admin & platform_admin only
 superAdminRouter.post("/clinics/:id/impersonate", authMiddleware, requireRole("super_admin", "platform_admin"), async (req, res) => {
   const id = Number(req.params.id);
@@ -402,6 +487,37 @@ superAdminRouter.patch("/platform-settings", authMiddleware, requireRole("super_
 });
 
 // ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
+// GROWTH CHART — real monthly clinic registration data
+// ═══════════════════════════════════════════════════════════════════
+
+superAdminRouter.get("/growth", authMiddleware, requireRole("super_admin", "platform_admin", "support_admin"), async (_req, res) => {
+  // Last 7 months of clinic registrations
+  const rows = await db.execute<{ month: string; count: string }>(sql`
+    SELECT
+      TO_CHAR(DATE_TRUNC('month', created_at), 'YYYY-MM') AS month,
+      COUNT(*) AS count
+    FROM registered_clinics
+    WHERE created_at >= NOW() - INTERVAL '7 months'
+    GROUP BY DATE_TRUNC('month', created_at)
+    ORDER BY DATE_TRUNC('month', created_at)
+  `);
+
+  const ARABIC_MONTHS: Record<string, string> = {
+    '01': 'يناير', '02': 'فبراير', '03': 'مارس', '04': 'أبريل',
+    '05': 'مايو', '06': 'يونيو', '07': 'يوليو', '08': 'أغسطس',
+    '09': 'سبتمبر', '10': 'أكتوبر', '11': 'نوفمبر', '12': 'ديسمبر',
+  };
+
+  const data = rows.rows.map(r => ({
+    month: ARABIC_MONTHS[r.month.split('-')[1]] ?? r.month,
+    clinics: Number(r.count),
+  }));
+
+  return res.json(data);
+});
+
+// ═══════════════════════════════════════════════════════════════════
 // SYSTEM HEALTH — super_admin, platform_admin, developer
 // ═══════════════════════════════════════════════════════════════════
 
@@ -441,6 +557,61 @@ superAdminRouter.get("/system-health", authMiddleware, requireRole("super_admin"
       totalDoctors: (doctorsCount as any)?.[0]?.count ?? 0,
       totalAppointments: (appointmentsCount as any)?.[0]?.count ?? 0,
     },
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// DEVELOPER CENTER INFO
+// ═══════════════════════════════════════════════════════════════════
+
+superAdminRouter.get("/developer-info", authMiddleware, requireRole("super_admin", "platform_admin", "developer"), async (_req, res) => {
+  // Memory in MB
+  const rawMem = process.memoryUsage();
+  const toMb = (b: number) => Math.round(b / 1024 / 1024);
+
+  // Table row counts from pg_stat_user_tables (fast, no full-scan)
+  let tables: { name: string; rowCount: number }[] = [];
+  try {
+    const result = await db.execute<{ relname: string; n_live_tup: string }>(sql`
+      SELECT relname, n_live_tup
+      FROM pg_stat_user_tables
+      ORDER BY relname
+    `);
+    tables = result.rows.map(r => ({ name: r.relname, rowCount: Number(r.n_live_tup) }));
+  } catch {
+    // fallback — leave empty
+  }
+
+  // Recent audit logs — actorUsername and ip are direct columns, no join needed
+  const recentApiLogs = await db
+    .select({
+      action: platformAuditLogsTable.action,
+      actorUsername: platformAuditLogsTable.actorUsername,
+      ip: platformAuditLogsTable.ip,
+      createdAt: platformAuditLogsTable.createdAt,
+    })
+    .from(platformAuditLogsTable)
+    .orderBy(desc(platformAuditLogsTable.createdAt))
+    .limit(20)
+    .catch(() => []);
+
+  return res.json({
+    nodeVersion: process.version,
+    platform: process.platform,
+    uptimeSec: Math.floor(process.uptime()),
+    memoryMb: {
+      rss: toMb(rawMem.rss),
+      heapUsed: toMb(rawMem.heapUsed),
+      heapTotal: toMb(rawMem.heapTotal),
+    },
+    tables,
+    recentErrors: [],
+    recentApiLogs: recentApiLogs.map(l => ({
+      action: l.action,
+      actorUsername: l.actorUsername ?? null,
+      ip: l.ip ?? null,
+      createdAt: l.createdAt instanceof Date ? l.createdAt.toISOString() : l.createdAt,
+    })),
   });
 });
 

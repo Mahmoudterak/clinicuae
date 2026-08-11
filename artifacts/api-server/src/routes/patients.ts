@@ -148,7 +148,7 @@ router.get("/patients/:id/summary", async (req, res): Promise<void> => {
         ...iso(appointment),
         doctorName: doctorFirst && doctorLast ? `${doctorFirst} ${doctorLast}` : null,
       })),
-      medicalRecords: records.map(({ record, doctorFirst, doctorLast }) => ({
+      records: records.map(({ record, doctorFirst, doctorLast }) => ({
         ...iso(record),
         doctorName: doctorFirst && doctorLast ? `${doctorFirst} ${doctorLast}` : null,
       })),

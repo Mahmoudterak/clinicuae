@@ -1,5 +1,5 @@
 import * as React from "react"
-import { useDashboardStats, useClinics } from "@/hooks/use-api"
+import { useDashboardStats, useClinics, useGrowthData } from "@/hooks/use-api"
 import { useAuth } from "@/hooks/use-auth"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -15,16 +15,6 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 
 import { planLabels, statusBadges } from "@/lib/constants"
 
-// Mock monthly growth data for the sparkline
-const growthData = [
-  { month: 'يناير', clinics: 180, revenue: 195000 },
-  { month: 'فبراير', clinics: 196, revenue: 210000 },
-  { month: 'مارس', clinics: 208, revenue: 225000 },
-  { month: 'أبريل', clinics: 215, revenue: 238000 },
-  { month: 'مايو', clinics: 228, revenue: 255000 },
-  { month: 'يونيو', clinics: 237, revenue: 268000 },
-  { month: 'يوليو', clinics: 248, revenue: 284500 },
-]
 
 function StatCard({
   title, value, subtitle, icon: Icon, color, trend
@@ -64,6 +54,7 @@ export default function Dashboard() {
   const { user } = useAuth()
   const { data: stats, isLoading: isStatsLoading } = useDashboardStats()
   const { data: clinics, isLoading: isClinicsLoading } = useClinics()
+  const { data: growthData = [] } = useGrowthData()
 
   const recentClinics = clinics
     ? [...clinics].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 6)
@@ -175,9 +166,9 @@ export default function Dashboard() {
             trend={{ value: '+8.3% عن الشهر الماضي', positive: true }}
           />
           <StatCard
-            title="أخطاء النظام"
-            value={7}
-            subtitle="خلال 24 ساعة"
+            title="الإيرادات الشهرية"
+            value={mrrFormatted}
+            subtitle="MRR متكرر"
             icon={AlertTriangle}
             color="bg-orange-50 text-orange-500"
           />
@@ -222,31 +213,37 @@ export default function Dashboard() {
       {/* Row 4 — Charts + Recent */}
       <div className="grid gap-6 lg:grid-cols-7">
 
-        {/* Revenue growth chart */}
+        {/* Clinic growth chart */}
         <Card className="lg:col-span-4 border-none shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">نمو الإيرادات</CardTitle>
-            <CardDescription>الإيرادات الشهرية خلال 7 أشهر</CardDescription>
+            <CardTitle className="text-base">نمو العيادات</CardTitle>
+            <CardDescription>عدد العيادات المسجلة شهرياً خلال 7 أشهر</CardDescription>
           </CardHeader>
           <CardContent className="h-[220px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={growthData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                <Tooltip
-                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgb(0 0 0 / 0.1)' }}
-                  formatter={(v: number) => [`${v.toLocaleString()} AED`, 'الإيرادات']}
-                />
-                <Area type="monotone" dataKey="revenue" stroke="#6366f1" strokeWidth={2} fill="url(#colorRevenue)" />
-              </AreaChart>
-            </ResponsiveContainer>
+            {growthData.length === 0 ? (
+              <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
+                لا توجد بيانات نمو بعد
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={growthData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorClinics" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.15} />
+                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} allowDecimals={false} />
+                  <Tooltip
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgb(0 0 0 / 0.1)' }}
+                    formatter={(v: number) => [v, 'عيادة']}
+                  />
+                  <Area type="monotone" dataKey="clinics" stroke="#6366f1" strokeWidth={2} fill="url(#colorClinics)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 

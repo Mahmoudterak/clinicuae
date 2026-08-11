@@ -13,11 +13,20 @@ export interface AdminJwtPayload {
   impersonatedBy?: string;
 }
 
+export interface DoctorJwtPayload {
+  role: "doctor";
+  doctorId: number;
+  clinicId: number;
+}
+
+export type ClinicJwtPayload = AdminJwtPayload | DoctorJwtPayload;
+
 declare global {
   namespace Express {
     interface Request {
       clinicId?: number;
       adminId?: number;
+      doctorId?: number;
       adminJwt?: AdminJwtPayload;
     }
   }
@@ -51,6 +60,7 @@ export function adminAuth(req: Request, res: Response, next: NextFunction): void
 
 /**
  * Stricter guard: requires that the token carries a clinicId.
+ * Accepts both admin and doctor JWTs.
  * Use on all tenant-data routes to enforce hard isolation.
  */
 export function requireClinic(req: Request, res: Response, next: NextFunction): void {
@@ -61,18 +71,23 @@ export function requireClinic(req: Request, res: Response, next: NextFunction): 
   }
   const token = auth.slice(7);
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as AdminJwtPayload;
-    if (payload.role !== "admin") {
-      res.status(403).json({ error: "Forbidden — admin role required" });
+    const payload = jwt.verify(token, JWT_SECRET) as ClinicJwtPayload;
+    if (payload.role === "admin") {
+      req.adminJwt = payload as AdminJwtPayload;
+      if (!payload.clinicId) {
+        res.status(403).json({ error: "Forbidden — no clinic scope in token" });
+        return;
+      }
+      req.clinicId = payload.clinicId;
+      if ((payload as AdminJwtPayload).adminId) req.adminId = (payload as AdminJwtPayload).adminId;
+    } else if (payload.role === "doctor") {
+      const dp = payload as DoctorJwtPayload;
+      req.clinicId = dp.clinicId;
+      req.doctorId = dp.doctorId;
+    } else {
+      res.status(403).json({ error: "Forbidden — invalid role" });
       return;
     }
-    req.adminJwt = payload;
-    if (!payload.clinicId) {
-      res.status(403).json({ error: "Forbidden — no clinic scope in token" });
-      return;
-    }
-    req.clinicId = payload.clinicId;
-    if (payload.adminId) req.adminId = payload.adminId;
     next();
   } catch {
     res.status(401).json({ error: "Invalid or expired token" });

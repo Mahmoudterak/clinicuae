@@ -50,16 +50,19 @@ export default function Backups() {
 
   const lastSuccess = backupHistory.find(b => b.status === 'success')
 
-  const handleRunBackup = async (type: 'database' | 'files' | 'full') => {
-    setIsRunning(true)
-    toast({ title: "بدأت النسخة الاحتياطية", description: `جارٍ إنشاء ${typeLabels[type]}...` })
-    await new Promise(r => setTimeout(r, 2500))
-    setIsRunning(false)
-    toast({ title: "✅ تمت النسخ الاحتياطي", description: "تم حفظ النسخة بنجاح" })
+  const handleRunBackup = async (_type: 'database' | 'files' | 'full') => {
+    toast({
+      title: "ميزة غير متاحة بعد",
+      description: "النسخ الاحتياطي التلقائي يُدار على مستوى البنية التحتية. تواصل مع الدعم الفني.",
+      variant: "destructive",
+    })
   }
 
   const handleRestore = () => {
-    toast({ title: "طلب الاستعادة مُرسَل", description: "سيتواصل معك فريق الدعم الفني لتأكيد العملية" })
+    toast({
+      title: "طلب الاستعادة",
+      description: "يُرجى التواصل مع فريق الدعم الفني لإجراء عملية الاستعادة.",
+    })
     setRestoreTarget(null)
   }
 

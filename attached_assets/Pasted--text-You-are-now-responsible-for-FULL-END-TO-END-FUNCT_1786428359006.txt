@@ -1,0 +1,1162 @@
+```text
+You are now responsible for FULL END-TO-END FUNCTIONAL QA and PRODUCTION READINESS of the entire Clinic OS platform.
+
+IMPORTANT:
+
+Do NOT only inspect the UI.
+
+You must actually test the application as a real user.
+
+Every button, form, modal, dropdown, table action, navigation item, CRUD operation, authentication flow, tenant operation, doctor operation, clinic operation, and Super Admin operation must be tested.
+
+The goal is:
+
+EVERYTHING IN CLINIC OS MUST ACTUALLY WORK.
+
+Data must be entered successfully.
+Data must be saved to the database.
+Saved data must appear correctly everywhere it is supposed to appear.
+Relationships must work.
+Permissions must work.
+Tenant isolation must work.
+Accounts must work.
+Clinic branding/settings must persist.
+Doctors must be created and able to log in.
+Patients must be created.
+Appointments must be created.
+Medical records must be saved.
+Invoices and payments must work.
+Super Admin must be able to manage the entire platform.
+
+Do not mark a feature as working because the button exists.
+
+A feature is only WORKING if the complete workflow succeeds.
+
+==================================================
+PHASE 1 — FULL PROJECT AUDIT
+==================================================
+
+Before testing:
+
+1. Inspect the entire codebase.
+2. Inspect all routes.
+3. Inspect all pages.
+4. Inspect all components.
+5. Inspect all API endpoints.
+6. Inspect database schema.
+7. Inspect authentication.
+8. Inspect RBAC.
+9. Inspect tenant architecture.
+10. Inspect forms and validations.
+11. Inspect existing test infrastructure.
+12. Identify all incomplete functionality.
+13. Identify all buttons that have no real action.
+14. Identify all forms that do not persist data.
+15. Identify all fake/mock data.
+16. Identify all APIs that return placeholder data.
+17. Identify broken database relationships.
+
+Create:
+
+QA_MASTER_CHECKLIST.md
+
+with every feature that must be tested.
+
+==================================================
+PHASE 2 — CREATE A SAFE TEST ENVIRONMENT
+==================================================
+
+DO NOT destroy production data.
+
+Use a dedicated test environment/database if available.
+
+Create a test dataset.
+
+Create:
+
+TEST DATA
+
+Platform:
+
+Super Admin:
+superadmin@test.clinicos.local
+
+Clinic:
+
+Clinic Name:
+Test Medical Center
+
+Owner:
+owner@test.clinicos.local
+
+Doctors:
+
+doctor1@test.clinicos.local
+doctor2@test.clinicos.local
+
+Receptionist:
+
+reception@test.clinicos.local
+
+Accountant:
+
+accountant@test.clinicos.local
+
+Patients:
+
+Create at least 5 realistic test patients.
+
+Appointments:
+
+Create multiple test appointments.
+
+Services:
+
+Create multiple medical services.
+
+Invoices:
+
+Create test invoices.
+
+Payments:
+
+Create successful and pending payment scenarios.
+
+IMPORTANT:
+
+Use secure test passwords and never hard-code real production credentials.
+
+==================================================
+PHASE 3 — SUPER ADMIN TEST
+==================================================
+
+Login as Super Admin.
+
+Test:
+
+[ ] Login
+[ ] Logout
+[ ] Dashboard
+[ ] Navigation
+[ ] Search
+[ ] Filters
+[ ] Pagination
+[ ] Notifications
+[ ] Profile
+[ ] Settings
+
+Dashboard:
+
+Verify that every statistic is based on real database data.
+
+Verify:
+
+Total Clinics
+Active Clinics
+Trial Clinics
+Suspended Clinics
+Users
+Doctors
+Patients
+Appointments
+Subscriptions
+Revenue
+Storage
+Errors
+
+==================================================
+PHASE 4 — CREATE A CLINIC
+==================================================
+
+From Super Admin:
+
+Create a new clinic.
+
+Test every field.
+
+Example:
+
+Clinic Name
+Logo
+Owner Name
+Owner Email
+Phone
+Country
+City
+Address
+Domain
+Plan
+Trial
+Status
+
+Click SAVE.
+
+VERIFY:
+
+1. No frontend-only success message.
+2. Database record is created.
+3. Clinic appears in clinic list.
+4. Clinic ID exists.
+5. Owner account is created.
+6. Subscription/trial is created.
+7. Tenant ID is generated.
+8. Default settings are created.
+9. Default roles are created.
+10. Default permissions are created.
+
+Refresh the page.
+
+VERIFY the data remains.
+
+Logout.
+
+Login again.
+
+VERIFY the clinic still exists.
+
+==================================================
+PHASE 5 — CLINIC BRANDING
+==================================================
+
+Login as Clinic Owner.
+
+Go to:
+
+Settings → Clinic Profile / Branding
+
+Test:
+
+Clinic Name
+Logo
+Favicon
+Phone
+Email
+Address
+Website
+Working Hours
+Currency
+Timezone
+Language
+
+Upload a real test logo.
+
+SAVE.
+
+Then:
+
+1. Refresh.
+2. Logout.
+3. Login again.
+4. Open dashboard.
+5. Open settings.
+6. Open patient pages.
+7. Open appointment pages.
+
+VERIFY:
+
+The new clinic name and logo persist everywhere.
+
+Do not use localStorage-only persistence.
+
+Branding must be stored in the database/storage.
+
+==================================================
+PHASE 6 — CREATE DOCTOR ACCOUNT
+==================================================
+
+From Clinic Owner/Admin:
+
+Create a Doctor.
+
+Fields:
+
+Full Name
+Email
+Phone
+Specialization
+License Number
+Department
+Gender
+Date of Birth
+Profile Image
+Working Hours
+Status
+
+SAVE.
+
+VERIFY:
+
+1. Doctor is saved in database.
+2. User account is created.
+3. Doctor role is assigned.
+4. Doctor is connected to the correct tenant.
+5. Doctor appears in Doctors list.
+6. Doctor appears in appointment selection.
+7. Doctor appears in reports.
+8. Doctor can log in.
+
+Logout.
+
+Login as Doctor.
+
+VERIFY:
+
+Doctor sees ONLY the features permitted to the Doctor role.
+
+Doctor must NOT see:
+
+Super Admin
+Other tenants
+Platform settings
+Platform billing
+Other clinic tenants
+Unauthorized financial data
+
+==================================================
+PHASE 7 — DOCTOR FUNCTIONAL TEST
+==================================================
+
+Login as Doctor.
+
+Test:
+
+Dashboard
+Profile
+Appointments
+Patients
+Medical Records
+Prescriptions
+Treatments
+Notifications
+Settings
+
+Create a patient.
+
+SAVE.
+
+Refresh.
+
+VERIFY patient exists.
+
+Open patient.
+
+Add:
+
+Medical History
+Allergies
+Diagnosis
+Notes
+Treatment
+Prescription
+
+SAVE EACH SECTION.
+
+Refresh.
+
+VERIFY every value remains.
+
+==================================================
+PHASE 8 — PATIENT TEST
+==================================================
+
+Create a patient using Receptionist/Authorized Staff.
+
+Test all fields.
+
+SAVE.
+
+Then verify:
+
+Patient list
+Patient profile
+Doctor search
+Appointment creation
+Medical record
+Invoice
+Payment
+Reports
+
+The same patient must be correctly linked across all modules.
+
+Test:
+
+Edit patient.
+
+SAVE.
+
+Refresh.
+
+VERIFY changes persist.
+
+Delete/Archive patient if supported.
+
+VERIFY soft-delete/archive behavior.
+
+==================================================
+PHASE 9 — APPOINTMENT TEST
+==================================================
+
+Create appointment.
+
+Fields:
+
+Patient
+Doctor
+Department
+Date
+Time
+Type
+Status
+Notes
+
+SAVE.
+
+VERIFY:
+
+Appointment appears in:
+
+Calendar
+Doctor dashboard
+Patient profile
+Clinic dashboard
+Reports
+
+Test:
+
+Create
+Edit
+Cancel
+Reschedule
+Complete
+
+Verify every status transition updates the database correctly.
+
+Test duplicate/conflicting appointments if conflict prevention exists.
+
+==================================================
+PHASE 10 — MEDICAL RECORD TEST
+==================================================
+
+Create a medical record.
+
+Test:
+
+Chief Complaint
+Symptoms
+Diagnosis
+Vitals
+Clinical Notes
+Treatment
+Follow-up
+Attachments
+
+SAVE.
+
+Refresh.
+
+VERIFY all data persists.
+
+Verify medical record belongs to:
+
+Correct Patient
+Correct Doctor
+Correct Clinic/Tenant
+
+Test unauthorized access.
+
+A Doctor from Clinic A MUST NOT access Clinic B medical records.
+
+==================================================
+PHASE 11 — PRESCRIPTION TEST
+==================================================
+
+Create prescription.
+
+Add:
+
+Medication
+Dose
+Frequency
+Duration
+Instructions
+
+SAVE.
+
+Verify:
+
+Prescription appears in patient history.
+
+Edit prescription.
+
+Save.
+
+Refresh.
+
+Verify persistence.
+
+==================================================
+PHASE 12 — BILLING TEST
+==================================================
+
+Create invoice.
+
+Add:
+
+Patient
+Services
+Doctor
+Subtotal
+Discount
+Tax if applicable
+Total
+Payment Status
+
+SAVE.
+
+Verify database.
+
+Test:
+
+Paid
+Partially Paid
+Pending
+Cancelled
+
+Create payment.
+
+Verify invoice balance updates.
+
+Verify financial data appears correctly in:
+
+Patient
+Invoice
+Payments
+Dashboard
+Reports
+
+==================================================
+PHASE 13 — INVENTORY TEST
+==================================================
+
+Create inventory item.
+
+Test:
+
+Name
+SKU
+Barcode
+Category
+Quantity
+Minimum Stock
+Purchase Price
+Selling Price
+Supplier
+Expiration Date
+
+SAVE.
+
+Verify persistence.
+
+Test:
+
+Add Stock
+Remove Stock
+Adjust Quantity
+
+Verify stock calculations.
+
+Test low-stock warning.
+
+==================================================
+PHASE 14 — EMPLOYEE TEST
+==================================================
+
+Create:
+
+Receptionist
+Nurse
+Accountant
+Clinic Manager
+
+For every employee:
+
+Create account.
+
+Assign role.
+
+Login.
+
+Verify role-specific permissions.
+
+Test unauthorized routes directly.
+
+Example:
+
+Receptionist must not access Super Admin.
+
+Doctor must not access platform settings.
+
+Accountant must not access unauthorized medical records.
+
+==================================================
+PHASE 15 — MULTI-TENANT TEST
+==================================================
+
+Create:
+
+Clinic A
+Clinic B
+
+Create:
+
+Doctor A
+Patient A
+
+Doctor B
+Patient B
+
+Login as Clinic A.
+
+Verify:
+
+Clinic A data exists.
+
+Clinic B data MUST NOT exist.
+
+Test direct API access.
+
+Try requesting:
+
+Clinic B patient ID
+Clinic B doctor ID
+Clinic B appointment ID
+Clinic B medical record ID
+Clinic B invoice ID
+
+Every unauthorized request must fail.
+
+Expected:
+
+401 or 403
+
+Never return the other tenant's data.
+
+==================================================
+PHASE 16 — SEARCH / FILTER / TABLE TEST
+==================================================
+
+For EVERY major table:
+
+Test:
+
+Search
+Sort
+Filter
+Pagination
+Clear Filters
+Export
+View
+Edit
+Delete/Archive
+
+Test with:
+
+0 records
+1 record
+10 records
+100+ records
+
+Verify pagination and queries remain correct.
+
+==================================================
+PHASE 17 — EVERY BUTTON TEST
+==================================================
+
+Scan the entire application for buttons.
+
+For every button determine:
+
+1. What should it do?
+2. Does it have an event handler?
+3. Does it call the correct API?
+4. Does the API work?
+5. Does the database change?
+6. Does the UI update?
+7. Does refresh preserve the change?
+
+Pay special attention to:
+
+Add
+Create
+Save
+Update
+Edit
+Delete
+Archive
+Restore
+Cancel
+Confirm
+Submit
+Upload
+Download
+Export
+Import
+Search
+Filter
+Reset
+Approve
+Reject
+Activate
+Deactivate
+Assign
+Remove
+Change Plan
+Change Password
+Login As
+Send
+Resend
+Generate
+Print
+
+No dead buttons.
+
+No fake success messages.
+
+==================================================
+PHASE 18 — ALL FORMS
+==================================================
+
+Test every form.
+
+For each form test:
+
+Valid input
+Empty input
+Invalid email
+Invalid phone
+Invalid number
+Very long text
+Duplicate values
+Missing required fields
+Unauthorized submission
+
+Verify proper validation.
+
+Verify errors are displayed clearly.
+
+Verify successful submissions are persisted.
+
+==================================================
+PHASE 19 — AUTHENTICATION
+==================================================
+
+Test:
+
+Register
+Login
+Logout
+Forgot Password
+Reset Password
+Session Expiration
+Force Logout
+Multiple Sessions
+Unauthorized Route
+Unauthorized API
+
+Verify authentication is server-side.
+
+==================================================
+PHASE 20 — SUPER ADMIN IMPERSONATION
+==================================================
+
+Test:
+
+Super Admin → Login As Clinic
+
+Verify:
+
+Impersonation session is secure.
+
+The Super Admin can see the clinic exactly as the clinic user would.
+
+The system records:
+
+Super Admin ID
+Target User
+Target Clinic
+Start Time
+End Time
+IP
+Action
+
+Add a clear:
+
+"Exit Impersonation"
+
+button.
+
+Never expose the user's password.
+
+==================================================
+PHASE 21 — FILE UPLOADS
+==================================================
+
+Test:
+
+Clinic Logo
+Doctor Image
+Patient Attachments
+Medical Documents
+Prescriptions
+Reports
+
+For every upload:
+
+Upload
+Save
+Refresh
+Open
+Download
+Delete if supported
+
+Verify files are stored correctly.
+
+Verify tenant isolation for files.
+
+Clinic A must never access Clinic B files.
+
+==================================================
+PHASE 22 — NOTIFICATIONS
+==================================================
+
+Test:
+
+Create appointment.
+
+Verify notification.
+
+Change appointment.
+
+Verify notification.
+
+Cancel appointment.
+
+Verify notification.
+
+Create invoice.
+
+Verify notification.
+
+Trial expiration.
+
+Verify notification if implemented.
+
+==================================================
+PHASE 23 — API TESTING
+==================================================
+
+Test every API endpoint.
+
+For each endpoint verify:
+
+Authentication
+Authorization
+Tenant Isolation
+Validation
+Success Response
+Error Response
+Database Persistence
+
+No API should return fake/mock data in production functionality.
+
+==================================================
+PHASE 24 — DATABASE VERIFICATION
+==================================================
+
+For every CREATE/UPDATE/DELETE operation:
+
+Verify the actual database.
+
+Do not trust UI state.
+
+Test:
+
+Create → Database
+Update → Database
+Delete/Archive → Database
+Refresh → Database
+Logout/Login → Database
+
+Check relationships.
+
+Check foreign keys.
+
+Check indexes.
+
+Check unique constraints.
+
+==================================================
+PHASE 25 — ERROR HANDLING
+==================================================
+
+Intentionally test failures:
+
+Database unavailable
+Invalid request
+Unauthorized request
+Expired session
+Duplicate record
+Invalid file
+Payment failure
+API failure
+
+The application must:
+
+- Show a useful error
+- Not crash
+- Not expose stack traces
+- Not expose secrets
+- Log the error appropriately
+
+==================================================
+PHASE 26 — RESPONSIVE TEST
+==================================================
+
+Test:
+
+Desktop
+Tablet
+Mobile
+
+Every important page:
+
+Super Admin
+Clinic Dashboard
+Doctors
+Patients
+Appointments
+Medical Records
+Invoices
+Settings
+
+No:
+
+Horizontal overflow
+Broken tables
+Invisible buttons
+Overlapping modals
+Unreadable text
+
+==================================================
+PHASE 27 — RTL / ARABIC
+==================================================
+
+Test Arabic interface.
+
+Verify:
+
+RTL
+Sidebar
+Tables
+Forms
+Dialogs
+Dates
+Numbers
+Currency
+Notifications
+
+No layout breaking.
+
+==================================================
+PHASE 28 — PERFORMANCE
+==================================================
+
+Check:
+
+Dashboard load
+Patient list
+Doctor list
+Appointment calendar
+Reports
+Search
+Filters
+
+Avoid loading unnecessary data.
+
+Use pagination.
+
+Use optimized queries.
+
+Fix N+1 queries.
+
+==================================================
+PHASE 29 — AUTOMATED E2E TESTS
+==================================================
+
+If Playwright is available, implement Playwright E2E tests.
+
+Create tests for:
+
+01-super-admin.spec
+02-create-clinic.spec
+03-clinic-login.spec
+04-branding.spec
+05-create-doctor.spec
+06-doctor-login.spec
+07-create-patient.spec
+08-appointments.spec
+09-medical-records.spec
+10-prescriptions.spec
+11-billing.spec
+12-inventory.spec
+13-rbac.spec
+14-tenant-isolation.spec
+15-impersonation.spec
+16-file-upload.spec
+17-settings.spec
+
+The tests must interact with the real application.
+
+Do not mock the entire backend.
+
+==================================================
+PHASE 30 — FIX EVERYTHING
+==================================================
+
+Whenever a test fails:
+
+DO NOT simply document the failure.
+
+Fix the underlying problem.
+
+Then rerun the test.
+
+Continue until it passes.
+
+Example:
+
+Button does nothing
+→ inspect component
+→ inspect API
+→ inspect database
+→ implement missing functionality
+→ test again.
+
+Form saves visually but not database
+→ inspect API
+→ inspect server action
+→ inspect Prisma/database
+→ fix persistence
+→ test again.
+
+Doctor created but cannot log in
+→ inspect auth
+→ inspect user creation
+→ inspect role
+→ inspect tenant relation
+→ fix
+→ test again.
+
+==================================================
+FINAL ACCEPTANCE CRITERIA
+==================================================
+
+The project is NOT COMPLETE until:
+
+[ ] Every major button works
+[ ] Every major form saves
+[ ] Database persistence verified
+[ ] Clinic creation works
+[ ] Clinic login works
+[ ] Clinic branding persists
+[ ] Doctor creation works
+[ ] Doctor account works
+[ ] Doctor login works
+[ ] Patient creation works
+[ ] Appointment creation works
+[ ] Medical records work
+[ ] Prescriptions work
+[ ] Billing works
+[ ] Payments work
+[ ] Inventory works
+[ ] Employees work
+[ ] Roles work
+[ ] Permissions work
+[ ] Super Admin works
+[ ] Impersonation works
+[ ] File uploads work
+[ ] Notifications work
+[ ] Search works
+[ ] Filters work
+[ ] Pagination works
+[ ] Reports work
+[ ] Settings persist
+[ ] Multi-tenancy is isolated
+[ ] Unauthorized API requests fail
+[ ] No dead buttons
+[ ] No fake success states
+[ ] No placeholder production functionality
+[ ] No critical console errors
+[ ] No critical API errors
+[ ] No TypeScript errors
+[ ] No ESLint errors
+[ ] Tests pass
+[ ] Production build passes
+
+==================================================
+FINAL COMMANDS
+==================================================
+
+Run:
+
+npm install
+
+npm run lint
+
+npm run typecheck
+
+npm test
+
+npx playwright test
+
+npm run build
+
+If any command fails:
+
+FIX IT.
+
+Then rerun it.
+
+Do not stop at the first successful build.
+
+The final objective is not:
+
+"the application builds."
+
+The final objective is:
+
+"Clinic OS works as a real production SaaS application from Super Admin → Clinic → Doctor → Staff → Patient → Appointment → Medical Record → Billing → Reports, with real database persistence and secure tenant isolation."
+
+At the end create:
+
+FULL_QA_REPORT.md
+
+Include:
+
+- Total features tested
+- Total buttons tested
+- Total forms tested
+- Total APIs tested
+- Total workflows tested
+- Passed
+- Failed
+- Fixed
+- Remaining issues
+- Security findings
+- Multi-tenant findings
+- Database findings
+- Performance findings
+- Final production readiness status
+
+Do not claim a feature passed unless it was actually executed and verified.
+```

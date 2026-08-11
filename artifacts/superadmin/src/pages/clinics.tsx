@@ -1,5 +1,10 @@
 import * as React from "react"
-import { useClinics, useCreateClinic, useUpdateClinic, useDeleteClinic } from "@/hooks/use-api"
+import {
+  useClinics, useCreateClinic, useUpdateClinic, useDeleteClinic,
+  useClinicCredentials, useCreateClinicCredential, useResetClinicPassword, useDeleteClinicCredential,
+  useImpersonateClinic,
+  type ClinicCredential,
+} from "@/hooks/use-api"
 import { Clinic, ClinicPlan, ClinicStatus } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -7,10 +12,183 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Loader2, Plus, Search, Pencil, Trash2, ShieldAlert, CheckCircle2 } from "lucide-react"
+import { Loader2, Plus, Search, Pencil, Trash2, ShieldAlert, CheckCircle2, KeyRound, Eye, EyeOff, UserPlus, RotateCcw, LogIn } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { planLabels, statusBadges } from "@/lib/constants"
 import { useAuth, hasPermission } from "@/hooks/use-auth"
+
+// ── Credentials Dialog ────────────────────────────────────────────────────────
+function CredentialsDialog({ clinic, onClose }: { clinic: Clinic; onClose: () => void }) {
+  const { toast } = useToast()
+  const { data: creds, isLoading } = useClinicCredentials(clinic.id)
+  const createCred  = useCreateClinicCredential()
+  const resetPass   = useResetClinicPassword()
+  const deleteCred  = useDeleteClinicCredential()
+
+  const [form, setForm]         = React.useState({ username: '', password: '', name: '' })
+  const [showPw, setShowPw]     = React.useState(false)
+  const [resetId, setResetId]   = React.useState<number | null>(null)
+  const [resetPw, setResetPw]   = React.useState('')
+  const [showResetPw, setShowResetPw] = React.useState(false)
+  const [deleteId, setDeleteId] = React.useState<number | null>(null)
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      await createCred.mutateAsync({ clinicId: clinic.id, data: form })
+      toast({ title: "تم الإنشاء", description: `تم إنشاء حساب "${form.username}" بنجاح` })
+      setForm({ username: '', password: '', name: '' })
+    } catch (err: any) {
+      toast({ title: "خطأ", description: err.message, variant: "destructive" })
+    }
+  }
+
+  const handleReset = async () => {
+    if (!resetId || resetPw.length < 6) return
+    try {
+      await resetPass.mutateAsync({ clinicId: clinic.id, userId: resetId, password: resetPw })
+      toast({ title: "تم التغيير", description: "تم تغيير كلمة المرور بنجاح" })
+      setResetId(null); setResetPw('')
+    } catch (err: any) {
+      toast({ title: "خطأ", description: err.message, variant: "destructive" })
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!deleteId) return
+    try {
+      await deleteCred.mutateAsync({ clinicId: clinic.id, userId: deleteId })
+      toast({ title: "تم الحذف", description: "تم حذف الحساب" })
+      setDeleteId(null)
+    } catch (err: any) {
+      toast({ title: "خطأ", description: err.message, variant: "destructive" })
+    }
+  }
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <KeyRound className="w-5 h-5 text-primary" />
+            بيانات الدخول — {clinic.name}
+          </DialogTitle>
+          <DialogDescription>إنشاء وإدارة حسابات الدخول لهذه العيادة</DialogDescription>
+        </DialogHeader>
+
+        {/* Create new credential */}
+        <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
+          <p className="text-sm font-semibold flex items-center gap-2"><UserPlus className="w-4 h-4" /> إنشاء حساب جديد</p>
+          <form onSubmit={handleCreate} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">الاسم الكامل *</label>
+              <Input required value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="مدير العيادة" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">اسم المستخدم *</label>
+              <Input required dir="ltr" value={form.username} onChange={e => setForm({...form, username: e.target.value})} placeholder="clinic_admin" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">كلمة المرور *</label>
+              <div className="relative">
+                <Input required dir="ltr" type={showPw ? "text" : "password"} minLength={6} value={form.password}
+                  onChange={e => setForm({...form, password: e.target.value})} placeholder="6+ أحرف" className="pr-8" />
+                <button type="button" onClick={() => setShowPw(p => !p)} className="absolute left-2 top-2.5 text-muted-foreground">
+                  {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            <div className="sm:col-span-3 flex justify-end">
+              <Button type="submit" size="sm" disabled={createCred.isPending} className="gap-2">
+                {createCred.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+                إنشاء الحساب
+              </Button>
+            </div>
+          </form>
+        </div>
+
+        {/* List of existing credentials */}
+        <div className="space-y-2">
+          <p className="text-sm font-semibold text-muted-foreground">الحسابات الحالية</p>
+          {isLoading ? (
+            <div className="flex justify-center py-6"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
+          ) : !creds?.length ? (
+            <div className="text-center py-8 text-sm text-muted-foreground border rounded-xl">لا توجد حسابات بعد — أنشئ أول حساب أعلاه</div>
+          ) : (
+            <div className="space-y-2">
+              {creds.map(cred => (
+                <div key={cred.id} className="flex items-center justify-between gap-3 rounded-xl border bg-card p-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm">{cred.name}</p>
+                    <p className="text-xs text-muted-foreground font-mono" dir="ltr">{cred.username}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {cred.lastLoginAt
+                        ? `آخر دخول: ${new Date(cred.lastLoginAt).toLocaleDateString('ar-SA')}`
+                        : 'لم يسجّل دخولاً بعد'}
+                    </p>
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8"
+                      onClick={() => { setResetId(cred.id); setResetPw(''); setShowResetPw(false) }}>
+                      <RotateCcw className="w-3.5 h-3.5" /> تغيير كلمة المرور
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                      onClick={() => setDeleteId(cred.id)}>
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Reset password inline dialog */}
+        {resetId !== null && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-900/10 p-4 space-y-3">
+            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-2">
+              <RotateCcw className="w-4 h-4" />
+              تغيير كلمة المرور لـ: {creds?.find(c => c.id === resetId)?.username}
+            </p>
+            <div className="relative">
+              <Input dir="ltr" type={showResetPw ? "text" : "password"} minLength={6}
+                value={resetPw} onChange={e => setResetPw(e.target.value)}
+                placeholder="كلمة المرور الجديدة (6+ أحرف)" className="pr-8" />
+              <button type="button" onClick={() => setShowResetPw(p => !p)} className="absolute left-2 top-2.5 text-muted-foreground">
+                {showResetPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" size="sm" onClick={() => { setResetId(null); setResetPw('') }}>إلغاء</Button>
+              <Button size="sm" disabled={resetPw.length < 6 || resetPass.isPending} onClick={handleReset} className="gap-1.5">
+                {resetPass.isPending && <Loader2 className="w-4 h-4 animate-spin" />} حفظ
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Delete confirm */}
+        {deleteId !== null && (
+          <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 space-y-3">
+            <p className="text-sm font-semibold text-destructive">
+              هل تريد حذف حساب "{creds?.find(c => c.id === deleteId)?.username}"؟
+            </p>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" size="sm" onClick={() => setDeleteId(null)}>إلغاء</Button>
+              <Button variant="destructive" size="sm" disabled={deleteCred.isPending} onClick={handleDelete} className="gap-1.5">
+                {deleteCred.isPending && <Loader2 className="w-4 h-4 animate-spin" />} حذف
+              </Button>
+            </div>
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>إغلاق</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
 
 export default function Clinics() {
   const { data: clinics, isLoading } = useClinics()
@@ -18,9 +196,10 @@ export default function Clinics() {
   const { user } = useAuth()
   const canManage = hasPermission(user?.role, "manageClinic")
   
-  const createClinic = useCreateClinic()
-  const updateClinic = useUpdateClinic()
-  const deleteClinic = useDeleteClinic()
+  const createClinic    = useCreateClinic()
+  const updateClinic    = useUpdateClinic()
+  const deleteClinic    = useDeleteClinic()
+  const impersonateMut  = useImpersonateClinic()
 
   const [search, setSearch] = React.useState("")
   const [filterStatus, setFilterStatus] = React.useState<string>("all")
@@ -28,7 +207,29 @@ export default function Clinics() {
   const [isFormOpen, setIsFormOpen] = React.useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = React.useState(false)
   const [editingClinic, setEditingClinic] = React.useState<Clinic | null>(null)
-  
+  const [credClinic, setCredClinic] = React.useState<Clinic | null>(null)
+  const [impersonating, setImpersonating] = React.useState<number | null>(null)
+
+  const handleImpersonate = async (clinic: Clinic) => {
+    setImpersonating(clinic.id)
+    try {
+      const { token, clinicName } = await impersonateMut.mutateAsync(clinic.id)
+      // Write clinic-os auth into shared localStorage (same origin) then open clinic in new tab
+      localStorage.setItem("clinic-os-auth", JSON.stringify({
+        role: "admin",
+        token,
+        name: clinicName,
+        clinicId: clinic.id,
+      }))
+      window.open("/", "_blank")
+      toast({ title: "تم الدخول", description: `تم الدخول إلى عيادة "${clinicName}" بنجاح في تبويب جديد` })
+    } catch (err: any) {
+      toast({ title: "خطأ", description: err.message, variant: "destructive" })
+    } finally {
+      setImpersonating(null)
+    }
+  }
+
   // Form State
   const [formData, setFormData] = React.useState<Partial<Clinic>>({
     name: "", ownerName: "", phone: "", email: "", specialty: "", plan: "trial", status: "trial", notes: ""
@@ -205,6 +406,27 @@ export default function Clinics() {
                       <TableCell>
                         {canManage && (
                           <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              title="دخول مباشر للعيادة"
+                              onClick={() => handleImpersonate(clinic)}
+                              disabled={impersonating === clinic.id}
+                            >
+                              {impersonating === clinic.id
+                                ? <Loader2 className="h-4 w-4 animate-spin" />
+                                : <LogIn className="h-4 w-4 text-emerald-600" />}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              title="بيانات الدخول"
+                              onClick={() => setCredClinic(clinic)}
+                            >
+                              <KeyRound className="h-4 w-4 text-primary" />
+                            </Button>
                             <Button 
                               variant="ghost" 
                               size="icon" 
@@ -344,6 +566,11 @@ export default function Clinics() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Credentials Dialog */}
+      {credClinic && (
+        <CredentialsDialog clinic={credClinic} onClose={() => setCredClinic(null)} />
+      )}
     </div>
   )
 }

@@ -66,7 +66,7 @@ export default function LoginPage() {
         return;
       }
       const data = await res.json();
-      login({ role: "doctor", doctorId: data.doctorId, name: data.name });
+      login({ role: "doctor", doctorId: data.doctorId, name: data.name, token: data.token });
     } catch {
       toast({ variant: "destructive", title: isRtl ? "خطأ" : "Error", description: isRtl ? "تعذر الاتصال بالخادم" : "Could not reach server" });
     } finally {

@@ -67,8 +67,11 @@ function selectiveAdminAuth(req: Request, res: Response, next: NextFunction): vo
 // Apply selective auth before all clinic routes
 router.use(selectiveAdminAuth);
 
+// Public-capable routers FIRST — before any clinic-scoped router that applies requireClinic globally
 router.use(authRouter);
 router.use(healthRouter);
+router.use(patientAuthRouter);
+router.use(doctorAuthRouter);
 router.use(patientsRouter);
 router.use(doctorsRouter);
 router.use(appointmentsRouter);
@@ -89,8 +92,6 @@ router.use(bookingsRouter);
 router.use(zapierRouter);
 router.use(settingsRouter);
 router.use(adminUsersRouter);
-router.use(doctorAuthRouter);
-router.use(patientAuthRouter);
 router.use(branchesRouter);
 router.use(storageRouter);
 router.use(demoRequestsRouter);

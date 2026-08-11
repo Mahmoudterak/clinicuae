@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { eq, asc } from "drizzle-orm";
 import { db, adminUsersTable, registeredClinicsTable } from "@workspace/db";
 import { logSecurityEvent } from "../lib/securityLogger";
+import { requireClinic } from "../middlewares/adminAuth";
 import bcrypt from "bcryptjs";
 
 const router: IRouter = Router();
@@ -180,6 +181,65 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     success: false,
   });
   res.status(401).json({ error: "Invalid credentials" });
+});
+
+// ── Change password (authenticated clinic admin) ──────────────────────────────
+router.post("/auth/change-password", requireClinic, async (req, res): Promise<void> => {
+  const { currentPassword, newPassword } = (req.body ?? {}) as { currentPassword?: string; newPassword?: string };
+  if (!currentPassword || !newPassword) {
+    res.status(400).json({ error: "currentPassword and newPassword are required" });
+    return;
+  }
+  if (newPassword.length < 6) {
+    res.status(400).json({ error: "New password must be at least 6 characters" });
+    return;
+  }
+
+  // Look up by adminName (username) + clinicId — both are embedded in the JWT by requireClinic
+  const adminName = (req as any).adminJwt?.adminName;
+  const clinicId  = (req as any).clinicId;
+  if (!adminName || !clinicId) {
+    res.status(401).json({ error: "Not authenticated" });
+    return;
+  }
+
+  const [admin] = await db
+    .select()
+    .from(adminUsersTable)
+    .where(eq(adminUsersTable.username, adminName))
+    .limit(1);
+
+  if (!admin || admin.clinicId !== clinicId) {
+    res.status(404).json({ error: "Admin account not found" });
+    return;
+  }
+
+  // Verify current password (bcrypt or legacy plaintext)
+  let currentMatch = false;
+  if (isBcryptHash(admin.password)) {
+    currentMatch = await bcrypt.compare(currentPassword, admin.password);
+  } else {
+    currentMatch = admin.password === currentPassword;
+  }
+
+  if (!currentMatch) {
+    await logSecurityEvent({
+      req,
+      eventType: "login_failure",
+      description: `Wrong current password during change-password for "${adminName}"`,
+      clinicId: admin.clinicId,
+      adminId: admin.id,
+      success: false,
+      metadata: { reason: "wrong_current_password" },
+    });
+    res.status(401).json({ error: "Current password is incorrect" });
+    return;
+  }
+
+  const newHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+  await db.update(adminUsersTable).set({ password: newHash }).where(eq(adminUsersTable.id, admin.id));
+
+  res.json({ success: true });
 });
 
 export default router;

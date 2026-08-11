@@ -90,7 +90,7 @@ const invoiceSchema = z.object({
   amount: z.coerce.number().min(0, "Amount must be positive"),
   description: z.string().min(1, "Description is required"),
   issuedDate: z.string().min(1, "Issue date is required"),
-  dueDate: z.string().optional(),
+  dueDate: z.string().min(1, "Due date is required"),
   status: z.string().default("pending"),
 });
 

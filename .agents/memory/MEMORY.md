@@ -1,3 +1,6 @@
 - [Orval zod v4 import fix](orval-zod-v4.md) — codegen must rewrite generated zod import to zod/v4; entity routes must ISO-serialize createdAt before Zod parse.
 - [Tenant Isolation Architecture](tenant-isolation.md) — clinic_id on all data tables, requireClinic middleware on all routes; auth.ts does DB lookup → clinicId in JWT.
 - [SuperAdmin Routing — requireClinic intercept bug](superadmin-routing-bug.md) — superAdminRouter must be mounted FIRST in routes/index.ts; clinic routers use router.use(requireClinic) globally and block all paths including /superadmin/*.
+- [Doctor/Patient auth router ordering](auth-router-ordering.md) — doctorAuthRouter and patientAuthRouter must be mounted BEFORE clinic data routers (patients, doctors, etc.) in routes/index.ts; clinic data routers apply requireClinic globally, intercepting all paths including public auth endpoints.
+- [Developer Center 500 bug](developer-center-fix.md) — missing /developer-info endpoint caused logout (api-client clears sa-auth on 401); platformAuditLogsTable uses .ip not .ipAddress.
+- [Clinic OS API client auth wiring](clinic-os-api-client-auth.md) — setAuthTokenGetter wired in auth-context.tsx; invoice dueDate must be required (not optional) in frontend Zod schema.

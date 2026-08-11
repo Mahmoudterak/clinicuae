@@ -5,6 +5,9 @@ import { requireClinic } from "../middlewares/adminAuth";
 import { z } from "zod";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
+import jwt from "jsonwebtoken";
+
+const JWT_SECRET = process.env.SESSION_SECRET ?? "dev-secret-change-me";
 
 const router: IRouter = Router();
 const scryptAsync = promisify(scrypt);
@@ -51,7 +54,14 @@ router.post("/doctor-auth/login", async (req, res): Promise<void> => {
 
   if (!doctor) { res.status(404).json({ error: "بيانات الطبيب غير موجودة" }); return; }
 
+  const token = jwt.sign(
+    { role: "doctor", doctorId: doctor.id, clinicId: account.clinicId },
+    JWT_SECRET,
+    { expiresIn: "12h" }
+  );
+
   res.json({
+    token,
     doctorId: doctor.id,
     name: `د. ${doctor.firstName} ${doctor.lastName}`,
     specialty: doctor.specialty,
